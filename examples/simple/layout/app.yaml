@@ -1,0 +1,25 @@
+# Simple example app layout
+
+app:
+  body:
+    Window:
+      title: "Hello Ymery"
+
+widgets:
+  MainWindow:
+    type: Window
+    title: "Hello Ymery"
+    children:
+      - Text:
+          label: "Welcome to Ymery!"
+      - Button:
+          label: "Click Me"
+          event-handlers:
+            on-click:
+              - dispatch-event: button-clicked
+
+  Text:
+    type: Text
+
+  Button:
+    type: Button

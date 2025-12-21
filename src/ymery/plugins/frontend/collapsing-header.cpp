@@ -1,0 +1,56 @@
+// collapsing-header widget plugin
+#include "../../frontend/composite.hpp"
+#include "../../frontend/widget_factory.hpp"
+#include <imgui.h>
+
+namespace ymery::plugins {
+
+class CollapsingHeader : public Composite {
+public:
+    static Result<WidgetPtr> create(
+        std::shared_ptr<WidgetFactory> widget_factory,
+        std::shared_ptr<Dispatcher> dispatcher,
+        const std::string& ns,
+        std::shared_ptr<DataBag> data_bag
+    ) {
+        auto widget = std::make_shared<CollapsingHeader>();
+        widget->_widget_factory = widget_factory;
+        widget->_dispatcher = dispatcher;
+        widget->_namespace = ns;
+        widget->_data_bag = data_bag;
+
+        if (auto res = widget->init(); !res) {
+            return Err<WidgetPtr>("CollapsingHeader::create failed", res);
+        }
+        return widget;
+    }
+
+protected:
+    Result<void> _begin_container() override {
+        std::string label = "Header";
+        if (auto label_res = _data_bag->get("label"); label_res) {
+            if (auto l = get_as<std::string>(*label_res)) {
+                label = *l;
+            }
+        }
+        _container_open = ImGui::CollapsingHeader(label.c_str());
+        return Ok();
+    }
+
+    Result<void> _end_container() override {
+        return Ok();
+    }
+};
+
+} // namespace ymery::plugins
+
+extern "C" const char* name() { return "collapsing-header"; }
+extern "C" const char* type() { return "widget"; }
+extern "C" ymery::Result<ymery::WidgetPtr> create(
+    std::shared_ptr<ymery::WidgetFactory> wf,
+    std::shared_ptr<ymery::Dispatcher> d,
+    const std::string& ns,
+    std::shared_ptr<ymery::DataBag> db
+) {
+    return ymery::plugins::CollapsingHeader::create(wf, d, ns, db);
+}
