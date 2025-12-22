@@ -391,6 +391,88 @@ app:
                                     type: input
                                     label: Final
 
+              - tab-item:
+                  label: Extra Widgets
+                  body:
+                    - collapsing-header:
+                        label: Knobs
+                        body:
+                          - text: "Rotary knob controls with different variants:"
+                          - row:
+                              body:
+                                - knob:
+                                    label: Wiper
+                                    variant: wiper
+                                    min: 0
+                                    max: 100
+                                    size: 60
+                                - knob:
+                                    label: Tick
+                                    variant: tick
+                                    min: 0
+                                    max: 100
+                                    size: 60
+                                - knob:
+                                    label: Dot
+                                    variant: dot
+                                    min: 0
+                                    max: 100
+                                    size: 60
+                                - knob:
+                                    label: Stepped
+                                    variant: stepped
+                                    min: 0
+                                    max: 10
+                                    size: 60
+
+                    - collapsing-header:
+                        label: Spinners
+                        body:
+                          - text: "Loading spinner animations:"
+                          - row:
+                              body:
+                                - spinner:
+                                    variant: spinner
+                                    radius: 16
+                                    thickness: 3
+                                - spinner:
+                                    variant: dots
+                                    radius: 16
+                                    thickness: 3
+                                - spinner:
+                                    variant: ang
+                                    radius: 16
+                                    thickness: 3
+                                - spinner:
+                                    variant: rainbow
+                                    radius: 16
+                                    thickness: 3
+
+                    - collapsing-header:
+                        label: Toggle Switches
+                        body:
+                          - toggle:
+                              label: Enable notifications
+                          - toggle:
+                              label: Dark mode
+                          - toggle:
+                              label: Auto-save
+
+                    - collapsing-header:
+                        label: 3D Gizmo
+                        body:
+                          - text: "3D manipulation gizmo (translate/rotate/scale):"
+                          - gizmo:
+                              operation: translate
+                              mode: local
+
+                    - collapsing-header:
+                        label: 3D Plot
+                        body:
+                          - plot3d:
+                              label: 3D Surface
+                              size: [400, 300]
+
 widgets:
   # Container widgets
   window:
@@ -457,3 +539,17 @@ widgets:
     type: node
   node-pin:
     type: node-pin
+
+  # Extra widgets
+  knob:
+    type: knob
+  spinner:
+    type: spinner
+  toggle:
+    type: toggle
+  coolbar:
+    type: coolbar
+  gizmo:
+    type: gizmo
+  plot3d:
+    type: plot3d

@@ -222,6 +222,126 @@ if(imgui_markdown_ADDED)
     target_include_directories(imgui_md INTERFACE ${imgui_markdown_SOURCE_DIR})
 endif()
 
+# imgui-knobs - Knob widgets
+CPMAddPackage(
+    NAME imgui_knobs
+    GITHUB_REPOSITORY altschuler/imgui-knobs
+    GIT_TAG main
+    DOWNLOAD_ONLY YES
+)
+
+if(imgui_knobs_ADDED)
+    add_library(imgui_knobs STATIC ${imgui_knobs_SOURCE_DIR}/imgui-knobs.cpp)
+    target_include_directories(imgui_knobs PUBLIC ${imgui_knobs_SOURCE_DIR})
+    target_link_libraries(imgui_knobs PUBLIC imgui)
+endif()
+
+# imspinner - Spinner/loading widgets
+CPMAddPackage(
+    NAME imspinner
+    GITHUB_REPOSITORY dalerank/imspinner
+    GIT_TAG master
+    DOWNLOAD_ONLY YES
+)
+
+if(imspinner_ADDED)
+    # imspinner is header-only
+    add_library(imspinner INTERFACE)
+    target_include_directories(imspinner INTERFACE ${imspinner_SOURCE_DIR})
+endif()
+
+# imgui-toggle - Toggle switch widgets
+CPMAddPackage(
+    NAME imgui_toggle
+    GITHUB_REPOSITORY cmdwtf/imgui_toggle
+    GIT_TAG main
+    DOWNLOAD_ONLY YES
+)
+
+if(imgui_toggle_ADDED)
+    add_library(imgui_toggle STATIC ${imgui_toggle_SOURCE_DIR}/imgui_toggle.cpp)
+    target_include_directories(imgui_toggle PUBLIC ${imgui_toggle_SOURCE_DIR})
+    target_link_libraries(imgui_toggle PUBLIC imgui)
+endif()
+
+# imcoolbar - macOS-style dock bar
+CPMAddPackage(
+    NAME imcoolbar
+    GITHUB_REPOSITORY aiekick/ImCoolBar
+    GIT_TAG master
+    DOWNLOAD_ONLY YES
+)
+
+if(imcoolbar_ADDED)
+    add_library(imcoolbar STATIC ${imcoolbar_SOURCE_DIR}/ImCoolBar.cpp)
+    target_include_directories(imcoolbar PUBLIC ${imcoolbar_SOURCE_DIR})
+    target_link_libraries(imcoolbar PUBLIC imgui)
+endif()
+
+# imguizmo - 3D gizmo manipulation
+CPMAddPackage(
+    NAME imguizmo
+    GITHUB_REPOSITORY CedricGuillemet/ImGuizmo
+    GIT_TAG master
+    DOWNLOAD_ONLY YES
+)
+
+if(imguizmo_ADDED)
+    add_library(imguizmo STATIC
+        ${imguizmo_SOURCE_DIR}/ImGuizmo.cpp
+        ${imguizmo_SOURCE_DIR}/ImGradient.cpp
+        ${imguizmo_SOURCE_DIR}/ImCurveEdit.cpp
+        ${imguizmo_SOURCE_DIR}/ImSequencer.cpp
+        ${imguizmo_SOURCE_DIR}/GraphEditor.cpp
+    )
+    target_include_directories(imguizmo PUBLIC ${imguizmo_SOURCE_DIR})
+    target_link_libraries(imguizmo PUBLIC imgui)
+endif()
+
+# implot3d - 3D plotting
+CPMAddPackage(
+    NAME implot3d
+    GITHUB_REPOSITORY brenocq/implot3d
+    GIT_TAG main
+    DOWNLOAD_ONLY YES
+)
+
+if(implot3d_ADDED)
+    add_library(implot3d STATIC
+        ${implot3d_SOURCE_DIR}/implot3d.cpp
+        ${implot3d_SOURCE_DIR}/implot3d_items.cpp
+    )
+    target_include_directories(implot3d PUBLIC ${implot3d_SOURCE_DIR})
+    target_link_libraries(implot3d PUBLIC imgui)
+endif()
+
+# nanovg - Vector graphics (requires OpenGL)
+if(NOT YMERY_WEB)
+    CPMAddPackage(
+        NAME nanovg
+        GITHUB_REPOSITORY memononen/nanovg
+        GIT_TAG master
+        DOWNLOAD_ONLY YES
+    )
+
+    if(nanovg_ADDED)
+        add_library(nanovg STATIC ${nanovg_SOURCE_DIR}/src/nanovg.c)
+        target_include_directories(nanovg PUBLIC ${nanovg_SOURCE_DIR}/src)
+        if(NOT YMERY_USE_WEBGPU)
+            target_compile_definitions(nanovg PUBLIC NANOVG_GL2_IMPLEMENTATION)
+        endif()
+    endif()
+endif()
+
+# immvision - Image visualization (requires OpenCV)
+# CPMAddPackage(
+#     NAME immvision
+#     GITHUB_REPOSITORY pthom/immvision
+#     GIT_TAG main
+#     DOWNLOAD_ONLY YES
+# )
+# Note: immvision requires OpenCV, enable if OpenCV is available
+
 # Core library
 if(YMERY_WEB)
     # Static library for Emscripten (no shared libs)
@@ -261,6 +381,12 @@ if(YMERY_WEB)
         implot
         imgui_node_editor
         imgui_md
+        imgui_knobs
+        imspinner
+        imgui_toggle
+        imcoolbar
+        imguizmo
+        implot3d
         spdlog::spdlog
     )
     target_compile_definitions(ymery PUBLIC YMERY_WEB=1)
@@ -271,6 +397,13 @@ else()
         implot
         imgui_node_editor
         imgui_md
+        imgui_knobs
+        imspinner
+        imgui_toggle
+        imcoolbar
+        imguizmo
+        implot3d
+        nanovg
         glfw
         spdlog::spdlog
         dl

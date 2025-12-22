@@ -71,3 +71,63 @@ foreach(plugin ${NODE_EDITOR_PLUGINS})
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/frontend"
     )
 endforeach()
+
+# Knob widget (requires imgui_knobs)
+add_library(knob SHARED knob.cpp)
+target_link_libraries(knob PRIVATE ymery imgui imgui_knobs)
+target_include_directories(knob PRIVATE ${CMAKE_SOURCE_DIR}/src)
+set_target_properties(knob PROPERTIES
+    PREFIX ""
+    OUTPUT_NAME "knob"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/frontend"
+)
+
+# Spinner widget (requires imspinner - header only)
+add_library(spinner SHARED spinner.cpp)
+target_link_libraries(spinner PRIVATE ymery imgui imspinner)
+target_include_directories(spinner PRIVATE ${CMAKE_SOURCE_DIR}/src)
+set_target_properties(spinner PROPERTIES
+    PREFIX ""
+    OUTPUT_NAME "spinner"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/frontend"
+)
+
+# Toggle widget (requires imgui_toggle)
+add_library(toggle SHARED toggle.cpp)
+target_link_libraries(toggle PRIVATE ymery imgui imgui_toggle)
+target_include_directories(toggle PRIVATE ${CMAKE_SOURCE_DIR}/src)
+set_target_properties(toggle PROPERTIES
+    PREFIX ""
+    OUTPUT_NAME "toggle"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/frontend"
+)
+
+# Coolbar widget (requires imcoolbar)
+add_library(coolbar SHARED coolbar.cpp)
+target_link_libraries(coolbar PRIVATE ymery imgui imcoolbar)
+target_include_directories(coolbar PRIVATE ${CMAKE_SOURCE_DIR}/src)
+set_target_properties(coolbar PROPERTIES
+    PREFIX ""
+    OUTPUT_NAME "coolbar"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/frontend"
+)
+
+# Gizmo widget (requires imguizmo)
+add_library(gizmo SHARED gizmo.cpp)
+target_link_libraries(gizmo PRIVATE ymery imgui imguizmo)
+target_include_directories(gizmo PRIVATE ${CMAKE_SOURCE_DIR}/src)
+set_target_properties(gizmo PROPERTIES
+    PREFIX ""
+    OUTPUT_NAME "gizmo"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/frontend"
+)
+
+# Plot3D widget (requires implot3d)
+add_library(plot3d SHARED plot3d.cpp)
+target_link_libraries(plot3d PRIVATE ymery imgui implot3d)
+target_include_directories(plot3d PRIVATE ${CMAKE_SOURCE_DIR}/src)
+set_target_properties(plot3d PROPERTIES
+    PREFIX ""
+    OUTPUT_NAME "plot3d"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/frontend"
+)
