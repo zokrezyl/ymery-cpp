@@ -171,6 +171,13 @@ if(imgui_node_editor_ADDED)
     string(REPLACE "ImGui::GetKeyIndex(ImGuiKey_Delete)" "ImGuiKey_Delete" NODE_EDITOR_CPP "${NODE_EDITOR_CPP}")
     file(WRITE ${imgui_node_editor_SOURCE_DIR}/imgui_node_editor.cpp "${NODE_EDITOR_CPP}")
 
+    # Patch crude_json.cpp to add missing <exception> include for std::terminate (macOS fix)
+    file(READ ${imgui_node_editor_SOURCE_DIR}/crude_json.cpp CRUDE_JSON_CPP)
+    if(NOT CRUDE_JSON_CPP MATCHES "#include <exception>")
+        string(REPLACE "#include <cstdlib>" "#include <cstdlib>\n#include <exception>" CRUDE_JSON_CPP "${CRUDE_JSON_CPP}")
+        file(WRITE ${imgui_node_editor_SOURCE_DIR}/crude_json.cpp "${CRUDE_JSON_CPP}")
+    endif()
+
     # Patch imgui_extra_math.inl to guard duplicate operators (already defined in ImGui 1.90+)
     file(READ ${imgui_node_editor_SOURCE_DIR}/imgui_extra_math.inl EXTRA_MATH_INL)
     # Wrap operator== and operator!= in version guard
