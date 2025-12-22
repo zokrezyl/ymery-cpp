@@ -5,6 +5,7 @@ set(WIDGET_PLUGINS
     button
     popup
     popup-modal
+    tooltip
     input-text
     input-int
     slider-int
@@ -47,7 +48,7 @@ set_target_properties(markdown PROPERTIES
 )
 
 # ImPlot widgets (require implot) - use _plugin suffix to avoid conflict with library
-set(IMPLOT_PLUGINS implot implot-group)
+set(IMPLOT_PLUGINS implot implot-group implot-layer)
 foreach(plugin ${IMPLOT_PLUGINS})
     add_library(${plugin}_plugin SHARED ${plugin}.cpp)
     target_link_libraries(${plugin}_plugin PRIVATE ymery imgui implot)
@@ -89,6 +90,17 @@ target_include_directories(spinner PRIVATE ${CMAKE_SOURCE_DIR}/src)
 set_target_properties(spinner PROPERTIES
     PREFIX ""
     OUTPUT_NAME "spinner"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/frontend"
+)
+
+# Spinners demo widget (requires imspinner - header only)
+add_library(spinners_demo SHARED spinners_demo.cpp)
+target_link_libraries(spinners_demo PRIVATE ymery imgui imspinner)
+target_compile_definitions(spinners_demo PRIVATE IMSPINNER_DEMO)
+target_include_directories(spinners_demo PRIVATE ${CMAKE_SOURCE_DIR}/src)
+set_target_properties(spinners_demo PROPERTIES
+    PREFIX ""
+    OUTPUT_NAME "spinners-demo"
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/frontend"
 )
 

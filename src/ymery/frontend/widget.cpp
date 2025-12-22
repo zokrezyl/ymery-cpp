@@ -65,6 +65,15 @@ Result<void> Widget::render() {
 
     _detect_and_execute_events();
 
+    // Show tooltip if widget has tooltip property (always check, regardless of derived overrides)
+    if (ImGui::IsItemHovered()) {
+        if (auto tooltip_res = _data_bag->get_static("tooltip"); tooltip_res) {
+            if (auto tooltip_text = get_as<std::string>(*tooltip_res)) {
+                ImGui::SetTooltip("%s", tooltip_text->c_str());
+            }
+        }
+    }
+
     if (_is_body_activated) {
         if (auto res = _ensure_body(); !res) {
             _pop_styles();
@@ -172,7 +181,9 @@ Result<void> Widget::_pop_styles() {
 
 Result<void> Widget::_detect_and_execute_events() {
     if (ImGui::IsItemClicked()) _execute_event_commands("on-click");
-    if (ImGui::IsItemHovered()) _execute_event_commands("on-hover");
+    if (ImGui::IsItemHovered()) {
+        _execute_event_commands("on-hover");
+    }
     return Ok();
 }
 
@@ -188,7 +199,13 @@ Result<void> Widget::_execute_event_commands(const std::string& event_name) {
 
 Result<void> Widget::_execute_event_command(const Dict& command) {
     for (const auto& [cmd_type, cmd_data] : command) {
-        if (cmd_type == "dispatch-event") {
+        if (cmd_type == "show") {
+            // Create and render widget from spec
+            auto widget_res = _widget_factory->create_widget(_data_bag, cmd_data, _namespace);
+            if (widget_res) {
+                (*widget_res)->render();
+            }
+        } else if (cmd_type == "dispatch-event") {
             Dict event;
             if (auto name = get_as<std::string>(cmd_data)) {
                 event["name"] = cmd_data;

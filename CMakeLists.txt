@@ -266,7 +266,12 @@ CPMAddPackage(
 )
 
 if(imgui_toggle_ADDED)
-    add_library(imgui_toggle STATIC ${imgui_toggle_SOURCE_DIR}/imgui_toggle.cpp)
+    add_library(imgui_toggle STATIC
+        ${imgui_toggle_SOURCE_DIR}/imgui_toggle.cpp
+        ${imgui_toggle_SOURCE_DIR}/imgui_toggle_palette.cpp
+        ${imgui_toggle_SOURCE_DIR}/imgui_toggle_presets.cpp
+        ${imgui_toggle_SOURCE_DIR}/imgui_toggle_renderer.cpp
+    )
     target_include_directories(imgui_toggle PUBLIC ${imgui_toggle_SOURCE_DIR})
     target_link_libraries(imgui_toggle PUBLIC imgui)
 endif()
@@ -362,6 +367,7 @@ if(YMERY_WEB)
         src/ymery/frontend/widget.cpp
         src/ymery/frontend/widget_factory.cpp
         src/ymery/frontend/composite.cpp
+        src/ymery/backend/audio_buffer.cpp
     )
 else()
     add_library(ymery SHARED
@@ -374,6 +380,7 @@ else()
         src/ymery/frontend/widget.cpp
         src/ymery/frontend/widget_factory.cpp
         src/ymery/frontend/composite.cpp
+        src/ymery/backend/audio_buffer.cpp
     )
 endif()
 

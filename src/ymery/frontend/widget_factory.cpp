@@ -142,16 +142,54 @@ Result<WidgetPtr> WidgetFactory::create_widget(
 Result<WidgetPtr> WidgetFactory::create_root_widget() {
     spdlog::info("WidgetFactory::create_root_widget");
     const Dict& app_config = _lang->app_config();
-    spdlog::debug("App config has {} keys", app_config.size());
+    spdlog::info("App config has {} keys", app_config.size());
 
-    // Get root widget spec from app config
-    auto body_it = app_config.find("body");
-    if (body_it == app_config.end()) {
-        spdlog::error("No 'body' in app config");
-        return Err<WidgetPtr>(
-            "WidgetFactory::create_root_widget: no 'body' in app config");
+    // Debug: print all keys in app_config
+    for (const auto& [key, val] : app_config) {
+        spdlog::info("App config key: '{}'", key);
     }
-    spdlog::debug("Found 'body' in app config");
+
+    // Get root widget name from app config (Python pattern: app.widget)
+    std::string widget_name;
+    auto widget_it = app_config.find("widget");
+    if (widget_it != app_config.end()) {
+        if (auto name = get_as<std::string>(widget_it->second)) {
+            widget_name = *name;
+            spdlog::info("Found 'widget' in app config: {}", widget_name);
+        }
+    }
+
+    // Fallback: look for 'body' key (old pattern)
+    if (widget_name.empty()) {
+        auto body_it = app_config.find("body");
+        if (body_it != app_config.end()) {
+            spdlog::debug("Found 'body' in app config (fallback)");
+            // Create root data bag
+            std::map<std::string, TreeLikePtr> data_trees;
+            data_trees["data"] = _data_tree;
+
+            auto root_data_bag_res = DataBag::create(
+                _dispatcher,
+                _plugin_manager,
+                data_trees,
+                "data",
+                DataPath::root(),
+                {}  // empty statics
+            );
+            if (!root_data_bag_res) {
+                return Err<WidgetPtr>(
+                    "WidgetFactory::create_root_widget: failed to create root data bag",
+                    root_data_bag_res);
+            }
+            return create_widget(*root_data_bag_res, body_it->second, "app");
+        }
+    }
+
+    if (widget_name.empty()) {
+        spdlog::error("No 'widget' or 'body' in app config");
+        return Err<WidgetPtr>(
+            "WidgetFactory::create_root_widget: no 'widget' or 'body' in app config");
+    }
 
     // Create root data bag
     std::map<std::string, TreeLikePtr> data_trees;
@@ -171,7 +209,7 @@ Result<WidgetPtr> WidgetFactory::create_root_widget() {
             root_data_bag_res);
     }
 
-    return create_widget(*root_data_bag_res, body_it->second, "app");
+    return create_widget(*root_data_bag_res, Value(widget_name), "app");
 }
 
 Result<std::pair<std::string, Dict>> WidgetFactory::_parse_widget_spec(

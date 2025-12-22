@@ -50,22 +50,24 @@ protected:
         }
 
         ImColor color = ImColor(ImGui::GetStyleColorVec4(ImGuiCol_Text));
+        ImColor bg = ImColor(ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+        float speed = 2.8f;
 
         if (variant == "spinner") {
-            ImSpinner::SpinnerAngTriple("spinner", radius, thickness, color, color, color);
+            // SpinnerAngTriple needs 3 radius values
+            ImSpinner::SpinnerAngTriple("spinner", radius, radius * 0.75f, radius * 0.5f, thickness, color, bg, color, speed);
         } else if (variant == "dots") {
-            static float nextdot = 0.0f;
-            ImSpinner::SpinnerDots("dots", &nextdot, radius, thickness, color);
+            ImSpinner::SpinnerBounceDots("dots", radius, thickness, color, speed, 3);
         } else if (variant == "ang") {
-            ImSpinner::SpinnerAng("ang", radius, thickness, color);
+            ImSpinner::SpinnerAng("ang", radius, thickness, color, bg, speed);
         } else if (variant == "bounceball") {
-            ImSpinner::SpinnerBounceBall("bounceball", radius, thickness, color);
+            ImSpinner::SpinnerBounceBall("bounceball", radius, thickness, color, speed);
         } else if (variant == "rainbow") {
-            ImSpinner::SpinnerRainbow("rainbow", radius, thickness, color, 2.8f);
+            ImSpinner::SpinnerRainbow("rainbow", radius, thickness, color, speed);
         } else if (variant == "pulsar") {
-            ImSpinner::SpinnerPulsar("pulsar", radius, thickness, color);
+            ImSpinner::SpinnerPulsar("pulsar", radius, thickness, bg, speed);
         } else {
-            ImSpinner::SpinnerAngTriple("spinner", radius, thickness, color, color, color);
+            ImSpinner::SpinnerAng("spinner", radius, thickness, color, bg, speed);
         }
 
         return Ok();

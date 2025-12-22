@@ -85,10 +85,21 @@ Result<void> App::init() {
     }
     _lang = *lang_res;
 
-    // Create data tree from plugin (or fallback)
-    auto tree_res = _plugin_manager->create_tree("simple-data-tree");
+    // Get data tree type from app config (default: simple-data-tree)
+    std::string tree_type = "simple-data-tree";
+    const auto& app_config = _lang->app_config();
+    auto tree_it = app_config.find("data-tree");
+    if (tree_it != app_config.end()) {
+        if (auto t = get_as<std::string>(tree_it->second)) {
+            tree_type = *t;
+            spdlog::info("Using data-tree type from config: {}", tree_type);
+        }
+    }
+
+    // Create data tree from plugin
+    auto tree_res = _plugin_manager->create_tree(tree_type);
     if (!tree_res) {
-        spdlog::warn("Could not create simple-data-tree from plugin: {}", error_msg(tree_res));
+        spdlog::warn("Could not create {} from plugin: {}", tree_type, error_msg(tree_res));
         // Fallback to a minimal implementation if needed
         return Err<void>("App::init: no tree-like plugin available", tree_res);
     }
