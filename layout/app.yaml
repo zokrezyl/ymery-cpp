@@ -1,10 +1,96 @@
 app:
+  # Local data tree for this app - demonstrates dynamic data binding
+  data:
+    user:
+      type: simple-data-tree
+      initial:
+        name: Guest
+        email: guest@example.com
+        age: 25
+        enabled: true
+        score: 75
+        volume: 0.5
+        theme: Dark
+        color: [0.2, 0.4, 0.8, 1.0]
+
+    items:
+      type: data-tree
+      initial:
+        children:
+          item-1:
+            metadata:
+              name: First Item
+              description: This is the first item
+          item-2:
+            metadata:
+              name: Second Item
+              description: Another item here
+          item-3:
+            metadata:
+              name: Third Item
+              description: And one more item
+
   body:
     window:
       title: Ymery Widget Demo
       body:
         - tab-bar:
             body:
+              - tab-item:
+                  label: Dynamic Data
+                  body:
+                    - collapsing-header:
+                        label: User Profile (Data Binding)
+                        body:
+                          - text:
+                              content: "Edit the fields below - values are stored in the data tree"
+                          - separator
+                          - input-text:
+                              label: Name
+                              value: $user@/name
+                          - input-text:
+                              label: Email
+                              value: $user@/email
+                          - input-int:
+                              label: Age
+                              value: $user@/age
+                          - separator
+                          - checkbox:
+                              label: Account Enabled
+                              value: $user@/enabled
+                          - slider-int:
+                              label: Score
+                              min: 0
+                              max: 100
+                              value: $user@/score
+                          - slider-float:
+                              label: Volume
+                              min: 0.0
+                              max: 1.0
+                              value: $user@/volume
+                          - combo:
+                              label: Theme
+                              items:
+                                - Light
+                                - Dark
+                                - System
+                              value: $user@/theme
+                          - color-edit:
+                              label: Accent Color
+                              value: $user@/color
+
+                    - collapsing-header:
+                        label: Dynamic Item List
+                        body:
+                          - text: "Items from data-tree with children/metadata structure:"
+                          - separator
+                          - tree-node:
+                              label: Items
+                              data-path: $items@/
+                              body:
+                                - text:
+                                    content: "@name: @description"
+
               - tab-item:
                   label: Basic Widgets
                   body:
@@ -28,6 +114,50 @@ app:
                                     label: Secondary
                                 - button:
                                     label: Action
+
+                    - collapsing-header:
+                        label: Button with Popup
+                        body:
+                          - text: "Click a button to open its popup:"
+                          - row:
+                              body:
+                                - button:
+                                    label: Simple Popup
+                                    body:
+                                      - popup:
+                                          body:
+                                            - text: This is popup content!
+                                            - separator
+                                            - button:
+                                                label: Close
+                                - button:
+                                    label: Form Popup
+                                    body:
+                                      - popup:
+                                          body:
+                                            - text: "Enter your details:"
+                                            - input-text:
+                                                label: Name
+                                            - input-text:
+                                                label: Email
+                                            - separator
+                                            - row:
+                                                body:
+                                                  - button:
+                                                      label: Submit
+                                                  - button:
+                                                      label: Cancel
+                                - button:
+                                    label: Modal Popup
+                                    body:
+                                      - popup-modal:
+                                          label: Confirm Action
+                                          body:
+                                            - text: This is a modal popup!
+                                            - text: Click outside won't close it.
+                                            - separator
+                                            - button:
+                                                label: Close Modal
 
                     - collapsing-header:
                         label: Input Fields
@@ -177,6 +307,90 @@ app:
                                       - button:
                                           label: Cancel
 
+              - tab-item:
+                  label: Markdown
+                  body:
+                    - collapsing-header:
+                        label: Markdown Demo
+                        body:
+                          - markdown:
+                              label: |
+                                # Markdown Header
+                                This is **bold** and *italic* text.
+
+                                ## Features
+                                - Bullet points work
+                                - Multiple items
+                                - With proper formatting
+
+                                ### Code
+                                Inline `code` looks like this.
+
+                                [Link text](http://example.com)
+
+              - tab-item:
+                  label: Plotting
+                  body:
+                    - collapsing-header:
+                        label: Single Plot
+                        body:
+                          - implot:
+                              label: Demo Plot
+                              size: [400, 300]
+                    - collapsing-header:
+                        label: Subplot Grid
+                        body:
+                          - implot-group:
+                              label: Subplots
+                              rows: 2
+                              cols: 2
+                              size: [600, 400]
+                              body:
+                                - implot:
+                                    label: Plot 1
+                                - implot:
+                                    label: Plot 2
+                                - implot:
+                                    label: Plot 3
+                                - implot:
+                                    label: Plot 4
+
+              - tab-item:
+                  label: Node Editor
+                  body:
+                    - node-editor:
+                        body:
+                          - node:
+                              label: Input Node
+                              x: 50
+                              y: 100
+                              body:
+                                - node-pin:
+                                    type: output
+                                    label: Output
+                          - node:
+                              label: Process Node
+                              x: 300
+                              y: 100
+                              body:
+                                - node-pin:
+                                    type: input
+                                    label: Input A
+                                - node-pin:
+                                    type: input
+                                    label: Input B
+                                - node-pin:
+                                    type: output
+                                    label: Result
+                          - node:
+                              label: Output Node
+                              x: 550
+                              y: 100
+                              body:
+                                - node-pin:
+                                    type: input
+                                    label: Final
+
 widgets:
   # Container widgets
   window:
@@ -203,6 +417,10 @@ widgets:
     type: text
   button:
     type: button
+  popup:
+    type: popup
+  popup-modal:
+    type: popup-modal
   separator:
     type: separator
   spacing:
@@ -221,3 +439,21 @@ widgets:
     type: combo
   color-edit:
     type: color-edit
+
+  # Markdown widget
+  markdown:
+    type: markdown
+
+  # Plotting widgets
+  implot:
+    type: implot
+  implot-group:
+    type: implot-group
+
+  # Node editor widgets
+  node-editor:
+    type: node-editor
+  node:
+    type: node
+  node-pin:
+    type: node-pin

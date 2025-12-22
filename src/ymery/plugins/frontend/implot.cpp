@@ -1,11 +1,12 @@
-// button widget plugin
+// implot widget plugin - Creates plot context, renders body inside
 #include "../../frontend/widget.hpp"
 #include "../../frontend/widget_factory.hpp"
+#include <implot.h>
 #include <imgui.h>
 
 namespace ymery::plugins {
 
-class Button : public Widget {
+class Implot : public Widget {
 public:
     static Result<WidgetPtr> create(
         std::shared_ptr<WidgetFactory> widget_factory,
@@ -13,40 +14,45 @@ public:
         const std::string& ns,
         std::shared_ptr<DataBag> data_bag
     ) {
-        auto widget = std::make_shared<Button>();
+        auto widget = std::make_shared<Implot>();
         widget->_widget_factory = widget_factory;
         widget->_dispatcher = dispatcher;
         widget->_namespace = ns;
         widget->_data_bag = data_bag;
 
         if (auto res = widget->init(); !res) {
-            return Err<WidgetPtr>("Button::create failed", res);
+            return Err<WidgetPtr>("Implot::create failed", res);
         }
         return widget;
     }
 
 protected:
     Result<void> _pre_render_head() override {
-        std::string label = "Button";
+        std::string label = "Plot";
         if (auto res = _data_bag->get("label"); res) {
             if (auto l = get_as<std::string>(*res)) {
                 label = *l;
             }
         }
 
-        // Render button with unique ID
-        bool clicked = ImGui::Button((label + "###" + _uid).c_str());
-        if (clicked) {
-            // Activate body - if body is a popup, it will open
-            _is_body_activated = true;
+        // Get size from params
+        ImVec2 size(-1, -1);
+        if (auto res = _data_bag->get("size"); res) {
+            if (auto s = get_as<List>(*res)) {
+                if (s->size() >= 2) {
+                    if (auto w = get_as<double>((*s)[0])) size.x = static_cast<float>(*w);
+                    if (auto h = get_as<double>((*s)[1])) size.y = static_cast<float>(*h);
+                }
+            }
         }
 
+        _is_body_activated = ImPlot::BeginPlot(label.c_str(), size);
         return Ok();
     }
 
-    Result<void> _detect_and_execute_events() override {
+    Result<void> _post_render_head() override {
         if (_is_body_activated) {
-            _execute_event_commands("on-click");
+            ImPlot::EndPlot();
         }
         return Ok();
     }
@@ -54,7 +60,7 @@ protected:
 
 } // namespace ymery::plugins
 
-extern "C" const char* name() { return "button"; }
+extern "C" const char* name() { return "implot"; }
 extern "C" const char* type() { return "widget"; }
 extern "C" ymery::Result<ymery::WidgetPtr> create(
     std::shared_ptr<ymery::WidgetFactory> wf,
@@ -62,5 +68,5 @@ extern "C" ymery::Result<ymery::WidgetPtr> create(
     const std::string& ns,
     std::shared_ptr<ymery::DataBag> db
 ) {
-    return ymery::plugins::Button::create(wf, d, ns, db);
+    return ymery::plugins::Implot::create(wf, d, ns, db);
 }

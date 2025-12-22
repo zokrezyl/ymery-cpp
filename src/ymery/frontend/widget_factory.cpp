@@ -1,4 +1,5 @@
 #include "widget_factory.hpp"
+#include "composite.hpp"
 #include "../plugin_manager.hpp"
 #include <spdlog/spdlog.h>
 
@@ -33,6 +34,39 @@ Result<WidgetPtr> WidgetFactory::create_widget(
     const Value& spec,
     const std::string& namespace_
 ) {
+    // Check if spec is a List - create Composite widget
+    if (auto spec_list = get_as<List>(spec)) {
+        spdlog::debug("Creating Composite for list of {} widgets", spec_list->size());
+
+        // Create a data bag with the body list as statics
+        Dict statics;
+        statics["body"] = spec;
+
+        std::map<std::string, TreeLikePtr> data_trees;
+        data_trees["data"] = _data_tree;
+
+        DataPath data_path = DataPath::root();
+        if (parent_data_bag) {
+            if (auto path_res = parent_data_bag->get_data_path()) {
+                data_path = *path_res;
+            }
+        }
+
+        auto data_bag_res = DataBag::create(
+            _dispatcher,
+            _plugin_manager,
+            data_trees,
+            "data",
+            data_path,
+            statics
+        );
+        if (!data_bag_res) {
+            return Err<WidgetPtr>("WidgetFactory::create_widget: failed to create data bag for composite", data_bag_res);
+        }
+
+        return Composite::create(shared_from_this(), _dispatcher, namespace_, *data_bag_res);
+    }
+
     // Parse the spec to get widget name and inline props
     auto parse_res = _parse_widget_spec(spec, namespace_);
     if (!parse_res) {

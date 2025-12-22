@@ -5,6 +5,24 @@
 
 namespace ymery {
 
+Result<std::shared_ptr<Composite>> Composite::create(
+    std::shared_ptr<WidgetFactory> widget_factory,
+    std::shared_ptr<Dispatcher> dispatcher,
+    const std::string& ns,
+    std::shared_ptr<DataBag> data_bag
+) {
+    auto composite = std::make_shared<Composite>();
+    composite->_widget_factory = widget_factory;
+    composite->_dispatcher = dispatcher;
+    composite->_namespace = ns;
+    composite->_data_bag = data_bag;
+
+    if (auto res = composite->init(); !res) {
+        return Err<std::shared_ptr<Composite>>("Composite::create: init failed", res);
+    }
+    return composite;
+}
+
 Result<void> Composite::init() {
     if (auto res = Widget::init(); !res) {
         return res;

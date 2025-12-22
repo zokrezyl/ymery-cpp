@@ -1,10 +1,19 @@
 cmake_minimum_required(VERSION 3.20)
-project(ymery VERSION 0.1.0 LANGUAGES CXX)
+project(ymery VERSION 0.1.0 LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+# Graphics backend option
+option(YMERY_USE_WEBGPU "Use WebGPU backend instead of OpenGL" OFF)
+message(STATUS "Graphics backend: ${YMERY_USE_WEBGPU}")
+if(YMERY_USE_WEBGPU)
+    message(STATUS "Building with WebGPU backend")
+else()
+    message(STATUS "Building with OpenGL backend")
+endif()
 
 # CPM.cmake for dependency management
 set(CPM_DOWNLOAD_VERSION 0.40.2)
@@ -57,25 +66,139 @@ CPMAddPackage(
     DOWNLOAD_ONLY YES
 )
 
+# WebGPU native library (wgpu-native v0.19 - compatible with ImGui)
+if(YMERY_USE_WEBGPU)
+    CPMAddPackage(
+        NAME webgpu
+        GITHUB_REPOSITORY eliemichel/WebGPU-distribution
+        GIT_TAG wgpu-v0.19.4.1
+    )
+endif()
+
 if(imgui_ADDED)
-    add_library(imgui STATIC
+    # Core ImGui files
+    set(IMGUI_SOURCES
         ${imgui_SOURCE_DIR}/imgui.cpp
         ${imgui_SOURCE_DIR}/imgui_demo.cpp
         ${imgui_SOURCE_DIR}/imgui_draw.cpp
         ${imgui_SOURCE_DIR}/imgui_tables.cpp
         ${imgui_SOURCE_DIR}/imgui_widgets.cpp
         ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
-        ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
     )
+
+    if(YMERY_USE_WEBGPU)
+        # WebGPU backend
+        list(APPEND IMGUI_SOURCES ${imgui_SOURCE_DIR}/backends/imgui_impl_wgpu.cpp)
+    else()
+        # OpenGL backend
+        list(APPEND IMGUI_SOURCES ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp)
+    endif()
+
+    add_library(imgui STATIC ${IMGUI_SOURCES})
     target_include_directories(imgui PUBLIC
         ${imgui_SOURCE_DIR}
         ${imgui_SOURCE_DIR}/backends
     )
     target_link_libraries(imgui PUBLIC glfw)
 
-    # Use OpenGL on X11
-    find_package(OpenGL REQUIRED)
-    target_link_libraries(imgui PUBLIC OpenGL::GL)
+    if(YMERY_USE_WEBGPU)
+        target_link_libraries(imgui PUBLIC webgpu)
+        target_compile_definitions(imgui PUBLIC
+            YMERY_USE_WEBGPU=1
+            IMGUI_IMPL_WEBGPU_BACKEND_WGPU=1
+        )
+    else()
+        # Use OpenGL on X11
+        find_package(OpenGL REQUIRED)
+        target_link_libraries(imgui PUBLIC OpenGL::GL)
+    endif()
+endif()
+
+# ImPlot - plotting library
+CPMAddPackage(
+    NAME implot
+    GITHUB_REPOSITORY epezent/implot
+    VERSION 0.16
+    DOWNLOAD_ONLY YES
+)
+
+if(implot_ADDED)
+    add_library(implot STATIC
+        ${implot_SOURCE_DIR}/implot.cpp
+        ${implot_SOURCE_DIR}/implot_items.cpp
+    )
+    target_include_directories(implot PUBLIC ${implot_SOURCE_DIR})
+    target_link_libraries(implot PUBLIC imgui)
+endif()
+
+# imgui-node-editor
+CPMAddPackage(
+    NAME imgui_node_editor
+    GITHUB_REPOSITORY thedmd/imgui-node-editor
+    VERSION 0.9.3
+    DOWNLOAD_ONLY YES
+)
+
+if(imgui_node_editor_ADDED)
+    # Patch imgui_node_editor.cpp to fix compatibility with ImGui 1.90+
+    # GetKeyIndex was removed - just use the key directly
+    file(READ ${imgui_node_editor_SOURCE_DIR}/imgui_node_editor.cpp NODE_EDITOR_CPP)
+    string(REPLACE "ImGui::GetKeyIndex(ImGuiKey_X)" "ImGuiKey_X" NODE_EDITOR_CPP "${NODE_EDITOR_CPP}")
+    string(REPLACE "ImGui::GetKeyIndex(ImGuiKey_C)" "ImGuiKey_C" NODE_EDITOR_CPP "${NODE_EDITOR_CPP}")
+    string(REPLACE "ImGui::GetKeyIndex(ImGuiKey_V)" "ImGuiKey_V" NODE_EDITOR_CPP "${NODE_EDITOR_CPP}")
+    string(REPLACE "ImGui::GetKeyIndex(ImGuiKey_Space)" "ImGuiKey_Space" NODE_EDITOR_CPP "${NODE_EDITOR_CPP}")
+    string(REPLACE "ImGui::GetKeyIndex(ImGuiKey_Delete)" "ImGuiKey_Delete" NODE_EDITOR_CPP "${NODE_EDITOR_CPP}")
+    file(WRITE ${imgui_node_editor_SOURCE_DIR}/imgui_node_editor.cpp "${NODE_EDITOR_CPP}")
+
+    # Patch imgui_extra_math.inl to guard duplicate operators (already defined in ImGui 1.90+)
+    file(READ ${imgui_node_editor_SOURCE_DIR}/imgui_extra_math.inl EXTRA_MATH_INL)
+    # Wrap operator== and operator!= in version guard
+    string(REPLACE
+"inline bool operator==(const ImVec2& lhs, const ImVec2& rhs)
+{
+    return lhs.x == rhs.x && lhs.y == rhs.y;
+}
+
+inline bool operator!=(const ImVec2& lhs, const ImVec2& rhs)
+{
+    return lhs.x != rhs.x || lhs.y != rhs.y;
+}"
+"#if IMGUI_VERSION_NUM < 18955
+inline bool operator==(const ImVec2& lhs, const ImVec2& rhs)
+{
+    return lhs.x == rhs.x && lhs.y == rhs.y;
+}
+
+inline bool operator!=(const ImVec2& lhs, const ImVec2& rhs)
+{
+    return lhs.x != rhs.x || lhs.y != rhs.y;
+}
+#endif"
+        EXTRA_MATH_INL "${EXTRA_MATH_INL}")
+    file(WRITE ${imgui_node_editor_SOURCE_DIR}/imgui_extra_math.inl "${EXTRA_MATH_INL}")
+
+    add_library(imgui_node_editor STATIC
+        ${imgui_node_editor_SOURCE_DIR}/imgui_node_editor.cpp
+        ${imgui_node_editor_SOURCE_DIR}/imgui_canvas.cpp
+        ${imgui_node_editor_SOURCE_DIR}/crude_json.cpp
+    )
+    target_include_directories(imgui_node_editor PUBLIC ${imgui_node_editor_SOURCE_DIR})
+    target_link_libraries(imgui_node_editor PUBLIC imgui)
+    target_compile_options(imgui_node_editor PRIVATE -Wno-deprecated-declarations)
+endif()
+
+# imgui_markdown - markdown renderer
+CPMAddPackage(
+    NAME imgui_markdown
+    GITHUB_REPOSITORY juliettef/imgui_markdown
+    GIT_TAG main
+    DOWNLOAD_ONLY YES
+)
+
+if(imgui_markdown_ADDED)
+    # imgui_markdown is header-only
+    add_library(imgui_md INTERFACE)
+    target_include_directories(imgui_md INTERFACE ${imgui_markdown_SOURCE_DIR})
 endif()
 
 # Core library
@@ -98,6 +221,9 @@ target_include_directories(ymery PUBLIC
 target_link_libraries(ymery PUBLIC
     yaml-cpp
     imgui
+    implot
+    imgui_node_editor
+    imgui_md
     glfw
     spdlog::spdlog
     dl

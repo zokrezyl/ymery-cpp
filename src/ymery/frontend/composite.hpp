@@ -11,6 +11,14 @@ public:
     Composite() = default;
     virtual ~Composite() = default;
 
+    // Factory method
+    static Result<std::shared_ptr<Composite>> create(
+        std::shared_ptr<WidgetFactory> widget_factory,
+        std::shared_ptr<Dispatcher> dispatcher,
+        const std::string& ns,
+        std::shared_ptr<DataBag> data_bag
+    );
+
     // Lifecycle
     Result<void> init() override;
     Result<void> dispose() override;

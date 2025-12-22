@@ -2,11 +2,35 @@
 
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
+#ifdef YMERY_USE_WEBGPU
+#include <imgui_impl_wgpu.h>
+#include <webgpu/webgpu.h>
+#else
 #include <imgui_impl_opengl3.h>
+#endif
+#include <implot.h>
 #include <GLFW/glfw3.h>
 #include <spdlog/spdlog.h>
 
+#ifdef YMERY_USE_WEBGPU
+// For X11 surface creation with wgpu-native
+#define GLFW_EXPOSE_NATIVE_X11
+#include <GLFW/glfw3native.h>
+#endif
+
 namespace ymery {
+
+#ifdef YMERY_USE_WEBGPU
+// WebGPU state
+static WGPUInstance _wgpu_instance = nullptr;
+static WGPUAdapter _wgpu_adapter = nullptr;
+static WGPUDevice _wgpu_device = nullptr;
+static WGPUSurface _wgpu_surface = nullptr;
+static WGPUQueue _wgpu_queue = nullptr;
+static int _wgpu_surface_width = 0;
+static int _wgpu_surface_height = 0;
+static WGPUTextureFormat _wgpu_preferred_format = WGPUTextureFormat_BGRA8Unorm;
+#endif
 
 Result<std::shared_ptr<App>> App::create(const AppConfig& config) {
     auto app = std::shared_ptr<App>(new App());
@@ -58,9 +82,9 @@ Result<void> App::init() {
     _lang = *lang_res;
 
     // Create data tree from plugin (or fallback)
-    auto tree_res = _plugin_manager->create_tree("simple-tree");
+    auto tree_res = _plugin_manager->create_tree("simple-data-tree");
     if (!tree_res) {
-        spdlog::warn("Could not create simple-tree from plugin: {}", error_msg(tree_res));
+        spdlog::warn("Could not create simple-data-tree from plugin: {}", error_msg(tree_res));
         // Fallback to a minimal implementation if needed
         return Err<void>("App::init: no tree-like plugin available", tree_res);
     }
@@ -142,6 +166,274 @@ static void glfw_error_callback(int error, const char* description) {
     fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
 
+#ifdef YMERY_USE_WEBGPU
+
+// WebGPU callbacks
+static void wgpu_error_callback(WGPUErrorType type, const char* message, void* userdata) {
+    spdlog::error("WebGPU Error ({}): {}", static_cast<int>(type), message);
+}
+
+static void wgpu_device_lost_callback(WGPUDeviceLostReason reason, const char* message, void* userdata) {
+    spdlog::error("WebGPU Device Lost ({}): {}", static_cast<int>(reason), message);
+}
+
+static void configure_wgpu_surface(int width, int height) {
+    _wgpu_surface_width = width;
+    _wgpu_surface_height = height;
+
+    WGPUSurfaceConfiguration config = {};
+    config.device = _wgpu_device;
+    config.format = _wgpu_preferred_format;
+    config.usage = WGPUTextureUsage_RenderAttachment;
+    config.width = width;
+    config.height = height;
+    config.presentMode = WGPUPresentMode_Fifo;
+    config.alphaMode = WGPUCompositeAlphaMode_Auto;
+
+    wgpuSurfaceConfigure(_wgpu_surface, &config);
+}
+
+Result<void> App::_init_graphics() {
+    glfwSetErrorCallback(glfw_error_callback);
+
+    if (!glfwInit()) {
+        return Err<void>("App::_init_graphics: glfwInit failed");
+    }
+
+    // No OpenGL context for WebGPU
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+
+    _window = glfwCreateWindow(
+        _config.window_width,
+        _config.window_height,
+        _config.window_title.c_str(),
+        nullptr,
+        nullptr
+    );
+
+    if (!_window) {
+        glfwTerminate();
+        return Err<void>("App::_init_graphics: glfwCreateWindow failed");
+    }
+
+    // Create WebGPU instance
+    WGPUInstanceDescriptor instance_desc = {};
+    _wgpu_instance = wgpuCreateInstance(&instance_desc);
+    if (!_wgpu_instance) {
+        return Err<void>("App::_init_graphics: wgpuCreateInstance failed");
+    }
+
+    // Create surface from GLFW window using X11
+    Display* x11_display = glfwGetX11Display();
+    Window x11_window = glfwGetX11Window(static_cast<GLFWwindow*>(_window));
+
+    WGPUSurfaceDescriptorFromXlibWindow x11_surface_desc = {};
+    x11_surface_desc.chain.sType = WGPUSType_SurfaceDescriptorFromXlibWindow;
+    x11_surface_desc.display = x11_display;
+    x11_surface_desc.window = x11_window;
+
+    WGPUSurfaceDescriptor surface_desc = {};
+    surface_desc.nextInChain = reinterpret_cast<const WGPUChainedStruct*>(&x11_surface_desc);
+
+    _wgpu_surface = wgpuInstanceCreateSurface(_wgpu_instance, &surface_desc);
+    if (!_wgpu_surface) {
+        return Err<void>("App::_init_graphics: wgpuInstanceCreateSurface failed");
+    }
+
+    // Request adapter
+    WGPURequestAdapterOptions adapter_opts = {};
+    adapter_opts.compatibleSurface = _wgpu_surface;
+    adapter_opts.powerPreference = WGPUPowerPreference_HighPerformance;
+
+    struct AdapterUserData {
+        WGPUAdapter adapter = nullptr;
+        bool done = false;
+    } adapter_data;
+
+    wgpuInstanceRequestAdapter(_wgpu_instance, &adapter_opts,
+        [](WGPURequestAdapterStatus status, WGPUAdapter adapter, const char* message, void* userdata) {
+            auto* data = static_cast<AdapterUserData*>(userdata);
+            if (status == WGPURequestAdapterStatus_Success) {
+                data->adapter = adapter;
+            } else {
+                spdlog::error("Failed to get WebGPU adapter: {}", message ? message : "unknown");
+            }
+            data->done = true;
+        }, &adapter_data);
+
+    while (!adapter_data.done) {
+        // Busy wait for adapter (could use proper async)
+    }
+
+    _wgpu_adapter = adapter_data.adapter;
+    if (!_wgpu_adapter) {
+        return Err<void>("App::_init_graphics: failed to get WebGPU adapter");
+    }
+
+    // Request device
+    WGPUDeviceDescriptor device_desc = {};
+    device_desc.deviceLostCallback = wgpu_device_lost_callback;
+
+    struct DeviceUserData {
+        WGPUDevice device = nullptr;
+        bool done = false;
+    } device_data;
+
+    wgpuAdapterRequestDevice(_wgpu_adapter, &device_desc,
+        [](WGPURequestDeviceStatus status, WGPUDevice device, const char* message, void* userdata) {
+            auto* data = static_cast<DeviceUserData*>(userdata);
+            if (status == WGPURequestDeviceStatus_Success) {
+                data->device = device;
+            } else {
+                spdlog::error("Failed to get WebGPU device: {}", message ? message : "unknown");
+            }
+            data->done = true;
+        }, &device_data);
+
+    while (!device_data.done) {
+        // Busy wait for device
+    }
+
+    _wgpu_device = device_data.device;
+    if (!_wgpu_device) {
+        return Err<void>("App::_init_graphics: failed to get WebGPU device");
+    }
+
+    _wgpu_queue = wgpuDeviceGetQueue(_wgpu_device);
+
+    // Get preferred surface format
+    _wgpu_preferred_format = wgpuSurfaceGetPreferredFormat(_wgpu_surface, _wgpu_adapter);
+
+    // Configure surface
+    int width, height;
+    glfwGetFramebufferSize(static_cast<GLFWwindow*>(_window), &width, &height);
+    configure_wgpu_surface(width, height);
+
+    // Setup Dear ImGui context
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImPlot::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
+    // Setup style
+    ImGui::StyleColorsDark();
+
+    // Setup Platform/Renderer backends
+    ImGui_ImplGlfw_InitForOther(static_cast<GLFWwindow*>(_window), true);
+
+    ImGui_ImplWGPU_InitInfo wgpu_init_info = {};
+    wgpu_init_info.Device = _wgpu_device;
+    wgpu_init_info.NumFramesInFlight = 3;
+    wgpu_init_info.RenderTargetFormat = _wgpu_preferred_format;
+    wgpu_init_info.DepthStencilFormat = WGPUTextureFormat_Undefined;
+    ImGui_ImplWGPU_Init(&wgpu_init_info);
+
+    return Ok();
+}
+
+Result<void> App::_shutdown_graphics() {
+    ImGui_ImplWGPU_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImPlot::DestroyContext();
+    ImGui::DestroyContext();
+
+    if (_wgpu_surface) wgpuSurfaceUnconfigure(_wgpu_surface);
+    if (_wgpu_queue) wgpuQueueRelease(_wgpu_queue);
+    if (_wgpu_device) wgpuDeviceRelease(_wgpu_device);
+    if (_wgpu_adapter) wgpuAdapterRelease(_wgpu_adapter);
+    if (_wgpu_surface) wgpuSurfaceRelease(_wgpu_surface);
+    if (_wgpu_instance) wgpuInstanceRelease(_wgpu_instance);
+
+    if (_window) {
+        glfwDestroyWindow(static_cast<GLFWwindow*>(_window));
+    }
+    glfwTerminate();
+
+    return Ok();
+}
+
+Result<void> App::_begin_frame() {
+    glfwPollEvents();
+
+    if (glfwWindowShouldClose(static_cast<GLFWwindow*>(_window))) {
+        _should_close = true;
+    }
+
+    // Handle resize
+    int width, height;
+    glfwGetFramebufferSize(static_cast<GLFWwindow*>(_window), &width, &height);
+    if (width != _wgpu_surface_width || height != _wgpu_surface_height) {
+        if (width > 0 && height > 0) {
+            configure_wgpu_surface(width, height);
+        }
+    }
+
+    ImGui_ImplWGPU_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    return Ok();
+}
+
+Result<void> App::_end_frame() {
+    ImGui::Render();
+
+    // Get current surface texture
+    WGPUSurfaceTexture surface_texture;
+    wgpuSurfaceGetCurrentTexture(_wgpu_surface, &surface_texture);
+    if (surface_texture.status != WGPUSurfaceGetCurrentTextureStatus_Success) {
+        return Err<void>("Failed to get surface texture");
+    }
+
+    // Create texture view
+    WGPUTextureViewDescriptor view_desc = {};
+    view_desc.format = _wgpu_preferred_format;
+    view_desc.dimension = WGPUTextureViewDimension_2D;
+    view_desc.mipLevelCount = 1;
+    view_desc.arrayLayerCount = 1;
+    WGPUTextureView view = wgpuTextureCreateView(surface_texture.texture, &view_desc);
+    if (!view) {
+        return Err<void>("Failed to create texture view");
+    }
+
+    WGPURenderPassColorAttachment color_attachment = {};
+    color_attachment.view = view;
+    color_attachment.loadOp = WGPULoadOp_Clear;
+    color_attachment.storeOp = WGPUStoreOp_Store;
+    color_attachment.clearValue = {0.1f, 0.1f, 0.1f, 1.0f};
+
+    WGPURenderPassDescriptor render_pass_desc = {};
+    render_pass_desc.colorAttachmentCount = 1;
+    render_pass_desc.colorAttachments = &color_attachment;
+
+    WGPUCommandEncoderDescriptor encoder_desc = {};
+    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(_wgpu_device, &encoder_desc);
+
+    WGPURenderPassEncoder pass = wgpuCommandEncoderBeginRenderPass(encoder, &render_pass_desc);
+    ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), pass);
+    wgpuRenderPassEncoderEnd(pass);
+    wgpuRenderPassEncoderRelease(pass);
+
+    WGPUCommandBufferDescriptor cmd_desc = {};
+    WGPUCommandBuffer cmd = wgpuCommandEncoderFinish(encoder, &cmd_desc);
+    wgpuQueueSubmit(_wgpu_queue, 1, &cmd);
+
+    wgpuCommandBufferRelease(cmd);
+    wgpuCommandEncoderRelease(encoder);
+    wgpuTextureViewRelease(view);
+
+    wgpuSurfacePresent(_wgpu_surface);
+
+    // Release texture after present
+    wgpuTextureRelease(surface_texture.texture);
+
+    return Ok();
+}
+
+#else // OpenGL backend
+
 Result<void> App::_init_graphics() {
     glfwSetErrorCallback(glfw_error_callback);
 
@@ -173,6 +465,7 @@ Result<void> App::_init_graphics() {
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
+    ImPlot::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -190,6 +483,7 @@ Result<void> App::_init_graphics() {
 Result<void> App::_shutdown_graphics() {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
+    ImPlot::DestroyContext();
     ImGui::DestroyContext();
 
     if (_window) {
@@ -229,5 +523,7 @@ Result<void> App::_end_frame() {
 
     return Ok();
 }
+
+#endif // YMERY_USE_WEBGPU
 
 } // namespace ymery

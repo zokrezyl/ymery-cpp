@@ -1,16 +1,16 @@
-// simple-tree backend plugin - in-memory tree data store
+// simple-data-tree backend plugin - read-only wrapper around any data structure
 #include "../../types.hpp"
 #include "../../result.hpp"
 #include <map>
 
 namespace ymery::plugins {
 
-class SimpleTree : public TreeLike {
+class SimpleDataTree : public TreeLike {
 public:
     static Result<TreeLikePtr> create() {
-        auto tree = std::make_shared<SimpleTree>();
+        auto tree = std::make_shared<SimpleDataTree>();
         if (auto res = tree->init(); !res) {
-            return Err<TreeLikePtr>("SimpleTree::create failed", res);
+            return Err<TreeLikePtr>("SimpleDataTree::create failed", res);
         }
         return tree;
     }
@@ -78,8 +78,8 @@ private:
 
 } // namespace ymery::plugins
 
-extern "C" const char* name() { return "simple-tree"; }
+extern "C" const char* name() { return "simple-data-tree"; }
 extern "C" const char* type() { return "tree"; }
 extern "C" ymery::Result<ymery::TreeLikePtr> create() {
-    return ymery::plugins::SimpleTree::create();
+    return ymery::plugins::SimpleDataTree::create();
 }

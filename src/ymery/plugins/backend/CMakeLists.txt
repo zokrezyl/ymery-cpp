@@ -1,7 +1,8 @@
 # Build each tree-like backend as a shared library plugin
 
 set(BACKEND_PLUGINS
-    simple-tree
+    simple-data-tree
+    data-tree
 )
 
 foreach(plugin ${BACKEND_PLUGINS})
