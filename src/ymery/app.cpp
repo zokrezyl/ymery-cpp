@@ -12,7 +12,11 @@
 #include <GLFW/glfw3.h>
 #include <spdlog/spdlog.h>
 
-#ifdef YMERY_USE_WEBGPU
+#ifdef YMERY_WEB
+#include <emscripten.h>
+#include <emscripten/html5.h>
+#include <emscripten/html5_webgpu.h>
+#elif defined(YMERY_USE_WEBGPU)
 // For X11 surface creation with wgpu-native
 #define GLFW_EXPOSE_NATIVE_X11
 #include <GLFW/glfw3native.h>
@@ -126,8 +130,25 @@ Result<void> App::dispose() {
     return Ok();
 }
 
+#ifdef YMERY_WEB
+// Emscripten main loop callback
+static App* _em_app = nullptr;
+static void em_main_loop() {
+    if (_em_app) {
+        _em_app->frame();
+    }
+}
+#endif
+
 Result<void> App::run() {
     spdlog::info("App::run starting main loop");
+
+#ifdef YMERY_WEB
+    // Emscripten: use browser's requestAnimationFrame
+    _em_app = this;
+    emscripten_set_main_loop(em_main_loop, 0, true);
+#else
+    // Native: traditional while loop
     int frame_count = 0;
     while (!_should_close) {
         if (auto res = frame(); !res) {
@@ -139,6 +160,7 @@ Result<void> App::run() {
         frame_count++;
     }
     spdlog::info("App::run exiting after {} frames", frame_count);
+#endif
 
     return Ok();
 }
@@ -217,13 +239,29 @@ Result<void> App::_init_graphics() {
     }
 
     // Create WebGPU instance
+#ifdef YMERY_WEB
+    _wgpu_instance = wgpuCreateInstance(nullptr);
+#else
     WGPUInstanceDescriptor instance_desc = {};
     _wgpu_instance = wgpuCreateInstance(&instance_desc);
+#endif
     if (!_wgpu_instance) {
         return Err<void>("App::_init_graphics: wgpuCreateInstance failed");
     }
 
-    // Create surface from GLFW window using X11
+    // Create surface
+#ifdef YMERY_WEB
+    // Emscripten: create surface from canvas
+    WGPUSurfaceDescriptorFromCanvasHTMLSelector canvas_desc = {};
+    canvas_desc.chain.sType = WGPUSType_SurfaceDescriptorFromCanvasHTMLSelector;
+    canvas_desc.selector = "#canvas";
+
+    WGPUSurfaceDescriptor surface_desc = {};
+    surface_desc.nextInChain = reinterpret_cast<const WGPUChainedStruct*>(&canvas_desc);
+
+    _wgpu_surface = wgpuInstanceCreateSurface(_wgpu_instance, &surface_desc);
+#else
+    // Native: create surface from X11 window
     Display* x11_display = glfwGetX11Display();
     Window x11_window = glfwGetX11Window(static_cast<GLFWwindow*>(_window));
 
@@ -236,6 +274,7 @@ Result<void> App::_init_graphics() {
     surface_desc.nextInChain = reinterpret_cast<const WGPUChainedStruct*>(&x11_surface_desc);
 
     _wgpu_surface = wgpuInstanceCreateSurface(_wgpu_instance, &surface_desc);
+#endif
     if (!_wgpu_surface) {
         return Err<void>("App::_init_graphics: wgpuInstanceCreateSurface failed");
     }

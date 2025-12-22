@@ -6,8 +6,21 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-# Graphics backend option
+# Detect Emscripten
+if(EMSCRIPTEN)
+    message(STATUS "Building for Web (Emscripten)")
+    set(YMERY_WEB ON)
+    set(YMERY_USE_WEBGPU ON)  # Web always uses WebGPU
+else()
+    set(YMERY_WEB OFF)
+endif()
+
+# Graphics backend option (ignored for Emscripten - always WebGPU)
 option(YMERY_USE_WEBGPU "Use WebGPU backend instead of OpenGL" OFF)
+if(YMERY_WEB)
+    set(YMERY_USE_WEBGPU ON CACHE BOOL "" FORCE)
+endif()
+
 message(STATUS "Graphics backend: ${YMERY_USE_WEBGPU}")
 if(YMERY_USE_WEBGPU)
     message(STATUS "Building with WebGPU backend")
@@ -47,17 +60,20 @@ CPMAddPackage(
     OPTIONS "YAML_CPP_BUILD_TESTS OFF" "YAML_CPP_BUILD_TOOLS OFF"
 )
 
-CPMAddPackage(
-    NAME glfw
-    GITHUB_REPOSITORY glfw/glfw
-    GIT_TAG 3.4
-    OPTIONS
-        "GLFW_BUILD_EXAMPLES OFF"
-        "GLFW_BUILD_TESTS OFF"
-        "GLFW_BUILD_DOCS OFF"
-        "GLFW_BUILD_X11 ON"
-        "GLFW_BUILD_WAYLAND OFF"
-)
+# GLFW - Emscripten provides its own
+if(NOT YMERY_WEB)
+    CPMAddPackage(
+        NAME glfw
+        GITHUB_REPOSITORY glfw/glfw
+        GIT_TAG 3.4
+        OPTIONS
+            "GLFW_BUILD_EXAMPLES OFF"
+            "GLFW_BUILD_TESTS OFF"
+            "GLFW_BUILD_DOCS OFF"
+            "GLFW_BUILD_X11 ON"
+            "GLFW_BUILD_WAYLAND OFF"
+    )
+endif()
 
 CPMAddPackage(
     NAME imgui
@@ -67,7 +83,8 @@ CPMAddPackage(
 )
 
 # WebGPU native library (wgpu-native v0.19 - compatible with ImGui)
-if(YMERY_USE_WEBGPU)
+# Not needed for Emscripten - browser provides WebGPU
+if(YMERY_USE_WEBGPU AND NOT YMERY_WEB)
     CPMAddPackage(
         NAME webgpu
         GITHUB_REPOSITORY eliemichel/WebGPU-distribution
@@ -99,16 +116,20 @@ if(imgui_ADDED)
         ${imgui_SOURCE_DIR}
         ${imgui_SOURCE_DIR}/backends
     )
-    target_link_libraries(imgui PUBLIC glfw)
 
-    if(YMERY_USE_WEBGPU)
-        target_link_libraries(imgui PUBLIC webgpu)
+    if(YMERY_WEB)
+        # Emscripten - use USE_GLFW and USE_WEBGPU
+        target_compile_definitions(imgui PUBLIC YMERY_USE_WEBGPU=1 YMERY_WEB=1)
+    elseif(YMERY_USE_WEBGPU)
+        # Native WebGPU (wgpu-native)
+        target_link_libraries(imgui PUBLIC glfw webgpu)
         target_compile_definitions(imgui PUBLIC
             YMERY_USE_WEBGPU=1
             IMGUI_IMPL_WEBGPU_BACKEND_WGPU=1
         )
     else()
-        # Use OpenGL on X11
+        # OpenGL on X11
+        target_link_libraries(imgui PUBLIC glfw)
         find_package(OpenGL REQUIRED)
         target_link_libraries(imgui PUBLIC OpenGL::GL)
     endif()
@@ -202,40 +223,79 @@ if(imgui_markdown_ADDED)
 endif()
 
 # Core library
-add_library(ymery SHARED
-    src/ymery/types.cpp
-    src/ymery/data_bag.cpp
-    src/ymery/dispatcher.cpp
-    src/ymery/lang.cpp
-    src/ymery/plugin_manager.cpp
-    src/ymery/app.cpp
-    src/ymery/frontend/widget.cpp
-    src/ymery/frontend/widget_factory.cpp
-    src/ymery/frontend/composite.cpp
-)
+if(YMERY_WEB)
+    # Static library for Emscripten (no shared libs)
+    add_library(ymery STATIC
+        src/ymery/types.cpp
+        src/ymery/data_bag.cpp
+        src/ymery/dispatcher.cpp
+        src/ymery/lang.cpp
+        src/ymery/plugin_manager.cpp
+        src/ymery/app.cpp
+        src/ymery/frontend/widget.cpp
+        src/ymery/frontend/widget_factory.cpp
+        src/ymery/frontend/composite.cpp
+    )
+else()
+    add_library(ymery SHARED
+        src/ymery/types.cpp
+        src/ymery/data_bag.cpp
+        src/ymery/dispatcher.cpp
+        src/ymery/lang.cpp
+        src/ymery/plugin_manager.cpp
+        src/ymery/app.cpp
+        src/ymery/frontend/widget.cpp
+        src/ymery/frontend/widget_factory.cpp
+        src/ymery/frontend/composite.cpp
+    )
+endif()
 
 target_include_directories(ymery PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
-target_link_libraries(ymery PUBLIC
-    yaml-cpp
-    imgui
-    implot
-    imgui_node_editor
-    imgui_md
-    glfw
-    spdlog::spdlog
-    dl
-)
+if(YMERY_WEB)
+    target_link_libraries(ymery PUBLIC
+        yaml-cpp
+        imgui
+        implot
+        imgui_node_editor
+        imgui_md
+        spdlog::spdlog
+    )
+    target_compile_definitions(ymery PUBLIC YMERY_WEB=1)
+else()
+    target_link_libraries(ymery PUBLIC
+        yaml-cpp
+        imgui
+        implot
+        imgui_node_editor
+        imgui_md
+        glfw
+        spdlog::spdlog
+        dl
+    )
+endif()
 
-# Main executable with -rdynamic for plugin symbol access
+# Main executable
 add_executable(ymery-cli src/main.cpp)
 target_link_libraries(ymery-cli PRIVATE ymery)
-set_target_properties(ymery-cli PROPERTIES ENABLE_EXPORTS ON)
 
-# Plugins
-add_subdirectory(src/ymery/plugins)
+if(YMERY_WEB)
+    # Emscripten linker flags
+    set_target_properties(ymery-cli PROPERTIES
+        SUFFIX ".html"
+        LINK_FLAGS "-s USE_GLFW=3 -s USE_WEBGPU=1 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s NO_EXIT_RUNTIME=0 -s ASSERTIONS=1 --preload-file ${CMAKE_SOURCE_DIR}/layout@/layout"
+    )
+else()
+    # Native: enable symbol exports for plugins
+    set_target_properties(ymery-cli PROPERTIES ENABLE_EXPORTS ON)
+endif()
+
+# Plugins (not for Emscripten - no dynamic loading)
+if(NOT YMERY_WEB)
+    add_subdirectory(src/ymery/plugins)
+endif()
 
 # Examples
 add_subdirectory(examples EXCLUDE_FROM_ALL)
