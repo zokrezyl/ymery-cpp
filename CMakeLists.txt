@@ -160,26 +160,30 @@ CPMAddPackage(
     DOWNLOAD_ONLY YES
 )
 
-if(imgui_node_editor_ADDED)
-    # Patch imgui_node_editor.cpp to fix compatibility with ImGui 1.90+
-    # GetKeyIndex was removed - just use the key directly
-    file(READ ${imgui_node_editor_SOURCE_DIR}/imgui_node_editor.cpp NODE_EDITOR_CPP)
+# Always apply patches (even if cached) and build imgui_node_editor
+# Patch imgui_node_editor.cpp to fix compatibility with ImGui 1.90+
+# GetKeyIndex was removed - just use the key directly
+file(READ ${imgui_node_editor_SOURCE_DIR}/imgui_node_editor.cpp NODE_EDITOR_CPP)
+if(NODE_EDITOR_CPP MATCHES "ImGui::GetKeyIndex")
     string(REPLACE "ImGui::GetKeyIndex(ImGuiKey_X)" "ImGuiKey_X" NODE_EDITOR_CPP "${NODE_EDITOR_CPP}")
     string(REPLACE "ImGui::GetKeyIndex(ImGuiKey_C)" "ImGuiKey_C" NODE_EDITOR_CPP "${NODE_EDITOR_CPP}")
     string(REPLACE "ImGui::GetKeyIndex(ImGuiKey_V)" "ImGuiKey_V" NODE_EDITOR_CPP "${NODE_EDITOR_CPP}")
     string(REPLACE "ImGui::GetKeyIndex(ImGuiKey_Space)" "ImGuiKey_Space" NODE_EDITOR_CPP "${NODE_EDITOR_CPP}")
     string(REPLACE "ImGui::GetKeyIndex(ImGuiKey_Delete)" "ImGuiKey_Delete" NODE_EDITOR_CPP "${NODE_EDITOR_CPP}")
     file(WRITE ${imgui_node_editor_SOURCE_DIR}/imgui_node_editor.cpp "${NODE_EDITOR_CPP}")
+endif()
 
-    # Patch crude_json.cpp to add missing <exception> include for std::terminate (macOS fix)
-    file(READ ${imgui_node_editor_SOURCE_DIR}/crude_json.cpp CRUDE_JSON_CPP)
-    if(NOT CRUDE_JSON_CPP MATCHES "#include <exception>")
-        string(REPLACE "#include <cstdlib>" "#include <cstdlib>\n#include <exception>" CRUDE_JSON_CPP "${CRUDE_JSON_CPP}")
-        file(WRITE ${imgui_node_editor_SOURCE_DIR}/crude_json.cpp "${CRUDE_JSON_CPP}")
-    endif()
+# Patch crude_json.cpp to add missing <exception> include for std::terminate (macOS fix)
+# Prepend the include at the start of the file
+file(READ ${imgui_node_editor_SOURCE_DIR}/crude_json.cpp CRUDE_JSON_CPP)
+if(NOT CRUDE_JSON_CPP MATCHES "#include <exception>")
+    set(CRUDE_JSON_CPP "#include <exception>\n${CRUDE_JSON_CPP}")
+    file(WRITE ${imgui_node_editor_SOURCE_DIR}/crude_json.cpp "${CRUDE_JSON_CPP}")
+endif()
 
-    # Patch imgui_extra_math.inl to guard duplicate operators (already defined in ImGui 1.90+)
-    file(READ ${imgui_node_editor_SOURCE_DIR}/imgui_extra_math.inl EXTRA_MATH_INL)
+# Patch imgui_extra_math.inl to guard duplicate operators (already defined in ImGui 1.90+)
+file(READ ${imgui_node_editor_SOURCE_DIR}/imgui_extra_math.inl EXTRA_MATH_INL)
+if(NOT EXTRA_MATH_INL MATCHES "IMGUI_VERSION_NUM < 18955")
     # Wrap operator== and operator!= in version guard
     string(REPLACE
 "inline bool operator==(const ImVec2& lhs, const ImVec2& rhs)
@@ -204,17 +208,17 @@ inline bool operator!=(const ImVec2& lhs, const ImVec2& rhs)
 #endif"
         EXTRA_MATH_INL "${EXTRA_MATH_INL}")
     file(WRITE ${imgui_node_editor_SOURCE_DIR}/imgui_extra_math.inl "${EXTRA_MATH_INL}")
+endif()
 
-    add_library(imgui_node_editor STATIC
-        ${imgui_node_editor_SOURCE_DIR}/imgui_node_editor.cpp
-        ${imgui_node_editor_SOURCE_DIR}/imgui_canvas.cpp
-        ${imgui_node_editor_SOURCE_DIR}/crude_json.cpp
-    )
-    target_include_directories(imgui_node_editor PUBLIC ${imgui_node_editor_SOURCE_DIR})
-    target_link_libraries(imgui_node_editor PUBLIC imgui)
-    if(NOT MSVC)
-        target_compile_options(imgui_node_editor PRIVATE -Wno-deprecated-declarations)
-    endif()
+add_library(imgui_node_editor STATIC
+    ${imgui_node_editor_SOURCE_DIR}/imgui_node_editor.cpp
+    ${imgui_node_editor_SOURCE_DIR}/imgui_canvas.cpp
+    ${imgui_node_editor_SOURCE_DIR}/crude_json.cpp
+)
+target_include_directories(imgui_node_editor PUBLIC ${imgui_node_editor_SOURCE_DIR})
+target_link_libraries(imgui_node_editor PUBLIC imgui)
+if(NOT MSVC)
+    target_compile_options(imgui_node_editor PRIVATE -Wno-deprecated-declarations)
 endif()
 
 # imgui_markdown - markdown renderer

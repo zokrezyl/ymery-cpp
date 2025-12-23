@@ -153,7 +153,7 @@ Result<void> PluginManager::init() {
 Result<void> PluginManager::dispose() {
     for (auto handle : _handles) {
         if (handle) {
-            ymery_dlclose(handle);
+            ymery_dlclose(static_cast<PluginHandle>(handle));
         }
     }
     _handles.clear();
