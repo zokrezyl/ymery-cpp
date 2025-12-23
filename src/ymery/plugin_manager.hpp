@@ -87,7 +87,7 @@ private:
     // Category -> Name -> PluginMeta
     std::map<std::string, std::map<std::string, PluginMeta>> _plugins;
 
-    // Loaded .so handles
+    // Loaded plugin handles (.so on Unix, .dll on Windows)
     std::vector<void*> _handles;
 };
 

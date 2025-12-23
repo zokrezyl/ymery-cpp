@@ -422,8 +422,11 @@ else()
         nanovg
         glfw
         spdlog::spdlog
-        dl
     )
+    # dl library is only needed on Unix-like systems
+    if(UNIX)
+        target_link_libraries(ymery PUBLIC dl)
+    endif()
 endif()
 
 # Main executable

@@ -3,11 +3,40 @@
 #include "frontend/widget_factory.hpp"
 #include "data_bag.hpp"
 #include <spdlog/spdlog.h>
-#include <dlfcn.h>
 #include <filesystem>
 #include <sstream>
 #include <fstream>
 #include <yaml-cpp/yaml.h>
+
+// Platform-specific dynamic loading
+#ifdef _WIN32
+#include <windows.h>
+#define YMERY_PLUGIN_EXT ".dll"
+#define YMERY_PATH_SEP ';'
+using PluginHandle = HMODULE;
+inline PluginHandle ymery_dlopen(const char* path) { return LoadLibraryA(path); }
+inline void* ymery_dlsym(PluginHandle h, const char* sym) { return (void*)GetProcAddress(h, sym); }
+inline void ymery_dlclose(PluginHandle h) { FreeLibrary(h); }
+inline std::string ymery_dlerror() {
+    DWORD err = GetLastError();
+    if (err == 0) return "";
+    char* msg = nullptr;
+    FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
+                   nullptr, err, 0, (LPSTR)&msg, 0, nullptr);
+    std::string result = msg ? msg : "Unknown error";
+    LocalFree(msg);
+    return result;
+}
+#else
+#include <dlfcn.h>
+#define YMERY_PLUGIN_EXT ".so"
+#define YMERY_PATH_SEP ':'
+using PluginHandle = void*;
+inline PluginHandle ymery_dlopen(const char* path) { return dlopen(path, RTLD_NOW | RTLD_LOCAL); }
+inline void* ymery_dlsym(PluginHandle h, const char* sym) { return dlsym(h, sym); }
+inline void ymery_dlclose(PluginHandle h) { dlclose(h); }
+inline std::string ymery_dlerror() { const char* e = dlerror(); return e ? e : ""; }
+#endif
 
 namespace fs = std::filesystem;
 
@@ -61,10 +90,10 @@ static Value yaml_to_value(const YAML::Node& node) {
 }
 
 // Load meta.yaml file for a plugin
-static Dict load_plugin_meta(const std::string& so_path) {
-    // Replace .so with .meta.yaml
-    std::string meta_path = so_path;
-    auto pos = meta_path.rfind(".so");
+static Dict load_plugin_meta(const std::string& plugin_path) {
+    // Replace plugin extension with .meta.yaml
+    std::string meta_path = plugin_path;
+    auto pos = meta_path.rfind(YMERY_PLUGIN_EXT);
     if (pos != std::string::npos) {
         meta_path = meta_path.substr(0, pos) + ".meta.yaml";
     }
@@ -124,7 +153,7 @@ Result<void> PluginManager::init() {
 Result<void> PluginManager::dispose() {
     for (auto handle : _handles) {
         if (handle) {
-            dlclose(handle);
+            ymery_dlclose(handle);
         }
     }
     _handles.clear();
@@ -140,11 +169,11 @@ Result<void> PluginManager::_ensure_plugins_loaded() {
 
     spdlog::info("PluginManager: loading plugins from {}", _plugins_path);
 
-    // Parse colon-separated paths
+    // Parse path-separated paths (: on Unix, ; on Windows)
     std::vector<std::string> plugin_dirs;
     std::stringstream ss(_plugins_path);
     std::string path_str;
-    while (std::getline(ss, path_str, ':')) {
+    while (std::getline(ss, path_str, YMERY_PATH_SEP)) {
         if (!path_str.empty()) {
             plugin_dirs.push_back(path_str);
         }
@@ -157,9 +186,9 @@ Result<void> PluginManager::_ensure_plugins_loaded() {
             continue;
         }
 
-        // Recursively find all .so files
+        // Recursively find all plugin files (.so on Unix, .dll on Windows)
         for (const auto& entry : fs::recursive_directory_iterator(dir)) {
-            if (entry.is_regular_file() && entry.path().extension() == ".so") {
+            if (entry.is_regular_file() && entry.path().extension() == YMERY_PLUGIN_EXT) {
                 std::string path = entry.path().string();
                 if (auto res = _load_plugin(path); !res) {
                     spdlog::warn("Failed to load plugin {}: {}", path, error_msg(res));
@@ -178,20 +207,20 @@ Result<void> PluginManager::_ensure_plugins_loaded() {
 Result<void> PluginManager::_load_plugin(const std::string& path) {
     spdlog::debug("Loading plugin: {}", path);
 
-    void* handle = dlopen(path.c_str(), RTLD_NOW | RTLD_LOCAL);
+    PluginHandle handle = ymery_dlopen(path.c_str());
     if (!handle) {
-        return Err<void>(std::string("dlopen failed: ") + dlerror());
+        return Err<void>(std::string("Failed to load plugin: ") + ymery_dlerror());
     }
 
-    auto name_fn = reinterpret_cast<PluginNameFn>(dlsym(handle, "name"));
+    auto name_fn = reinterpret_cast<PluginNameFn>(ymery_dlsym(handle, "name"));
     if (!name_fn) {
-        dlclose(handle);
+        ymery_dlclose(handle);
         return Err<void>("Plugin has no 'name' function: " + path);
     }
 
-    auto type_fn = reinterpret_cast<PluginTypeFn>(dlsym(handle, "type"));
+    auto type_fn = reinterpret_cast<PluginTypeFn>(ymery_dlsym(handle, "type"));
     if (!type_fn) {
-        dlclose(handle);
+        ymery_dlclose(handle);
         return Err<void>("Plugin has no 'type' function: " + path);
     }
 
@@ -216,18 +245,18 @@ Result<void> PluginManager::_load_plugin(const std::string& path) {
     }
 
     if (plugin_type == "widget") {
-        auto create_fn = reinterpret_cast<PluginWidgetCreateFn>(dlsym(handle, "create"));
+        auto create_fn = reinterpret_cast<PluginWidgetCreateFn>(ymery_dlsym(handle, "create"));
         if (!create_fn) {
-            dlclose(handle);
+            ymery_dlclose(handle);
             return Err<void>("Widget plugin has no 'create' function: " + path);
         }
         meta.create_fn = WidgetCreateFn(create_fn);
         _plugins["widget"][plugin_name] = meta;
     }
     else if (plugin_type == "tree") {
-        auto create_fn = reinterpret_cast<PluginTreeCreateFn>(dlsym(handle, "create"));
+        auto create_fn = reinterpret_cast<PluginTreeCreateFn>(ymery_dlsym(handle, "create"));
         if (!create_fn) {
-            dlclose(handle);
+            ymery_dlclose(handle);
             return Err<void>("Tree plugin has no 'create' function: " + path);
         }
         meta.create_fn = TreeLikeCreateFn(create_fn);
