@@ -1,0 +1,7 @@
+name: tooltip
+category: Popups
+properties:
+  - name: content
+    type: string
+    description: Tooltip content
+events: []

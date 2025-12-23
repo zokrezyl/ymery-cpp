@@ -1,0 +1,14 @@
+name: text
+category: Display
+properties:
+  - name: content
+    type: string
+    description: Text content to display
+  - name: tooltip
+    type: string
+    description: Hover tooltip text
+  - name: color
+    type: string
+    description: Text color (hex or name)
+events:
+  - on-hover

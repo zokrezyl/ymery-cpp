@@ -1,0 +1,68 @@
+#pragma once
+
+#include "layout_model.hpp"
+#include "widget_tree.hpp"
+#include "editor_canvas.hpp"
+#include "../plugin_manager.hpp"
+#include <memory>
+#include <string>
+
+struct GLFWwindow;
+
+namespace ymery::editor {
+
+struct EditorConfig {
+    int window_width = 1280;
+    int window_height = 720;
+    std::string window_title = "Ymery Widget Editor";
+    std::string plugins_path;  // Path to plugins directory
+};
+
+class EditorApp {
+public:
+    static std::unique_ptr<EditorApp> create(const EditorConfig& config);
+
+    ~EditorApp();
+
+    void run();
+
+private:
+    EditorApp() = default;
+
+    bool init(const EditorConfig& config);
+    void dispose();
+
+    void frame();
+    void begin_frame();
+    void end_frame();
+
+    void render_menu_bar();
+    void render_dockspace();
+    void render_preview();
+    void render_preview_node(LayoutNode* node);
+
+    // Graphics
+    GLFWwindow* _window = nullptr;
+    bool _should_close = false;
+
+#ifdef YMERY_USE_WEBGPU
+    // WebGPU context
+    void* _wgpu_instance = nullptr;
+    void* _wgpu_adapter = nullptr;
+    void* _wgpu_device = nullptr;
+    void* _wgpu_queue = nullptr;
+    void* _wgpu_surface = nullptr;
+#endif
+
+    // Editor state
+    LayoutModel _model;
+    std::unique_ptr<WidgetTree> _widget_tree;
+    std::unique_ptr<EditorCanvas> _canvas;
+    ymery::PluginManagerPtr _plugin_manager;
+
+    // File state
+    std::string _current_file;
+    bool _modified = false;
+};
+
+} // namespace ymery::editor

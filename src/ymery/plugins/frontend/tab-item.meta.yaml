@@ -1,0 +1,7 @@
+name: tab-item
+category: Collapsible
+properties:
+  - name: label
+    type: string
+    description: Tab text
+events: []

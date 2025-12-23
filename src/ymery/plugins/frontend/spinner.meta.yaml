@@ -1,0 +1,13 @@
+name: spinner
+category: Advanced
+properties:
+  - name: label
+    type: string
+    description: Spinner ID
+  - name: size
+    type: number
+    description: Spinner size
+  - name: speed
+    type: number
+    description: Animation speed
+events: []

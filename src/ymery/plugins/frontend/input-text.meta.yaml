@@ -1,0 +1,17 @@
+name: input-text
+category: Inputs
+properties:
+  - name: label
+    type: string
+    description: Input label
+  - name: hint
+    type: string
+    description: Placeholder text
+  - name: width
+    type: number
+    description: Input width
+  - name: tooltip
+    type: string
+    description: Hover tooltip
+events:
+  - on-change

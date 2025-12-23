@@ -1,0 +1,7 @@
+name: column
+category: Containers
+properties:
+  - name: label
+    type: string
+    description: Optional label for the column
+events: []

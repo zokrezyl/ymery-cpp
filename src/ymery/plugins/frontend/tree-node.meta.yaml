@@ -1,0 +1,10 @@
+name: tree-node
+category: Collapsible
+properties:
+  - name: label
+    type: string
+    description: Node text
+  - name: default-open
+    type: boolean
+    description: Whether node starts open
+events: []

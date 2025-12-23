@@ -1,0 +1,7 @@
+name: tab-bar
+category: Collapsible
+properties:
+  - name: label
+    type: string
+    description: Tab bar ID
+events: []

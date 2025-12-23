@@ -1,0 +1,7 @@
+name: popup-modal
+category: Popups
+properties:
+  - name: label
+    type: string
+    description: Modal title
+events: []

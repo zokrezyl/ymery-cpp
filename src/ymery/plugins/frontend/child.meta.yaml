@@ -1,0 +1,16 @@
+name: child
+category: Containers
+properties:
+  - name: label
+    type: string
+    description: Child window ID
+  - name: width
+    type: number
+    description: Child width (0 for auto)
+  - name: height
+    type: number
+    description: Child height (0 for auto)
+  - name: border
+    type: boolean
+    description: Show border around child
+events: []

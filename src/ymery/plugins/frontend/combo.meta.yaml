@@ -1,0 +1,17 @@
+name: combo
+category: Inputs
+properties:
+  - name: label
+    type: string
+    description: Combo label
+  - name: items
+    type: string
+    description: Comma-separated list of items
+  - name: default
+    type: number
+    description: Default selected index
+  - name: tooltip
+    type: string
+    description: Hover tooltip
+events:
+  - on-change

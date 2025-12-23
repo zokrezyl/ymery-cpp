@@ -1,0 +1,14 @@
+name: gizmo
+category: Visualization
+properties:
+  - name: label
+    type: string
+    description: Gizmo ID
+  - name: width
+    type: number
+    description: Gizmo width
+  - name: height
+    type: number
+    description: Gizmo height
+events:
+  - on-change

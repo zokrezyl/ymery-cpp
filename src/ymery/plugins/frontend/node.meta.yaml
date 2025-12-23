@@ -1,0 +1,10 @@
+name: node
+category: Advanced
+properties:
+  - name: label
+    type: string
+    description: Node title
+  - name: node-id
+    type: number
+    description: Unique node ID
+events: []

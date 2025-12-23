@@ -1,0 +1,13 @@
+name: node-pin
+category: Advanced
+properties:
+  - name: label
+    type: string
+    description: Pin label
+  - name: pin-id
+    type: number
+    description: Unique pin ID
+  - name: kind
+    type: string
+    description: Pin kind (input/output)
+events: []

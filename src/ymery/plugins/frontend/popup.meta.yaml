@@ -1,0 +1,7 @@
+name: popup
+category: Popups
+properties:
+  - name: label
+    type: string
+    description: Popup ID
+events: []

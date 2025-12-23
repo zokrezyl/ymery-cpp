@@ -1,0 +1,14 @@
+name: toggle
+category: Inputs
+properties:
+  - name: label
+    type: string
+    description: Toggle label
+  - name: default
+    type: boolean
+    description: Default state
+  - name: tooltip
+    type: string
+    description: Hover tooltip
+events:
+  - on-change

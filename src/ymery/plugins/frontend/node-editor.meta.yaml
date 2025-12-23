@@ -1,0 +1,13 @@
+name: node-editor
+category: Advanced
+properties:
+  - name: label
+    type: string
+    description: Editor ID
+  - name: width
+    type: number
+    description: Editor width
+  - name: height
+    type: number
+    description: Editor height
+events: []

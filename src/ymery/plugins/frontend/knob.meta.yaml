@@ -1,0 +1,23 @@
+name: knob
+category: Inputs
+properties:
+  - name: label
+    type: string
+    description: Knob label
+  - name: min
+    type: number
+    description: Minimum value
+  - name: max
+    type: number
+    description: Maximum value
+  - name: default
+    type: number
+    description: Default value
+  - name: size
+    type: number
+    description: Knob size in pixels
+  - name: tooltip
+    type: string
+    description: Hover tooltip
+events:
+  - on-change

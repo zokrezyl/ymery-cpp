@@ -1,0 +1,7 @@
+name: row
+category: Containers
+properties:
+  - name: label
+    type: string
+    description: Optional label for the row
+events: []

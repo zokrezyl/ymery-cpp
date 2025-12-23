@@ -1,0 +1,16 @@
+name: window
+category: Containers
+properties:
+  - name: label
+    type: string
+    description: Window title
+  - name: width
+    type: number
+    description: Window width
+  - name: height
+    type: number
+    description: Window height
+  - name: flags
+    type: string
+    description: ImGui window flags
+events: []

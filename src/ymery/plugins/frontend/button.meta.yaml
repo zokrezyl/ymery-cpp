@@ -1,0 +1,18 @@
+name: button
+category: Inputs
+properties:
+  - name: label
+    type: string
+    description: Button text
+  - name: tooltip
+    type: string
+    description: Hover tooltip text
+  - name: width
+    type: number
+    description: Button width (0 for auto)
+  - name: height
+    type: number
+    description: Button height (0 for auto)
+events:
+  - on-click
+  - on-hover

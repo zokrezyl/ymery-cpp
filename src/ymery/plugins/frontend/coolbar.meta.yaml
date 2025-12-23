@@ -1,0 +1,10 @@
+name: coolbar
+category: Advanced
+properties:
+  - name: label
+    type: string
+    description: Coolbar ID
+  - name: height
+    type: number
+    description: Bar height
+events: []

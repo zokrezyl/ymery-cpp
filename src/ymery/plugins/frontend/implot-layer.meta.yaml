@@ -1,0 +1,10 @@
+name: implot-layer
+category: Visualization
+properties:
+  - name: label
+    type: string
+    description: Layer label
+  - name: data-path
+    type: string
+    description: Path to data source in data tree
+events: []

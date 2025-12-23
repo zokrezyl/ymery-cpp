@@ -1,0 +1,10 @@
+name: collapsing-header
+category: Collapsible
+properties:
+  - name: label
+    type: string
+    description: Header text
+  - name: default-open
+    type: boolean
+    description: Whether header starts open
+events: []

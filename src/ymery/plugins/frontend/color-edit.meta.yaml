@@ -1,0 +1,14 @@
+name: color-edit
+category: Inputs
+properties:
+  - name: label
+    type: string
+    description: Color picker label
+  - name: default
+    type: string
+    description: Default color (hex)
+  - name: tooltip
+    type: string
+    description: Hover tooltip
+events:
+  - on-change

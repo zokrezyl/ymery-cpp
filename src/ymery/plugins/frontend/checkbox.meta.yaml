@@ -1,0 +1,14 @@
+name: checkbox
+category: Inputs
+properties:
+  - name: label
+    type: string
+    description: Checkbox label
+  - name: default
+    type: boolean
+    description: Default checked state
+  - name: tooltip
+    type: string
+    description: Hover tooltip
+events:
+  - on-change

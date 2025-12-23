@@ -1,0 +1,13 @@
+name: implot
+category: Visualization
+properties:
+  - name: label
+    type: string
+    description: Plot title
+  - name: width
+    type: number
+    description: Plot width
+  - name: height
+    type: number
+    description: Plot height
+events: []

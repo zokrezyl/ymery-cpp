@@ -1,0 +1,7 @@
+name: markdown
+category: Display
+properties:
+  - name: content
+    type: string
+    description: Markdown content to render
+events: []
