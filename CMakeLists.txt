@@ -357,10 +357,8 @@ set(YMERY_CORE_SOURCES
     src/ymery/backend/audio_buffer.cpp
 )
 
-# App.cpp requires GLFW - only include on non-Android platforms
-if(NOT YMERY_ANDROID)
-    list(APPEND YMERY_CORE_SOURCES src/ymery/app.cpp)
-endif()
+# App.cpp has backend support for GLFW (desktop), WebGPU, and Android (EGL)
+list(APPEND YMERY_CORE_SOURCES src/ymery/app.cpp)
 
 # Core library
 if(YMERY_WEB OR YMERY_ANDROID)
@@ -404,9 +402,13 @@ elseif(YMERY_ANDROID)
         spdlog::spdlog
         android
         log
+        EGL
+        GLESv3
     )
     # Add tl::expected include directory (header-only library)
     target_include_directories(ymery PUBLIC ${tl_expected_SOURCE_DIR}/include)
+    # Add NDK native_app_glue include directory
+    target_include_directories(ymery PUBLIC ${ANDROID_NDK}/sources/android/native_app_glue)
     target_compile_definitions(ymery PUBLIC YMERY_ANDROID=1)
 else()
     target_link_libraries(ymery PUBLIC
@@ -476,8 +478,8 @@ if(NOT YMERY_WEB AND NOT YMERY_ANDROID)
     endif()
 endif()
 
-# Plugins (desktop only - no dynamic loading on Web/Android)
-if(NOT YMERY_WEB AND NOT YMERY_ANDROID)
+# Plugins (desktop and Android - no dynamic loading on Web)
+if(NOT YMERY_WEB)
     add_subdirectory(src/ymery/plugins)
 endif()
 

@@ -1,5 +1,12 @@
 # Build each tree-like backend as a shared library plugin
 
+# On Android, output to the default location so Gradle bundles them in APK
+if(YMERY_ANDROID)
+    set(PLUGIN_OUTPUT_DIR "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
+else()
+    set(PLUGIN_OUTPUT_DIR "${CMAKE_BINARY_DIR}/plugins/backend")
+endif()
+
 set(BACKEND_PLUGINS
     simple-data-tree
     data-tree
@@ -12,7 +19,7 @@ foreach(plugin ${BACKEND_PLUGINS})
     set_target_properties(${plugin} PROPERTIES
         PREFIX ""
         OUTPUT_NAME "${plugin}"
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/backend"
+        LIBRARY_OUTPUT_DIRECTORY "${PLUGIN_OUTPUT_DIR}"
     )
 endforeach()
 
@@ -23,5 +30,5 @@ target_include_directories(waveform PRIVATE ${CMAKE_SOURCE_DIR}/src)
 set_target_properties(waveform PROPERTIES
     PREFIX ""
     OUTPUT_NAME "waveform"
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/backend"
+    LIBRARY_OUTPUT_DIRECTORY "${PLUGIN_OUTPUT_DIR}"
 )

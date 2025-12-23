@@ -1,5 +1,12 @@
 # Build each widget as a shared library plugin
 
+# On Android, output to the default location so Gradle bundles them in APK
+if(YMERY_ANDROID)
+    set(PLUGIN_OUTPUT_DIR "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
+else()
+    set(PLUGIN_OUTPUT_DIR "${CMAKE_BINARY_DIR}/plugins/frontend")
+endif()
+
 set(WIDGET_PLUGINS
     text
     button
@@ -33,7 +40,7 @@ foreach(plugin ${WIDGET_PLUGINS})
     set_target_properties(${plugin} PROPERTIES
         PREFIX ""
         OUTPUT_NAME "${plugin}"
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/frontend"
+        LIBRARY_OUTPUT_DIRECTORY "${PLUGIN_OUTPUT_DIR}"
     )
 endforeach()
 
@@ -44,7 +51,7 @@ target_include_directories(markdown PRIVATE ${CMAKE_SOURCE_DIR}/src)
 set_target_properties(markdown PROPERTIES
     PREFIX ""
     OUTPUT_NAME "markdown"
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/frontend"
+    LIBRARY_OUTPUT_DIRECTORY "${PLUGIN_OUTPUT_DIR}"
 )
 
 # ImPlot widgets (require implot) - use _plugin suffix to avoid conflict with library
@@ -56,7 +63,7 @@ foreach(plugin ${IMPLOT_PLUGINS})
     set_target_properties(${plugin}_plugin PROPERTIES
         PREFIX ""
         OUTPUT_NAME "${plugin}"
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/frontend"
+        LIBRARY_OUTPUT_DIRECTORY "${PLUGIN_OUTPUT_DIR}"
     )
 endforeach()
 
@@ -69,7 +76,7 @@ endforeach()
 #     set_target_properties(${plugin} PROPERTIES
 #         PREFIX ""
 #         OUTPUT_NAME "${plugin}"
-#         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/frontend"
+#         LIBRARY_OUTPUT_DIRECTORY "${PLUGIN_OUTPUT_DIR}"
 #     )
 # endforeach()
 
@@ -80,7 +87,7 @@ target_include_directories(knob PRIVATE ${CMAKE_SOURCE_DIR}/src)
 set_target_properties(knob PROPERTIES
     PREFIX ""
     OUTPUT_NAME "knob"
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/frontend"
+    LIBRARY_OUTPUT_DIRECTORY "${PLUGIN_OUTPUT_DIR}"
 )
 
 # Spinner widget (requires imspinner - header only)
@@ -90,7 +97,7 @@ target_include_directories(spinner PRIVATE ${CMAKE_SOURCE_DIR}/src)
 set_target_properties(spinner PROPERTIES
     PREFIX ""
     OUTPUT_NAME "spinner"
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/frontend"
+    LIBRARY_OUTPUT_DIRECTORY "${PLUGIN_OUTPUT_DIR}"
 )
 
 # Spinners demo widget (requires imspinner - header only)
@@ -101,7 +108,7 @@ target_include_directories(spinners_demo PRIVATE ${CMAKE_SOURCE_DIR}/src)
 set_target_properties(spinners_demo PROPERTIES
     PREFIX ""
     OUTPUT_NAME "spinners-demo"
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/frontend"
+    LIBRARY_OUTPUT_DIRECTORY "${PLUGIN_OUTPUT_DIR}"
 )
 
 # Toggle widget (requires imgui_toggle)
@@ -111,7 +118,7 @@ target_include_directories(toggle PRIVATE ${CMAKE_SOURCE_DIR}/src)
 set_target_properties(toggle PROPERTIES
     PREFIX ""
     OUTPUT_NAME "toggle"
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/frontend"
+    LIBRARY_OUTPUT_DIRECTORY "${PLUGIN_OUTPUT_DIR}"
 )
 
 # Coolbar widget (requires imcoolbar)
@@ -121,7 +128,7 @@ target_include_directories(coolbar PRIVATE ${CMAKE_SOURCE_DIR}/src)
 set_target_properties(coolbar PROPERTIES
     PREFIX ""
     OUTPUT_NAME "coolbar"
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/frontend"
+    LIBRARY_OUTPUT_DIRECTORY "${PLUGIN_OUTPUT_DIR}"
 )
 
 # Gizmo widget (requires imguizmo)
@@ -131,7 +138,7 @@ target_include_directories(gizmo PRIVATE ${CMAKE_SOURCE_DIR}/src)
 set_target_properties(gizmo PROPERTIES
     PREFIX ""
     OUTPUT_NAME "gizmo"
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/frontend"
+    LIBRARY_OUTPUT_DIRECTORY "${PLUGIN_OUTPUT_DIR}"
 )
 
 # Plot3D widget (requires implot3d)
@@ -141,7 +148,7 @@ target_include_directories(plot3d PRIVATE ${CMAKE_SOURCE_DIR}/src)
 set_target_properties(plot3d PROPERTIES
     PREFIX ""
     OUTPUT_NAME "plot3d"
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/frontend"
+    LIBRARY_OUTPUT_DIRECTORY "${PLUGIN_OUTPUT_DIR}"
 )
 
 # Copy meta.yaml files to build directory

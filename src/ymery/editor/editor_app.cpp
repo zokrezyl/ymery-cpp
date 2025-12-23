@@ -2,6 +2,19 @@
 
 #include <imgui.h>
 #include <imgui_internal.h>
+
+#ifdef YMERY_ANDROID
+#include <android/log.h>
+#include <android/configuration.h>
+#include <android_native_app_glue.h>
+#include <EGL/egl.h>
+#include <GLES3/gl3.h>
+#include <jni.h>
+#include <imgui_impl_android.h>
+#include <imgui_impl_opengl3.h>
+#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, "ymery-editor", __VA_ARGS__)
+#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, "ymery-editor", __VA_ARGS__)
+#else
 #include <imgui_impl_glfw.h>
 #ifdef YMERY_USE_WEBGPU
 #include <imgui_impl_wgpu.h>
@@ -10,15 +23,47 @@
 #include <imgui_impl_opengl3.h>
 #endif
 #include <GLFW/glfw3.h>
+#endif
+
 #include <spdlog/spdlog.h>
 
-#ifdef YMERY_USE_WEBGPU
+#if defined(YMERY_USE_WEBGPU) && !defined(YMERY_ANDROID)
 #define GLFW_EXPOSE_NATIVE_X11
 #include <GLFW/glfw3native.h>
 #endif
 
 namespace ymery::editor {
 
+#ifdef YMERY_ANDROID
+// Get native library directory via JNI
+static std::string get_native_library_dir(ANativeActivity* activity) {
+    JNIEnv* env = nullptr;
+    activity->vm->AttachCurrentThread(&env, nullptr);
+
+    jclass activityClass = env->GetObjectClass(activity->clazz);
+    jmethodID getApplicationInfo = env->GetMethodID(activityClass, "getApplicationInfo",
+        "()Landroid/content/pm/ApplicationInfo;");
+    jobject appInfo = env->CallObjectMethod(activity->clazz, getApplicationInfo);
+
+    jclass appInfoClass = env->GetObjectClass(appInfo);
+    jfieldID nativeLibDirField = env->GetFieldID(appInfoClass, "nativeLibraryDir", "Ljava/lang/String;");
+    jstring nativeLibDir = (jstring)env->GetObjectField(appInfo, nativeLibDirField);
+
+    const char* pathChars = env->GetStringUTFChars(nativeLibDir, nullptr);
+    std::string result(pathChars);
+    env->ReleaseStringUTFChars(nativeLibDir, pathChars);
+
+    env->DeleteLocalRef(nativeLibDir);
+    env->DeleteLocalRef(appInfo);
+    env->DeleteLocalRef(activityClass);
+    env->DeleteLocalRef(appInfoClass);
+
+    activity->vm->DetachCurrentThread();
+    return result;
+}
+#endif
+
+#ifndef YMERY_ANDROID
 #ifdef YMERY_USE_WEBGPU
 // WebGPU state
 static WGPUInstance s_wgpu_instance = nullptr;
@@ -58,6 +103,7 @@ static void configure_wgpu_surface(int width, int height) {
 static void glfw_error_callback(int error, const char* description) {
     spdlog::error("GLFW Error {}: {}", error, description);
 }
+#endif // !YMERY_ANDROID
 
 std::unique_ptr<EditorApp> EditorApp::create(const EditorConfig& config) {
     auto app = std::unique_ptr<EditorApp>(new EditorApp());
@@ -67,6 +113,23 @@ std::unique_ptr<EditorApp> EditorApp::create(const EditorConfig& config) {
     return app;
 }
 
+#ifdef YMERY_ANDROID
+std::unique_ptr<EditorApp> EditorApp::create(struct android_app* android_app, const EditorConfig& config) {
+    auto app = std::unique_ptr<EditorApp>(new EditorApp());
+    app->_android_app = android_app;
+
+    // Get native library directory for plugins
+    EditorConfig cfg = config;
+    cfg.plugins_path = get_native_library_dir(android_app->activity);
+    LOGI("Native library dir: %s", cfg.plugins_path.c_str());
+
+    if (!app->init(cfg)) {
+        return nullptr;
+    }
+    return app;
+}
+#endif
+
 EditorApp::~EditorApp() {
     dispose();
 }
@@ -74,6 +137,101 @@ EditorApp::~EditorApp() {
 bool EditorApp::init(const EditorConfig& config) {
     spdlog::info("EditorApp::init starting");
 
+#ifdef YMERY_ANDROID
+    // Android/EGL initialization
+    LOGI("EditorApp::init starting (Android/EGL)");
+
+    if (!_android_app || !_android_app->window) {
+        LOGE("No Android window available");
+        return false;
+    }
+
+    const EGLint attribs[] = {
+        EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
+        EGL_BLUE_SIZE, 8,
+        EGL_GREEN_SIZE, 8,
+        EGL_RED_SIZE, 8,
+        EGL_DEPTH_SIZE, 24,
+        EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT,
+        EGL_NONE
+    };
+
+    EGLint contextAttribs[] = {
+        EGL_CONTEXT_CLIENT_VERSION, 3,
+        EGL_NONE
+    };
+
+    EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+    if (display == EGL_NO_DISPLAY) {
+        LOGE("eglGetDisplay failed");
+        return false;
+    }
+
+    if (!eglInitialize(display, nullptr, nullptr)) {
+        LOGE("eglInitialize failed");
+        return false;
+    }
+
+    EGLConfig egl_config;
+    EGLint numConfigs;
+    if (!eglChooseConfig(display, attribs, &egl_config, 1, &numConfigs) || numConfigs == 0) {
+        LOGE("eglChooseConfig failed");
+        return false;
+    }
+
+    EGLint format;
+    eglGetConfigAttrib(display, egl_config, EGL_NATIVE_VISUAL_ID, &format);
+    ANativeWindow_setBuffersGeometry(_android_app->window, 0, 0, format);
+
+    EGLSurface surface = eglCreateWindowSurface(display, egl_config, _android_app->window, nullptr);
+    if (surface == EGL_NO_SURFACE) {
+        LOGE("eglCreateWindowSurface failed");
+        return false;
+    }
+
+    EGLContext context = eglCreateContext(display, egl_config, EGL_NO_CONTEXT, contextAttribs);
+    if (context == EGL_NO_CONTEXT) {
+        LOGE("eglCreateContext failed");
+        return false;
+    }
+
+    if (eglMakeCurrent(display, surface, surface, context) == EGL_FALSE) {
+        LOGE("eglMakeCurrent failed");
+        return false;
+    }
+
+    eglQuerySurface(display, surface, EGL_WIDTH, &_display_width);
+    eglQuerySurface(display, surface, EGL_HEIGHT, &_display_height);
+
+    _egl_display = display;
+    _egl_context = context;
+    _egl_surface = surface;
+
+    // Get density
+    _display_density = AConfiguration_getDensity(_android_app->config) / 160.0f;
+    if (_display_density < 1.0f) _display_density = 1.0f;
+
+    LOGI("EGL initialized: %dx%d, density=%.2f", _display_width, _display_height, _display_density);
+
+    // Setup ImGui
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.IniFilename = nullptr;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.FontGlobalScale = _display_density;
+
+    ImGui::StyleColorsDark();
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.ScaleAllSizes(_display_density);
+
+    ImGui_ImplAndroid_Init(_android_app->window);
+    ImGui_ImplOpenGL3_Init("#version 300 es");
+
+    LOGI("ImGui initialized successfully");
+
+#else
     glfwSetErrorCallback(glfw_error_callback);
 
     if (!glfwInit()) {
@@ -242,6 +400,7 @@ bool EditorApp::init(const EditorConfig& config) {
     ImGui_ImplGlfw_InitForOpenGL(_window, true);
     ImGui_ImplOpenGL3_Init(glsl_version);
 #endif
+#endif // !YMERY_ANDROID
 
     // Create plugin manager
     if (!config.plugins_path.empty()) {
@@ -266,7 +425,26 @@ void EditorApp::dispose() {
     _canvas.reset();
     _widget_tree.reset();
 
-#ifdef YMERY_USE_WEBGPU
+#ifdef YMERY_ANDROID
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplAndroid_Shutdown();
+    ImGui::DestroyContext();
+
+    EGLDisplay display = static_cast<EGLDisplay>(_egl_display);
+    if (display != EGL_NO_DISPLAY) {
+        eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+        if (_egl_context != EGL_NO_CONTEXT) {
+            eglDestroyContext(display, static_cast<EGLContext>(_egl_context));
+        }
+        if (_egl_surface != EGL_NO_SURFACE) {
+            eglDestroySurface(display, static_cast<EGLSurface>(_egl_surface));
+        }
+        eglTerminate(display);
+    }
+    _egl_display = EGL_NO_DISPLAY;
+    _egl_context = EGL_NO_CONTEXT;
+    _egl_surface = EGL_NO_SURFACE;
+#elif defined(YMERY_USE_WEBGPU)
     ImGui_ImplWGPU_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
@@ -281,13 +459,13 @@ void EditorApp::dispose() {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
-#endif
 
     if (_window) {
         glfwDestroyWindow(_window);
         _window = nullptr;
     }
     glfwTerminate();
+#endif
 }
 
 void EditorApp::run() {
@@ -313,6 +491,11 @@ void EditorApp::frame() {
 }
 
 void EditorApp::begin_frame() {
+#ifdef YMERY_ANDROID
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplAndroid_NewFrame();
+    ImGui::NewFrame();
+#else
     glfwPollEvents();
 
     if (glfwWindowShouldClose(_window)) {
@@ -335,12 +518,21 @@ void EditorApp::begin_frame() {
 #endif
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
+#endif
 }
 
 void EditorApp::end_frame() {
     ImGui::Render();
 
-#ifdef YMERY_USE_WEBGPU
+#ifdef YMERY_ANDROID
+    glViewport(0, 0, _display_width, _display_height);
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+    eglSwapBuffers(static_cast<EGLDisplay>(_egl_display), static_cast<EGLSurface>(_egl_surface));
+#elif defined(YMERY_USE_WEBGPU)
     WGPUSurfaceTexture surface_texture;
     wgpuSurfaceGetCurrentTexture(s_wgpu_surface, &surface_texture);
     if (surface_texture.status != WGPUSurfaceGetCurrentTextureStatus_Success) {

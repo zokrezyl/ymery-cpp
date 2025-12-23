@@ -10,6 +10,10 @@
 #include <filesystem>
 #include <memory>
 
+#ifdef YMERY_ANDROID
+struct android_app;
+#endif
+
 namespace ymery {
 
 // App configuration
@@ -27,6 +31,11 @@ class App {
 public:
     // Factory method
     static Result<std::shared_ptr<App>> create(const AppConfig& config);
+
+#ifdef YMERY_ANDROID
+    // Android factory method
+    static Result<std::shared_ptr<App>> create(struct android_app* android_app, const AppConfig& config);
+#endif
 
     // Main loop
     Result<void> run();
@@ -74,6 +83,16 @@ private:
     // Graphics state (platform-specific)
     void* _window = nullptr;
     void* _gl_context = nullptr;
+
+#ifdef YMERY_ANDROID
+    struct android_app* _android_app = nullptr;
+    void* _egl_display = nullptr;
+    void* _egl_surface = nullptr;
+    void* _egl_context = nullptr;
+    int32_t _display_width = 0;
+    int32_t _display_height = 0;
+    float _display_density = 1.0f;
+#endif
 };
 
 using AppPtr = std::shared_ptr<App>;
