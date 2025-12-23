@@ -6,6 +6,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+# Windows: Export all symbols from shared libraries to generate import libraries (.lib)
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
 # Set output directories to avoid multi-config subdirectories (Release/Debug)
 # This ensures plugins can find the ymery library
 # For single-config generators (Make, Ninja)

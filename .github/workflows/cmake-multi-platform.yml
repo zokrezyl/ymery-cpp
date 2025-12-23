@@ -114,14 +114,26 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
-    - name: Build Android APK
+    - name: Build Main App APK
       working-directory: android
       run: |
         chmod +x ./gradlew 2>/dev/null || true
         ./gradlew assembleDebug --no-daemon
 
-    - name: Upload APK
+    - name: Build Editor APK
+      working-directory: android-editor
+      run: |
+        chmod +x ./gradlew 2>/dev/null || true
+        ./gradlew assembleDebug --no-daemon
+
+    - name: Upload Main App APK
       uses: actions/upload-artifact@v4
       with:
         name: ymery-android-debug
         path: android/app/build/outputs/apk/debug/*.apk
+
+    - name: Upload Editor APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: ymery-editor-android-debug
+        path: android-editor/app/build/outputs/apk/debug/*.apk
