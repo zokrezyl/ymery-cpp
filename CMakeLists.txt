@@ -439,6 +439,34 @@ else()
     set_target_properties(ymery-cli PROPERTIES ENABLE_EXPORTS ON)
 endif()
 
+# Widget Layout Editor (not for Emscripten)
+if(NOT YMERY_WEB)
+    add_executable(ymery-editor
+        src/ymery/editor/main.cpp
+        src/ymery/editor/editor_app.cpp
+        src/ymery/editor/widget_tree.cpp
+        src/ymery/editor/layout_model.cpp
+        src/ymery/editor/editor_canvas.cpp
+    )
+    target_include_directories(ymery-editor PRIVATE
+        ${CMAKE_SOURCE_DIR}/src
+        ${CMAKE_SOURCE_DIR}/third_party/imgui
+        ${CMAKE_SOURCE_DIR}/third_party/imgui/backends
+    )
+    target_link_libraries(ymery-editor PRIVATE
+        imgui
+        glfw
+        spdlog::spdlog
+    )
+    if(YMERY_USE_WEBGPU)
+        target_link_libraries(ymery-editor PRIVATE webgpu)
+        target_compile_definitions(ymery-editor PRIVATE YMERY_USE_WEBGPU)
+    else()
+        find_package(OpenGL REQUIRED)
+        target_link_libraries(ymery-editor PRIVATE OpenGL::GL)
+    endif()
+endif()
+
 # Plugins (not for Emscripten - no dynamic loading)
 if(NOT YMERY_WEB)
     add_subdirectory(src/ymery/plugins)

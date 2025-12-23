@@ -1,0 +1,216 @@
+#include "layout_model.hpp"
+#include <algorithm>
+#include <sstream>
+
+namespace ymery::editor {
+
+// Container widget types
+static const std::vector<std::string> CONTAINER_TYPES = {
+    "window", "row", "column", "group", "child",
+    "tab-bar", "tab-item", "tree-node", "collapsing-header",
+    "popup", "popup-modal", "tooltip", "implot", "implot-group",
+    "node-editor", "node", "coolbar"
+};
+
+bool is_container_type(const std::string& type) {
+    return std::find(CONTAINER_TYPES.begin(), CONTAINER_TYPES.end(), type) != CONTAINER_TYPES.end();
+}
+
+// LayoutNode implementation
+
+std::atomic<int> LayoutModel::_id_counter{0};
+
+LayoutNode::LayoutNode() : id(0) {}
+
+LayoutNode::LayoutNode(const std::string& type)
+    : widget_type(type), label(type) {}
+
+bool LayoutNode::is_container() const {
+    return is_container_type(widget_type);
+}
+
+bool LayoutNode::can_have_children() const {
+    return is_container();
+}
+
+// LayoutModel implementation
+
+LayoutModel::LayoutModel() = default;
+
+bool LayoutModel::empty() const {
+    return !_root;
+}
+
+LayoutNode* LayoutModel::root() const {
+    return _root.get();
+}
+
+void LayoutModel::set_root(const std::string& widget_type) {
+    _root = std::make_unique<LayoutNode>(widget_type);
+    _root->id = _next_id();
+    _selected = _root.get();
+}
+
+void LayoutModel::clear() {
+    _root.reset();
+    _selected = nullptr;
+}
+
+LayoutNode* LayoutModel::selected() const {
+    return _selected;
+}
+
+void LayoutModel::select(LayoutNode* node) {
+    _selected = node;
+}
+
+void LayoutModel::clear_selection() {
+    _selected = nullptr;
+}
+
+LayoutNode* LayoutModel::find_by_id(int id) {
+    if (!_root) return nullptr;
+    return _find_by_id_recursive(_root.get(), id);
+}
+
+LayoutNode* LayoutModel::_find_by_id_recursive(LayoutNode* node, int id) {
+    if (node->id == id) return node;
+    for (auto& child : node->children) {
+        if (auto found = _find_by_id_recursive(child.get(), id)) {
+            return found;
+        }
+    }
+    return nullptr;
+}
+
+int LayoutModel::_next_id() {
+    return ++_id_counter;
+}
+
+void LayoutModel::insert_before(LayoutNode* target, const std::string& widget_type, LayoutPosition pos) {
+    if (!target || !target->parent) return;
+
+    auto new_node = std::make_unique<LayoutNode>(widget_type);
+    new_node->id = _next_id();
+    new_node->position = pos;
+    new_node->parent = target->parent;
+
+    auto& siblings = target->parent->children;
+    for (auto it = siblings.begin(); it != siblings.end(); ++it) {
+        if (it->get() == target) {
+            siblings.insert(it, std::move(new_node));
+            break;
+        }
+    }
+}
+
+void LayoutModel::insert_after(LayoutNode* target, const std::string& widget_type, LayoutPosition pos) {
+    if (!target || !target->parent) return;
+
+    auto new_node = std::make_unique<LayoutNode>(widget_type);
+    new_node->id = _next_id();
+    new_node->position = pos;
+    new_node->parent = target->parent;
+
+    auto& siblings = target->parent->children;
+    for (auto it = siblings.begin(); it != siblings.end(); ++it) {
+        if (it->get() == target) {
+            ++it;  // Move past target
+            siblings.insert(it, std::move(new_node));
+            break;
+        }
+    }
+}
+
+void LayoutModel::add_child(LayoutNode* parent, const std::string& widget_type) {
+    if (!parent) {
+        // No parent means add to root
+        if (!_root) {
+            set_root(widget_type);
+        } else if (_root->can_have_children()) {
+            add_child(_root.get(), widget_type);
+        }
+        return;
+    }
+
+    if (!parent->can_have_children()) return;
+
+    auto new_node = std::make_unique<LayoutNode>(widget_type);
+    new_node->id = _next_id();
+    new_node->parent = parent;
+    parent->children.push_back(std::move(new_node));
+}
+
+void LayoutModel::remove(LayoutNode* node) {
+    if (!node) return;
+
+    // Can't remove root this way, use clear() instead
+    if (node == _root.get()) {
+        clear();
+        return;
+    }
+
+    if (!node->parent) return;
+
+    // Clear selection if removing selected node
+    if (_selected == node) {
+        _selected = node->parent;
+    }
+
+    auto& siblings = node->parent->children;
+    for (auto it = siblings.begin(); it != siblings.end(); ++it) {
+        if (it->get() == node) {
+            siblings.erase(it);
+            break;
+        }
+    }
+}
+
+std::string LayoutModel::to_yaml() const {
+    if (!_root) return "";
+
+    std::string yaml;
+    yaml += "widgets:\n";
+
+    // First, define widget types used
+    yaml += "  # Widget type definitions\n";
+
+    // Then the main widget
+    yaml += "\n  main-widget:\n";
+    _to_yaml_recursive(_root.get(), yaml, 4);
+
+    yaml += "\napp:\n";
+    yaml += "  widget: app.main-widget\n";
+
+    return yaml;
+}
+
+void LayoutModel::_to_yaml_recursive(const LayoutNode* node, std::string& out, int indent) const {
+    std::string ind(indent, ' ');
+
+    out += ind + "type: " + node->widget_type + "\n";
+
+    if (!node->label.empty() && node->label != node->widget_type) {
+        out += ind + "label: \"" + node->label + "\"\n";
+    }
+
+    // Output properties
+    for (const auto& [key, value] : node->properties) {
+        out += ind + key + ": \"" + value + "\"\n";
+    }
+
+    // Output children as body
+    if (!node->children.empty()) {
+        out += ind + "body:\n";
+        for (const auto& child : node->children) {
+            // Handle same-line positioning
+            if (child->position == LayoutPosition::SameLine) {
+                out += ind + "  # same-line\n";
+            }
+            out += ind + "  - " + child->widget_type + ":\n";
+            _to_yaml_recursive(child.get(), out, indent + 6);
+        }
+    }
+}
+
+} // namespace ymery::editor
