@@ -9,7 +9,7 @@ static const std::vector<std::string> CONTAINER_TYPES = {
     "window", "row", "column", "group", "child",
     "tab-bar", "tab-item", "tree-node", "collapsing-header",
     "popup", "popup-modal", "tooltip", "implot", "implot-group",
-    "node-editor", "node", "coolbar"
+    "coolbar"
 };
 
 bool is_container_type(const std::string& type) {

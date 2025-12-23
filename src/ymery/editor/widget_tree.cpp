@@ -16,7 +16,7 @@ void WidgetTree::_init_categories() {
         {"Display", {"text", "separator", "spacing", "markdown"}},
         {"Popups", {"popup", "popup-modal", "tooltip"}},
         {"Visualization", {"implot", "implot-layer", "plot3d", "gizmo"}},
-        {"Advanced", {"node-editor", "node", "node-pin", "coolbar", "spinner"}}
+        {"Advanced", {"coolbar", "spinner"}}
     };
 }
 

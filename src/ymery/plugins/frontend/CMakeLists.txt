@@ -60,18 +60,18 @@ foreach(plugin ${IMPLOT_PLUGINS})
     )
 endforeach()
 
-# Node editor widgets (require imgui_node_editor)
-set(NODE_EDITOR_PLUGINS node-editor node node-pin)
-foreach(plugin ${NODE_EDITOR_PLUGINS})
-    add_library(${plugin} SHARED ${plugin}.cpp)
-    target_link_libraries(${plugin} PRIVATE ymery imgui imgui_node_editor)
-    target_include_directories(${plugin} PRIVATE ${CMAKE_SOURCE_DIR}/src)
-    set_target_properties(${plugin} PROPERTIES
-        PREFIX ""
-        OUTPUT_NAME "${plugin}"
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/frontend"
-    )
-endforeach()
+# Node editor widgets - DISABLED due to imgui_node_editor compatibility issues
+# set(NODE_EDITOR_PLUGINS node-editor node node-pin)
+# foreach(plugin ${NODE_EDITOR_PLUGINS})
+#     add_library(${plugin} SHARED ${plugin}.cpp)
+#     target_link_libraries(${plugin} PRIVATE ymery imgui imgui_node_editor)
+#     target_include_directories(${plugin} PRIVATE ${CMAKE_SOURCE_DIR}/src)
+#     set_target_properties(${plugin} PROPERTIES
+#         PREFIX ""
+#         OUTPUT_NAME "${plugin}"
+#         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/frontend"
+#     )
+# endforeach()
 
 # Knob widget (requires imgui_knobs)
 add_library(knob SHARED knob.cpp)
