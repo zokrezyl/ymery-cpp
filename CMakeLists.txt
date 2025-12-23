@@ -56,7 +56,7 @@ CPMAddPackage(
 CPMAddPackage(
     NAME yaml-cpp
     GITHUB_REPOSITORY jbeder/yaml-cpp
-    GIT_TAG yaml-cpp-0.7.0
+    GIT_TAG 0.8.0
     OPTIONS "YAML_CPP_BUILD_TESTS OFF" "YAML_CPP_BUILD_TOOLS OFF"
 )
 
@@ -212,7 +212,9 @@ inline bool operator!=(const ImVec2& lhs, const ImVec2& rhs)
     )
     target_include_directories(imgui_node_editor PUBLIC ${imgui_node_editor_SOURCE_DIR})
     target_link_libraries(imgui_node_editor PUBLIC imgui)
-    target_compile_options(imgui_node_editor PRIVATE -Wno-deprecated-declarations)
+    if(NOT MSVC)
+        target_compile_options(imgui_node_editor PRIVATE -Wno-deprecated-declarations)
+    endif()
 endif()
 
 # imgui_markdown - markdown renderer
