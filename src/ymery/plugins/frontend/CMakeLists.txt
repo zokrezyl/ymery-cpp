@@ -143,3 +143,10 @@ set_target_properties(plot3d PROPERTIES
     OUTPUT_NAME "plot3d"
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/frontend"
 )
+
+# Copy meta.yaml files to build directory
+file(GLOB META_YAML_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.meta.yaml")
+foreach(meta_file ${META_YAML_FILES})
+    get_filename_component(meta_name ${meta_file} NAME)
+    configure_file(${meta_file} "${CMAKE_BINARY_DIR}/plugins/frontend/${meta_name}" COPYONLY)
+endforeach()

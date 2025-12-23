@@ -6,10 +6,90 @@
 #include <dlfcn.h>
 #include <filesystem>
 #include <sstream>
+#include <fstream>
+#include <yaml-cpp/yaml.h>
 
 namespace fs = std::filesystem;
 
 namespace ymery {
+
+// Helper to convert YAML node to Value
+static Value yaml_to_value(const YAML::Node& node) {
+    if (node.IsScalar()) {
+        // Try to parse as different types
+        try {
+            if (node.Tag() == "!") return Value(node.as<std::string>());
+            // Try bool first
+            std::string s = node.as<std::string>();
+            if (s == "true" || s == "false") {
+                return Value(node.as<bool>());
+            }
+            // Try int
+            try {
+                size_t pos;
+                int64_t i = std::stoll(s, &pos);
+                if (pos == s.size()) return Value(i);
+            } catch (...) {}
+            // Try double
+            try {
+                size_t pos;
+                double d = std::stod(s, &pos);
+                if (pos == s.size()) return Value(d);
+            } catch (...) {}
+            // Default to string
+            return Value(s);
+        } catch (...) {
+            return Value(std::string());
+        }
+    }
+    if (node.IsSequence()) {
+        List list;
+        for (const auto& item : node) {
+            list.push_back(yaml_to_value(item));
+        }
+        return Value(list);
+    }
+    if (node.IsMap()) {
+        Dict dict;
+        for (const auto& pair : node) {
+            std::string key = pair.first.as<std::string>();
+            dict[key] = yaml_to_value(pair.second);
+        }
+        return Value(dict);
+    }
+    return Value();
+}
+
+// Load meta.yaml file for a plugin
+static Dict load_plugin_meta(const std::string& so_path) {
+    // Replace .so with .meta.yaml
+    std::string meta_path = so_path;
+    auto pos = meta_path.rfind(".so");
+    if (pos != std::string::npos) {
+        meta_path = meta_path.substr(0, pos) + ".meta.yaml";
+    }
+
+    Dict result;
+    if (!fs::exists(meta_path)) {
+        spdlog::debug("No meta file found: {}", meta_path);
+        return result;
+    }
+
+    try {
+        YAML::Node node = YAML::LoadFile(meta_path);
+        if (node.IsMap()) {
+            for (const auto& pair : node) {
+                std::string key = pair.first.as<std::string>();
+                result[key] = yaml_to_value(pair.second);
+            }
+        }
+        spdlog::debug("Loaded meta file: {}", meta_path);
+    } catch (const std::exception& e) {
+        spdlog::warn("Failed to load meta file {}: {}", meta_path, e.what());
+    }
+
+    return result;
+}
 
 // Plugin function types (from .so files)
 using PluginNameFn = const char*(*)();
@@ -120,9 +200,20 @@ Result<void> PluginManager::_load_plugin(const std::string& path) {
 
     spdlog::info("Loaded plugin: {} (type: {})", plugin_name, plugin_type);
 
+    // Load meta.yaml for this plugin
+    Dict meta_dict = load_plugin_meta(path);
+
     PluginMeta meta;
     meta.registered_name = plugin_name;
-    meta.class_name = plugin_name;  // Could be different if we add a class_name() export
+    meta.class_name = plugin_name;
+    meta.meta = meta_dict;
+
+    // Extract category from meta
+    if (auto cat_it = meta_dict.find("category"); cat_it != meta_dict.end()) {
+        if (auto cat = get_as<std::string>(cat_it->second)) {
+            meta.category = *cat;
+        }
+    }
 
     if (plugin_type == "widget") {
         auto create_fn = reinterpret_cast<PluginWidgetCreateFn>(dlsym(handle, "create"));
@@ -182,6 +273,22 @@ Result<std::vector<std::string>> PluginManager::get_children_names(const DataPat
         return Ok(names);
     }
 
+    if (parts.size() == 2) {
+        // Return children of a specific plugin (e.g., /widget/button -> ["meta"])
+        std::string category = parts[0];
+        std::string name = parts[1];
+        auto cat_it = _plugins.find(category);
+        if (cat_it == _plugins.end()) {
+            return Err<std::vector<std::string>>("PluginManager: category '" + category + "' not found");
+        }
+        auto plugin_it = cat_it->second.find(name);
+        if (plugin_it == cat_it->second.end()) {
+            return Err<std::vector<std::string>>("PluginManager: '" + name + "' not found in '" + category + "'");
+        }
+        // Each plugin has a "meta" child
+        return Ok(std::vector<std::string>{"meta"});
+    }
+
     return Err<std::vector<std::string>>("PluginManager: path too deep: " + path.to_string());
 }
 
@@ -223,8 +330,23 @@ Result<Dict> PluginManager::get_metadata(const DataPath& path) {
         Dict meta;
         meta["class-name"] = pm.class_name;
         meta["registered-name"] = pm.registered_name;
-        // Note: can't store create_fn in Dict directly, use create_widget/create_tree methods
+        meta["category"] = pm.category;
         return Ok(meta);
+    }
+
+    if (parts.size() == 3 && parts[2] == "meta") {
+        // Return the full meta.yaml contents at /widget/button/meta
+        std::string category = parts[0];
+        std::string name = parts[1];
+        auto cat_it = _plugins.find(category);
+        if (cat_it == _plugins.end()) {
+            return Err<Dict>("PluginManager: category '" + category + "' not found");
+        }
+        auto plugin_it = cat_it->second.find(name);
+        if (plugin_it == cat_it->second.end()) {
+            return Err<Dict>("PluginManager: '" + name + "' not found in '" + category + "'");
+        }
+        return Ok(plugin_it->second.meta);
     }
 
     return Err<Dict>("PluginManager: path too deep: " + path.to_string());

@@ -31,7 +31,9 @@ using TreeLikeCreateFn = std::function<Result<TreeLikePtr>()>;
 struct PluginMeta {
     std::string class_name;
     std::string registered_name;
-    std::any create_fn;  // Holds the appropriate create function
+    std::string category;           // Widget category (e.g., "Inputs", "Containers")
+    Dict meta;                       // Full meta.yaml contents as Dict
+    std::any create_fn;             // Holds the appropriate create function
 };
 
 // PluginManager - TreeLike that holds all plugins organized by category

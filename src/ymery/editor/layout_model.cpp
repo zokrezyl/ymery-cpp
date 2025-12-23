@@ -141,6 +141,84 @@ void LayoutModel::add_child(LayoutNode* parent, const std::string& widget_type) 
     parent->children.push_back(std::move(new_node));
 }
 
+void LayoutModel::wrap_root_in_column() {
+    if (!_root) return;
+
+    // Create new column container
+    auto column = std::make_unique<LayoutNode>("column");
+    column->id = _next_id();
+    column->label = "column";
+
+    // Move current root to be child of column
+    _root->parent = column.get();
+    column->children.push_back(std::move(_root));
+
+    // Column becomes new root
+    _root = std::move(column);
+
+    // Update selection to new root if old root was selected
+    if (_selected && _selected->parent == _root.get()) {
+        // Keep selection on the original widget
+    } else if (_selected == nullptr) {
+        _selected = _root.get();
+    }
+}
+
+bool LayoutModel::can_move_up(LayoutNode* node) const {
+    if (!node || !node->parent) return false;
+
+    auto& siblings = node->parent->children;
+    for (size_t i = 0; i < siblings.size(); ++i) {
+        if (siblings[i].get() == node) {
+            return i > 0;  // Can move up if not first child
+        }
+    }
+    return false;
+}
+
+bool LayoutModel::can_move_down(LayoutNode* node) const {
+    if (!node || !node->parent) return false;
+
+    auto& siblings = node->parent->children;
+    for (size_t i = 0; i < siblings.size(); ++i) {
+        if (siblings[i].get() == node) {
+            return i < siblings.size() - 1;  // Can move down if not last child
+        }
+    }
+    return false;
+}
+
+void LayoutModel::move_up(LayoutNode* node) {
+    if (!can_move_up(node)) return;
+
+    auto& siblings = node->parent->children;
+    for (size_t i = 1; i < siblings.size(); ++i) {
+        if (siblings[i].get() == node) {
+            // Swap with previous sibling
+            std::swap(siblings[i], siblings[i - 1]);
+            break;
+        }
+    }
+}
+
+void LayoutModel::move_down(LayoutNode* node) {
+    if (!can_move_down(node)) return;
+
+    auto& siblings = node->parent->children;
+    for (size_t i = 0; i < siblings.size() - 1; ++i) {
+        if (siblings[i].get() == node) {
+            // Swap with next sibling
+            std::swap(siblings[i], siblings[i + 1]);
+            break;
+        }
+    }
+}
+
+void LayoutModel::set_same_line(LayoutNode* node, bool same_line) {
+    if (!node) return;
+    node->position = same_line ? LayoutPosition::SameLine : LayoutPosition::NewLine;
+}
+
 void LayoutModel::remove(LayoutNode* node) {
     if (!node) return;
 

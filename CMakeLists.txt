@@ -454,6 +454,7 @@ if(NOT YMERY_WEB)
         ${CMAKE_SOURCE_DIR}/third_party/imgui/backends
     )
     target_link_libraries(ymery-editor PRIVATE
+        ymery
         imgui
         glfw
         spdlog::spdlog

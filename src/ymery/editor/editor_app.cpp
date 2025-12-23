@@ -243,9 +243,20 @@ bool EditorApp::init(const EditorConfig& config) {
     ImGui_ImplOpenGL3_Init(glsl_version);
 #endif
 
+    // Create plugin manager
+    if (!config.plugins_path.empty()) {
+        auto pm_res = ymery::PluginManager::create(config.plugins_path);
+        if (pm_res) {
+            _plugin_manager = *pm_res;
+            spdlog::info("Plugin manager created with path: {}", config.plugins_path);
+        } else {
+            spdlog::warn("Failed to create plugin manager: {}", ymery::error_msg(pm_res));
+        }
+    }
+
     // Create editor components
     _widget_tree = std::make_unique<WidgetTree>();
-    _canvas = std::make_unique<EditorCanvas>(_model, *_widget_tree);
+    _canvas = std::make_unique<EditorCanvas>(_model, *_widget_tree, _plugin_manager);
 
     spdlog::info("EditorApp initialized successfully");
     return true;
@@ -415,7 +426,8 @@ void EditorApp::render_menu_bar() {
 
         if (ImGui::BeginMenu("View")) {
             ImGui::MenuItem("Widget Browser", nullptr, true);
-            ImGui::MenuItem("Layout Editor", nullptr, true);
+            ImGui::MenuItem("Layout View", nullptr, true);
+            ImGui::MenuItem("Preview", nullptr, true);
             ImGui::EndMenu();
         }
 
@@ -462,22 +474,248 @@ void EditorApp::render_dockspace() {
         ImGuiID dock_left, dock_right;
         ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Left, 0.25f, &dock_left, &dock_right);
 
+        // Split right into top (Layout View) and bottom (Preview)
+        ImGuiID dock_right_top, dock_right_bottom;
+        ImGui::DockBuilderSplitNode(dock_right, ImGuiDir_Up, 0.5f, &dock_right_top, &dock_right_bottom);
+
         ImGui::DockBuilderDockWindow("Widget Browser", dock_left);
-        ImGui::DockBuilderDockWindow("Layout Editor", dock_right);
+        ImGui::DockBuilderDockWindow("Layout View", dock_right_top);
+        ImGui::DockBuilderDockWindow("Preview", dock_right_bottom);
 
         ImGui::DockBuilderFinish(dockspace_id);
     }
 
     ImGui::End();
 
-    // Render the two panels
+    // Render the three panels
     ImGui::Begin("Widget Browser");
     _widget_tree->render();
     ImGui::End();
 
-    ImGui::Begin("Layout Editor");
+    ImGui::Begin("Layout View");
     _canvas->render();
     ImGui::End();
+
+    ImGui::Begin("Preview");
+    render_preview();
+    ImGui::End();
+}
+
+void EditorApp::render_preview() {
+    if (_model.empty()) {
+        ImVec2 avail = ImGui::GetContentRegionAvail();
+        ImVec2 text_size = ImGui::CalcTextSize("No widgets in layout");
+        ImGui::SetCursorPos(ImVec2(
+            (avail.x - text_size.x) / 2,
+            (avail.y - text_size.y) / 2
+        ));
+        ImGui::TextDisabled("No widgets in layout");
+        return;
+    }
+
+    render_preview_node(_model.root());
+}
+
+void EditorApp::render_preview_node(LayoutNode* node) {
+    if (!node) return;
+
+    ImGui::PushID(node->id);
+
+    const std::string& type = node->widget_type;
+    const std::string& label = node->label;
+
+    // Handle same-line positioning
+    if (node->position == LayoutPosition::SameLine && node->parent) {
+        // Check if this is not the first child
+        auto& siblings = node->parent->children;
+        for (size_t i = 0; i < siblings.size(); ++i) {
+            if (siblings[i].get() == node && i > 0) {
+                ImGui::SameLine();
+                break;
+            }
+        }
+    }
+
+    // Render widget based on type
+    bool has_children = !node->children.empty();
+
+    if (type == "window") {
+        if (ImGui::Begin(label.c_str())) {
+            for (auto& child : node->children) {
+                render_preview_node(child.get());
+            }
+        }
+        ImGui::End();
+    }
+    else if (type == "button") {
+        ImGui::Button(label.c_str());
+    }
+    else if (type == "text") {
+        ImGui::Text("%s", label.c_str());
+    }
+    else if (type == "separator") {
+        ImGui::Separator();
+    }
+    else if (type == "spacing") {
+        ImGui::Spacing();
+    }
+    else if (type == "checkbox") {
+        static std::map<int, bool> checkbox_states;
+        ImGui::Checkbox(label.c_str(), &checkbox_states[node->id]);
+    }
+    else if (type == "input-text") {
+        static std::map<int, std::string> input_buffers;
+        if (input_buffers.find(node->id) == input_buffers.end()) {
+            input_buffers[node->id] = "";
+        }
+        char buf[256];
+        strncpy(buf, input_buffers[node->id].c_str(), sizeof(buf) - 1);
+        buf[sizeof(buf) - 1] = '\0';
+        if (ImGui::InputText(label.c_str(), buf, sizeof(buf))) {
+            input_buffers[node->id] = buf;
+        }
+    }
+    else if (type == "input-int") {
+        static std::map<int, int> int_values;
+        ImGui::InputInt(label.c_str(), &int_values[node->id]);
+    }
+    else if (type == "slider-int") {
+        static std::map<int, int> slider_values;
+        ImGui::SliderInt(label.c_str(), &slider_values[node->id], 0, 100);
+    }
+    else if (type == "slider-float") {
+        static std::map<int, float> slider_values;
+        ImGui::SliderFloat(label.c_str(), &slider_values[node->id], 0.0f, 1.0f);
+    }
+    else if (type == "combo") {
+        static std::map<int, int> combo_values;
+        const char* items[] = { "Option 1", "Option 2", "Option 3" };
+        ImGui::Combo(label.c_str(), &combo_values[node->id], items, 3);
+    }
+    else if (type == "color-edit") {
+        static std::map<int, ImVec4> colors;
+        if (colors.find(node->id) == colors.end()) {
+            colors[node->id] = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+        }
+        ImGui::ColorEdit4(label.c_str(), &colors[node->id].x);
+    }
+    else if (type == "row" || type == "group") {
+        ImGui::BeginGroup();
+        bool first = true;
+        for (auto& child : node->children) {
+            if (!first) ImGui::SameLine();
+            render_preview_node(child.get());
+            first = false;
+        }
+        ImGui::EndGroup();
+    }
+    else if (type == "column") {
+        ImGui::BeginGroup();
+        for (auto& child : node->children) {
+            render_preview_node(child.get());
+        }
+        ImGui::EndGroup();
+    }
+    else if (type == "child") {
+        ImVec2 size(0, 100);  // Default child size
+        if (ImGui::BeginChild(label.c_str(), size, true)) {
+            for (auto& child : node->children) {
+                render_preview_node(child.get());
+            }
+        }
+        ImGui::EndChild();
+    }
+    else if (type == "tree-node") {
+        if (ImGui::TreeNode(label.c_str())) {
+            for (auto& child : node->children) {
+                render_preview_node(child.get());
+            }
+            ImGui::TreePop();
+        }
+    }
+    else if (type == "collapsing-header") {
+        if (ImGui::CollapsingHeader(label.c_str())) {
+            for (auto& child : node->children) {
+                render_preview_node(child.get());
+            }
+        }
+    }
+    else if (type == "tab-bar") {
+        if (ImGui::BeginTabBar(label.c_str())) {
+            for (auto& child : node->children) {
+                render_preview_node(child.get());
+            }
+            ImGui::EndTabBar();
+        }
+    }
+    else if (type == "tab-item") {
+        if (ImGui::BeginTabItem(label.c_str())) {
+            for (auto& child : node->children) {
+                render_preview_node(child.get());
+            }
+            ImGui::EndTabItem();
+        }
+    }
+    else if (type == "tooltip") {
+        if (ImGui::IsItemHovered()) {
+            ImGui::BeginTooltip();
+            ImGui::Text("%s", label.c_str());
+            ImGui::EndTooltip();
+        }
+    }
+    else if (type == "popup" || type == "popup-modal") {
+        // Popups need to be triggered - show as button
+        if (ImGui::Button(("Open " + label).c_str())) {
+            ImGui::OpenPopup(label.c_str());
+        }
+        bool open = true;
+        if (type == "popup-modal") {
+            if (ImGui::BeginPopupModal(label.c_str(), &open)) {
+                for (auto& child : node->children) {
+                    render_preview_node(child.get());
+                }
+                if (ImGui::Button("Close")) {
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::EndPopup();
+            }
+        } else {
+            if (ImGui::BeginPopup(label.c_str())) {
+                for (auto& child : node->children) {
+                    render_preview_node(child.get());
+                }
+                ImGui::EndPopup();
+            }
+        }
+    }
+    else if (type == "toggle") {
+        static std::map<int, bool> toggle_states;
+        // Simple checkbox as toggle representation
+        ImGui::Checkbox(label.c_str(), &toggle_states[node->id]);
+    }
+    else if (type == "knob") {
+        static std::map<int, float> knob_values;
+        // Show as slider since ImGui doesn't have built-in knob
+        ImGui::SliderFloat(label.c_str(), &knob_values[node->id], 0.0f, 1.0f);
+    }
+    else if (type == "markdown") {
+        // Show markdown as plain text
+        ImGui::TextWrapped("%s", label.c_str());
+    }
+    else {
+        // Unknown widget type - show placeholder
+        ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.3f, 1.0f), "[%s: %s]", type.c_str(), label.c_str());
+        // Still render children for containers
+        if (has_children) {
+            ImGui::Indent();
+            for (auto& child : node->children) {
+                render_preview_node(child.get());
+            }
+            ImGui::Unindent();
+        }
+    }
+
+    ImGui::PopID();
 }
 
 } // namespace ymery::editor
