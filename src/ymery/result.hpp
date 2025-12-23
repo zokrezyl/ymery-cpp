@@ -1,6 +1,11 @@
 #pragma once
 
+#ifdef YMERY_ANDROID
+// Use tl::expected on Android due to libc++ issues with std::expected and std::any
+#include <tl/expected.hpp>
+#else
 #include <expected>
+#endif
 #include <string>
 #include <memory>
 #include <source_location>
@@ -19,6 +24,15 @@ public:
     Error(const Error& other)
         : _msg(other._msg), _loc(other._loc) {
         if (other._prev) _prev = std::make_unique<Error>(*other._prev);
+    }
+
+    Error& operator=(const Error& other) {
+        if (this != &other) {
+            _msg = other._msg;
+            _loc = other._loc;
+            _prev = other._prev ? std::make_unique<Error>(*other._prev) : nullptr;
+        }
+        return *this;
     }
 
     Error(Error&&) = default;
@@ -44,7 +58,35 @@ private:
     std::source_location _loc;
 };
 
-// Result using C++23 std::expected
+#ifdef YMERY_ANDROID
+// Use tl::expected on Android
+template<typename T>
+using Result = tl::expected<T, Error>;
+
+// Helper macros/functions for creating results
+template<typename T>
+[[nodiscard]] inline Result<T> Ok(T value) {
+    return Result<T>(std::move(value));
+}
+
+[[nodiscard]] inline Result<void> Ok() {
+    return Result<void>();
+}
+
+template<typename T = void>
+[[nodiscard]] inline tl::unexpected<Error> Err(std::string msg, std::source_location loc = std::source_location::current()) {
+    return tl::make_unexpected(Error(std::move(msg), loc));
+}
+
+template<typename T, typename U>
+[[nodiscard]] inline tl::unexpected<Error> Err(std::string msg, const Result<U>& prev, std::source_location loc = std::source_location::current()) {
+    if (!prev.has_value()) {
+        return tl::make_unexpected(Error(std::move(msg), prev.error(), loc));
+    }
+    return tl::make_unexpected(Error(std::move(msg), loc));
+}
+#else
+// Use std::expected on other platforms
 template<typename T>
 using Result = std::expected<T, Error>;
 
@@ -70,6 +112,7 @@ template<typename T, typename U>
     }
     return std::unexpected(Error(std::move(msg), loc));
 }
+#endif
 
 // Get error message from result
 template<typename T>

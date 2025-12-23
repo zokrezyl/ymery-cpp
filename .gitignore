@@ -1,0 +1,44 @@
+# Build directories
+build*/
+cmake-build*/
+
+# Android
+android/app/build/
+android/app/.cxx/
+android/.gradle/
+*.apk
+*.aab
+
+# IDE and caches
+.idea/
+.vscode/
+.cache/
+*.swp
+*.swo
+*~
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+compile_commands.json
+Makefile.cmake
+
+# Libraries and objects
+*.a
+*.so
+*.dylib
+*.dll
+*.o
+*.obj
+
+# Executables
+ymery-cli
+ymery-editor
+
+# imgui.ini (generated at runtime)
+imgui.ini
+
+# OS
+.DS_Store
+Thumbs.db

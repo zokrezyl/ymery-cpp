@@ -35,6 +35,12 @@ else()
     set(YMERY_WEB OFF)
 endif()
 
+# Android build option
+option(YMERY_ANDROID "Build for Android" OFF)
+if(YMERY_ANDROID)
+    message(STATUS "Building for Android")
+endif()
+
 # Graphics backend option (ignored for Emscripten - always WebGPU)
 option(YMERY_USE_WEBGPU "Use WebGPU backend instead of OpenGL" OFF)
 if(YMERY_WEB)
@@ -80,8 +86,18 @@ CPMAddPackage(
     OPTIONS "YAML_CPP_BUILD_TESTS OFF" "YAML_CPP_BUILD_TOOLS OFF"
 )
 
-# GLFW - Emscripten provides its own
-if(NOT YMERY_WEB)
+# tl::expected - better std::expected compatibility for Android NDK
+if(YMERY_ANDROID)
+    CPMAddPackage(
+        NAME tl_expected
+        GITHUB_REPOSITORY TartanLlama/expected
+        GIT_TAG v1.1.0
+        OPTIONS "EXPECTED_BUILD_TESTS OFF"
+    )
+endif()
+
+# GLFW - Emscripten and Android provide their own windowing
+if(NOT YMERY_WEB AND NOT YMERY_ANDROID)
     CPMAddPackage(
         NAME glfw
         GITHUB_REPOSITORY glfw/glfw
@@ -120,14 +136,19 @@ if(imgui_ADDED)
         ${imgui_SOURCE_DIR}/imgui_draw.cpp
         ${imgui_SOURCE_DIR}/imgui_tables.cpp
         ${imgui_SOURCE_DIR}/imgui_widgets.cpp
-        ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
     )
 
+    # Platform backend
+    if(YMERY_ANDROID)
+        list(APPEND IMGUI_SOURCES ${imgui_SOURCE_DIR}/backends/imgui_impl_android.cpp)
+    else()
+        list(APPEND IMGUI_SOURCES ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp)
+    endif()
+
+    # Renderer backend
     if(YMERY_USE_WEBGPU)
-        # WebGPU backend
         list(APPEND IMGUI_SOURCES ${imgui_SOURCE_DIR}/backends/imgui_impl_wgpu.cpp)
     else()
-        # OpenGL backend
         list(APPEND IMGUI_SOURCES ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp)
     endif()
 
@@ -140,6 +161,10 @@ if(imgui_ADDED)
     if(YMERY_WEB)
         # Emscripten - use USE_GLFW and USE_WEBGPU
         target_compile_definitions(imgui PUBLIC YMERY_USE_WEBGPU=1 YMERY_WEB=1)
+    elseif(YMERY_ANDROID)
+        # Android - OpenGL ES
+        target_compile_definitions(imgui PUBLIC YMERY_ANDROID=1)
+        target_link_libraries(imgui PUBLIC android log EGL GLESv3)
     elseif(YMERY_USE_WEBGPU)
         # Native WebGPU (wgpu-native)
         target_link_libraries(imgui PUBLIC glfw webgpu)
@@ -292,8 +317,8 @@ if(implot3d_ADDED)
     target_link_libraries(implot3d PUBLIC imgui)
 endif()
 
-# nanovg - Vector graphics (requires OpenGL)
-if(NOT YMERY_WEB)
+# nanovg - Vector graphics (requires OpenGL, desktop only)
+if(NOT YMERY_WEB AND NOT YMERY_ANDROID)
     CPMAddPackage(
         NAME nanovg
         GITHUB_REPOSITORY memononen/nanovg
@@ -319,34 +344,30 @@ endif()
 # )
 # Note: immvision requires OpenCV, enable if OpenCV is available
 
+# Core library sources (shared between all platforms)
+set(YMERY_CORE_SOURCES
+    src/ymery/types.cpp
+    src/ymery/data_bag.cpp
+    src/ymery/dispatcher.cpp
+    src/ymery/lang.cpp
+    src/ymery/plugin_manager.cpp
+    src/ymery/frontend/widget.cpp
+    src/ymery/frontend/widget_factory.cpp
+    src/ymery/frontend/composite.cpp
+    src/ymery/backend/audio_buffer.cpp
+)
+
+# App.cpp requires GLFW - only include on non-Android platforms
+if(NOT YMERY_ANDROID)
+    list(APPEND YMERY_CORE_SOURCES src/ymery/app.cpp)
+endif()
+
 # Core library
-if(YMERY_WEB)
-    # Static library for Emscripten (no shared libs)
-    add_library(ymery STATIC
-        src/ymery/types.cpp
-        src/ymery/data_bag.cpp
-        src/ymery/dispatcher.cpp
-        src/ymery/lang.cpp
-        src/ymery/plugin_manager.cpp
-        src/ymery/app.cpp
-        src/ymery/frontend/widget.cpp
-        src/ymery/frontend/widget_factory.cpp
-        src/ymery/frontend/composite.cpp
-        src/ymery/backend/audio_buffer.cpp
-    )
+if(YMERY_WEB OR YMERY_ANDROID)
+    # Static library for Emscripten and Android (no shared libs / dynamic loading)
+    add_library(ymery STATIC ${YMERY_CORE_SOURCES})
 else()
-    add_library(ymery SHARED
-        src/ymery/types.cpp
-        src/ymery/data_bag.cpp
-        src/ymery/dispatcher.cpp
-        src/ymery/lang.cpp
-        src/ymery/plugin_manager.cpp
-        src/ymery/app.cpp
-        src/ymery/frontend/widget.cpp
-        src/ymery/frontend/widget_factory.cpp
-        src/ymery/frontend/composite.cpp
-        src/ymery/backend/audio_buffer.cpp
-    )
+    add_library(ymery SHARED ${YMERY_CORE_SOURCES})
 endif()
 
 target_include_directories(ymery PUBLIC
@@ -368,6 +389,25 @@ if(YMERY_WEB)
         spdlog::spdlog
     )
     target_compile_definitions(ymery PUBLIC YMERY_WEB=1)
+elseif(YMERY_ANDROID)
+    target_link_libraries(ymery PUBLIC
+        yaml-cpp
+        imgui
+        implot
+        imgui_md
+        imgui_knobs
+        imspinner
+        imgui_toggle
+        imcoolbar
+        imguizmo
+        implot3d
+        spdlog::spdlog
+        android
+        log
+    )
+    # Add tl::expected include directory (header-only library)
+    target_include_directories(ymery PUBLIC ${tl_expected_SOURCE_DIR}/include)
+    target_compile_definitions(ymery PUBLIC YMERY_ANDROID=1)
 else()
     target_link_libraries(ymery PUBLIC
         yaml-cpp
@@ -390,23 +430,25 @@ else()
     endif()
 endif()
 
-# Main executable
-add_executable(ymery-cli src/main.cpp)
-target_link_libraries(ymery-cli PRIVATE ymery)
+# Main executable (not for Android - needs native activity)
+if(NOT YMERY_ANDROID)
+    add_executable(ymery-cli src/main.cpp)
+    target_link_libraries(ymery-cli PRIVATE ymery)
 
-if(YMERY_WEB)
-    # Emscripten linker flags
-    set_target_properties(ymery-cli PROPERTIES
-        SUFFIX ".html"
-        LINK_FLAGS "-s USE_GLFW=3 -s USE_WEBGPU=1 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s NO_EXIT_RUNTIME=0 -s ASSERTIONS=1 --preload-file ${CMAKE_SOURCE_DIR}/layout@/layout"
-    )
-else()
-    # Native: enable symbol exports for plugins
-    set_target_properties(ymery-cli PROPERTIES ENABLE_EXPORTS ON)
+    if(YMERY_WEB)
+        # Emscripten linker flags
+        set_target_properties(ymery-cli PROPERTIES
+            SUFFIX ".html"
+            LINK_FLAGS "-s USE_GLFW=3 -s USE_WEBGPU=1 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s NO_EXIT_RUNTIME=0 -s ASSERTIONS=1 --preload-file ${CMAKE_SOURCE_DIR}/layout@/layout"
+        )
+    else()
+        # Native: enable symbol exports for plugins
+        set_target_properties(ymery-cli PROPERTIES ENABLE_EXPORTS ON)
+    endif()
 endif()
 
-# Widget Layout Editor (not for Emscripten)
-if(NOT YMERY_WEB)
+# Widget Layout Editor (desktop only)
+if(NOT YMERY_WEB AND NOT YMERY_ANDROID)
     add_executable(ymery-editor
         src/ymery/editor/main.cpp
         src/ymery/editor/editor_app.cpp
@@ -434,10 +476,12 @@ if(NOT YMERY_WEB)
     endif()
 endif()
 
-# Plugins (not for Emscripten - no dynamic loading)
-if(NOT YMERY_WEB)
+# Plugins (desktop only - no dynamic loading on Web/Android)
+if(NOT YMERY_WEB AND NOT YMERY_ANDROID)
     add_subdirectory(src/ymery/plugins)
 endif()
 
-# Examples
-add_subdirectory(examples EXCLUDE_FROM_ALL)
+# Examples (not for Android)
+if(NOT YMERY_ANDROID)
+    add_subdirectory(examples EXCLUDE_FROM_ALL)
+endif()
