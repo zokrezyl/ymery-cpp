@@ -2,6 +2,10 @@
 
 C++ implementation of the ymery UI framework using ImGui with YAML-based widget definitions.
 
+For the sister project, python based implementation, see https://github.com/zokrezyl/ymery. That repo contains more documentation as well as an online demo https://zokrezyl.github.io/ymery/demo/index.html
+
+The two repos will be merged at a certain moment.
+
 ## Features
 
 - YAML-based UI layout definitions
@@ -11,6 +15,7 @@ C++ implementation of the ymery UI framework using ImGui with YAML-based widget 
 - ImPlot for charts
 - imgui-node-editor for node graphs
 - imgui_markdown for markdown rendering
+- powerfull layout editor
 
 ## Building
 
