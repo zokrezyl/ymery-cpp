@@ -69,6 +69,8 @@ public:
     void move_up(LayoutNode* node);    // Swap with previous sibling
     void move_down(LayoutNode* node);  // Swap with next sibling
     void set_same_line(LayoutNode* node, bool same_line);  // Change position
+    void change_type(LayoutNode* node, const std::string& new_type);  // Change widget type
+    void move_node(LayoutNode* node, LayoutNode* new_parent, int position = -1);  // Move node to new parent
 
     // Deletion
     void remove(LayoutNode* node);

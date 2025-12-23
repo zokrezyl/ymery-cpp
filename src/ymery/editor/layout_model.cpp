@@ -219,6 +219,49 @@ void LayoutModel::set_same_line(LayoutNode* node, bool same_line) {
     node->position = same_line ? LayoutPosition::SameLine : LayoutPosition::NewLine;
 }
 
+void LayoutModel::change_type(LayoutNode* node, const std::string& new_type) {
+    if (!node) return;
+    node->widget_type = new_type;
+    // Update label if it matches the old type
+    if (node->label == node->widget_type || node->label.empty()) {
+        node->label = new_type;
+    }
+}
+
+void LayoutModel::move_node(LayoutNode* node, LayoutNode* new_parent, int position) {
+    if (!node || !new_parent || !node->parent) return;
+    if (node == new_parent) return;  // Can't move to self
+    if (!new_parent->can_have_children()) return;
+
+    // Check if new_parent is a descendant of node (would create cycle)
+    for (auto* p = new_parent; p; p = p->parent) {
+        if (p == node) return;  // Can't move to own descendant
+    }
+
+    // Remove from old parent
+    auto* old_parent = node->parent;
+    std::unique_ptr<LayoutNode> node_ptr;
+
+    auto& old_siblings = old_parent->children;
+    for (auto it = old_siblings.begin(); it != old_siblings.end(); ++it) {
+        if (it->get() == node) {
+            node_ptr = std::move(*it);
+            old_siblings.erase(it);
+            break;
+        }
+    }
+
+    if (!node_ptr) return;
+
+    // Add to new parent
+    node_ptr->parent = new_parent;
+    if (position < 0 || position >= static_cast<int>(new_parent->children.size())) {
+        new_parent->children.push_back(std::move(node_ptr));
+    } else {
+        new_parent->children.insert(new_parent->children.begin() + position, std::move(node_ptr));
+    }
+}
+
 void LayoutModel::remove(LayoutNode* node) {
     if (!node) return;
 

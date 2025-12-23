@@ -29,7 +29,9 @@ private:
             AddChild,
             // For root nodes - wrap in column first
             WrapInsertBefore, WrapInsertAfter,
-            WrapInsertBeforeSameLine, WrapInsertAfterSameLine
+            WrapInsertBeforeSameLine, WrapInsertAfterSameLine,
+            // Change widget type
+            ChangeType
         } action = Action::None;
     };
     PendingInsertion _pending;
@@ -41,6 +43,18 @@ private:
         bool add_as_child = false;  // true = add child, false = insert after
     };
     std::vector<PendingDrop> _pending_drops;
+
+    // Pending move action (drag existing node) - deferred
+    struct PendingMove {
+        int node_id = -1;    // Node being moved
+        int target_id = -1;  // Drop target
+        bool into_container = false;  // true = add as child, false = insert after
+    };
+    std::vector<PendingMove> _pending_moves;
+
+    // Context popup state (replaces menu system)
+    int _context_popup_node_id = -1;
+    bool _context_popup_open = false;
 
     // Render methods
     void _render_empty_state();

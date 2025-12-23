@@ -18,23 +18,40 @@ void EditorCanvas::render() {
     // Process any pending drops after rendering is complete
     // This avoids iterator invalidation during tree traversal
     _process_pending_drops();
+
+    // Context popup (replaces menu - stays open)
+    if (_context_popup_open) {
+        ImGui::OpenPopup("##context_popup");
+        _context_popup_open = false;
+    }
+
+    if (ImGui::BeginPopup("##context_popup")) {
+        auto* node = _model.find_by_id(_context_popup_node_id);
+        if (node) {
+            _render_context_menu(node);
+        }
+        ImGui::EndPopup();
+    }
 }
 
 void EditorCanvas::_render_empty_state() {
-    // Center the "Add Widget" button
-    ImVec2 avail = ImGui::GetContentRegionAvail();
-    ImVec2 button_size(150, 50);
+    // Show "undefined" placeholder as root of the tree
+    ImGui::Text("Layout:");
+    ImGui::Separator();
 
-    ImGui::SetCursorPos(ImVec2(
-        (avail.x - button_size.x) / 2,
-        (avail.y - button_size.y) / 2
-    ));
+    // Render placeholder as a button like normal nodes
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0.5f, 0.5f, 0.5f));
+    if (ImGui::Button("[undefined]")) {
+        // Click selects (nothing to select yet)
+    }
+    ImGui::PopStyleColor();
 
-    if (ImGui::Button("+ Add Root Widget", button_size)) {
-        ImGui::OpenPopup("add_root_widget");
+    // Right-click to change type (set root)
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+        ImGui::OpenPopup("set_root_widget");
     }
 
-    // Also accept drops on empty canvas
+    // Also accept drops
     if (ImGui::BeginDragDropTarget()) {
         if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("WIDGET_TYPE")) {
             std::string type(static_cast<const char*>(payload->Data));
@@ -45,7 +62,7 @@ void EditorCanvas::_render_empty_state() {
     }
 
     // Popup with widget tree
-    if (ImGui::BeginPopup("add_root_widget")) {
+    if (ImGui::BeginPopup("set_root_widget")) {
         ImGui::Text("Select widget type:");
         ImGui::Separator();
 
@@ -64,43 +81,6 @@ void EditorCanvas::_render_layout() {
     ImGui::Separator();
 
     _render_node(_model.root());
-
-    // Add a drop zone below the tree for adding widgets
-    ImGui::Spacing();
-    ImGui::Spacing();
-
-    // Invisible button as drop zone
-    ImVec2 avail = ImGui::GetContentRegionAvail();
-    if (avail.y > 30) {
-        ImGui::InvisibleButton("##drop_zone", ImVec2(avail.x, avail.y));
-
-        // Show hint when dragging
-        if (ImGui::BeginDragDropTarget()) {
-            // Draw visual feedback
-            ImDrawList* draw_list = ImGui::GetWindowDrawList();
-            ImVec2 min = ImGui::GetItemRectMin();
-            ImVec2 max = ImGui::GetItemRectMax();
-            draw_list->AddRectFilled(min, max, IM_COL32(100, 150, 200, 50));
-            draw_list->AddRect(min, max, IM_COL32(100, 150, 200, 200), 0, 0, 2.0f);
-
-            ImVec2 text_pos((min.x + max.x) / 2 - 50, (min.y + max.y) / 2 - 10);
-            draw_list->AddText(text_pos, IM_COL32(200, 200, 200, 255), "Drop widget here");
-
-            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("WIDGET_TYPE")) {
-                std::string type(static_cast<const char*>(payload->Data));
-                // Queue the drop action - don't execute immediately
-                auto* root = _model.root();
-                if (root) {
-                    PendingDrop drop;
-                    drop.target_id = root->id;
-                    drop.widget_type = type;
-                    drop.add_as_child = root->can_have_children();
-                    _pending_drops.push_back(drop);
-                }
-            }
-            ImGui::EndDragDropTarget();
-        }
-    }
 
     // Handle pending insertion from context menu
     if (_pending.action != PendingInsertion::Action::None) {
@@ -161,13 +141,20 @@ void EditorCanvas::_render_node(LayoutNode* node, int depth, bool same_line) {
         ImGui::PopStyleColor();
     }
 
+    // Drag source for reordering (only non-root nodes)
+    if (node->parent && ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+        ImGui::SetDragDropPayload("LAYOUT_NODE", &node->id, sizeof(int));
+        ImGui::Text("Move: %s", node->widget_type.c_str());
+        ImGui::EndDragDropSource();
+    }
+
     // Drag and drop target
     _handle_drop(node);
 
-    // Context menu
-    if (ImGui::BeginPopupContextItem()) {
-        _render_context_menu(node);
-        ImGui::EndPopup();
+    // Right-click opens context popup
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+        _context_popup_node_id = node->id;
+        _context_popup_open = true;
     }
 
     // Render children
@@ -188,6 +175,7 @@ void EditorCanvas::_render_node(LayoutNode* node, int depth, bool same_line) {
 
 void EditorCanvas::_handle_drop(LayoutNode* node) {
     if (ImGui::BeginDragDropTarget()) {
+        // Handle new widget drops from widget tree
         if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("WIDGET_TYPE")) {
             std::string type(static_cast<const char*>(payload->Data));
 
@@ -198,11 +186,25 @@ void EditorCanvas::_handle_drop(LayoutNode* node) {
             drop.add_as_child = node->can_have_children();
             _pending_drops.push_back(drop);
         }
+
+        // Handle node moves (reordering)
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("LAYOUT_NODE")) {
+            int dragged_id = *static_cast<const int*>(payload->Data);
+
+            // Queue the move action
+            PendingMove move;
+            move.node_id = dragged_id;
+            move.target_id = node->id;
+            move.into_container = node->can_have_children();
+            _pending_moves.push_back(move);
+        }
+
         ImGui::EndDragDropTarget();
     }
 }
 
 void EditorCanvas::_process_pending_drops() {
+    // Process new widget drops
     for (const auto& drop : _pending_drops) {
         auto* target = _model.find_by_id(drop.target_id);
         if (!target) continue;
@@ -222,17 +224,48 @@ void EditorCanvas::_process_pending_drops() {
         }
     }
     _pending_drops.clear();
+
+    // Process node moves (reordering)
+    for (const auto& move : _pending_moves) {
+        auto* node = _model.find_by_id(move.node_id);
+        auto* target = _model.find_by_id(move.target_id);
+        if (!node || !target || node == target) continue;
+
+        if (move.into_container) {
+            // Move into container as last child
+            _model.move_node(node, target);
+            spdlog::info("Moved {} into {}", node->widget_type, target->widget_type);
+        } else if (target->parent) {
+            // Move to same parent, insert after target
+            auto* parent = target->parent;
+            // Find target's position
+            int pos = 0;
+            for (size_t i = 0; i < parent->children.size(); ++i) {
+                if (parent->children[i].get() == target) {
+                    pos = static_cast<int>(i) + 1;
+                    break;
+                }
+            }
+            _model.move_node(node, parent, pos);
+            spdlog::info("Moved {} after {}", node->widget_type, target->widget_type);
+        }
+    }
+    _pending_moves.clear();
 }
 
 void EditorCanvas::_render_context_menu(LayoutNode* node) {
     ImGui::Text("%s", node->widget_type.c_str());
     ImGui::Separator();
 
-    // Edit Properties - first item
-    if (ImGui::BeginMenu("Edit Properties")) {
+    // Edit Properties - collapsible section in same popup
+    if (ImGui::CollapsingHeader("Edit Properties")) {
         _render_properties_menu(node);
-        ImGui::EndMenu();
     }
+
+    ImGui::Separator();
+
+    // Change widget type
+    _render_insertion_submenu("Change Type", node, PendingInsertion::Action::ChangeType);
 
     ImGui::Separator();
 
@@ -496,6 +529,9 @@ void EditorCanvas::_execute_pending_insertion(const std::string& widget_type) {
             if (_model.root() && !_model.root()->children.empty()) {
                 _model.insert_after(_model.root()->children[0].get(), widget_type, LayoutPosition::SameLine);
             }
+            break;
+        case PendingInsertion::Action::ChangeType:
+            _model.change_type(_pending.target, widget_type);
             break;
         default:
             break;
