@@ -1,0 +1,89 @@
+widgets:
+  # Widget type definitions
+  window:
+    type: window
+  text:
+    type: text
+  button:
+    type: button
+  separator:
+    type: separator
+  checkbox:
+    type: checkbox
+  slider-int:
+    type: slider-int
+  input-text:
+    type: input-text
+  tooltip:
+    type: tooltip
+  row:
+    type: row
+  collapsing-header:
+    type: collapsing-header
+
+  # Main window widget
+  main-window:
+    type: window
+    label: Simple Demo
+    body:
+      - text:
+          content: "Simple Widget Demo"
+      - separator
+      - collapsing-header:
+          label: Buttons
+          body:
+            - row:
+                body:
+                  - button:
+                      label: Button 1
+                      tooltip: First button
+                  - button:
+                      label: Button 2
+                      tooltip: Second button
+                  - button:
+                      label: Button 3
+                      tooltip: Third button
+      - collapsing-header:
+          label: Input Widgets
+          body:
+            - input-text:
+                label: Name
+                tooltip: Enter your name
+            - slider-int:
+                label: Value
+                min: 0
+                max: 100
+                tooltip: Drag to change value
+            - checkbox:
+                label: Enable feature
+                tooltip: Toggle this option
+      - collapsing-header:
+          label: Tooltips Demo
+          body:
+            - text:
+                content: "Hover over buttons to see tooltips"
+            - row:
+                body:
+                  - button:
+                      label: Simple Tooltip
+                      tooltip: This is a simple text tooltip
+                  - button:
+                      label: Rich Tooltip
+                      event-handlers:
+                        on-hover:
+                          show: rich-tooltip
+
+  # Rich tooltip widget
+  rich-tooltip:
+    type: tooltip
+    body:
+      - text:
+          content: "Rich Tooltip Content"
+      - separator
+      - text:
+          content: "Line 1: Information"
+      - text:
+          content: "Line 2: More details"
+
+app:
+  widget: app.main-window
