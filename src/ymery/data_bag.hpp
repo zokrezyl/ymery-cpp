@@ -46,6 +46,7 @@ public:
     // Path info
     Result<DataPath> get_data_path();
     Result<std::string> get_data_path_str();
+    std::string main_data_key() const { return _main_data_key; }
 
     // Child management
     Result<void> add_child(const Dict& child_spec);

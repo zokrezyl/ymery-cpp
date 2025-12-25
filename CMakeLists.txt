@@ -358,6 +358,7 @@ set(YMERY_CORE_SOURCES
     src/ymery/frontend/widget_factory.cpp
     src/ymery/frontend/composite.cpp
     src/ymery/backend/audio_buffer.cpp
+    src/ymery/embedded.cpp
 )
 
 # App.cpp has backend support for GLFW (desktop), WebGPU, and Android (EGL)
@@ -486,7 +487,7 @@ if(NOT YMERY_WEB)
     add_subdirectory(src/ymery/plugins)
 endif()
 
-# Examples (not for Android)
+# C++ Examples (not for Android)
 if(NOT YMERY_ANDROID)
-    add_subdirectory(examples EXCLUDE_FROM_ALL)
+    add_subdirectory(demo/cpp EXCLUDE_FROM_ALL)
 endif()

@@ -1,0 +1,55 @@
+widgets:
+  main-widget:
+    type: docking-main-window
+    title: Ymery Widget Editor
+    body:
+      # Docking splits - create 3 panel layout (left | center | right)
+      - docking-split:
+          initial-dock: "MainDockSpace"
+          new-dock: "LeftPanel"
+          direction: "left"
+          ratio: 0.20
+      - docking-split:
+          initial-dock: "MainDockSpace"
+          new-dock: "RightPanel"
+          direction: "right"
+          ratio: 0.25
+
+      # Dockable windows
+      - dockable-window:
+          label: "Widget Browser"
+          dock-space-name: "LeftPanel"
+          body:
+            - editor-widget-tree:
+                title: ""
+
+      - dockable-window:
+          label: "Layout Editor"
+          dock-space-name: "MainDockSpace"
+          body:
+            - editor-canvas:
+                title: ""
+
+      - dockable-window:
+          label: "Preview"
+          dock-space-name: "RightPanel"
+          body:
+            - editor-preview:
+                title: ""
+
+  # Widget type definitions
+  docking-main-window:
+    type: docking-main-window
+  docking-split:
+    type: docking-split
+  dockable-window:
+    type: dockable-window
+  editor-widget-tree:
+    type: editor-widget-tree
+  editor-canvas:
+    type: editor-canvas
+  editor-preview:
+    type: editor-preview
+
+app:
+  widget: app.main-widget

@@ -38,6 +38,9 @@ public:
     // Event handling
     virtual Result<void> handle_event(const Dict& event);
 
+    // Accessors
+    std::shared_ptr<DataBag> data_bag() const { return _data_bag; }
+
 protected:
     // Overridable rendering methods
     virtual Result<void> _pre_render_head();

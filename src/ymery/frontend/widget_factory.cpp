@@ -149,6 +149,10 @@ Result<WidgetPtr> WidgetFactory::create_root_widget() {
         spdlog::info("App config key: '{}'", key);
     }
 
+    // Simple data trees map with just the main data tree
+    std::map<std::string, TreeLikePtr> data_trees;
+    data_trees["data"] = _data_tree;
+
     // Get root widget name from app config (Python pattern: app.widget)
     std::string widget_name;
     auto widget_it = app_config.find("widget");
@@ -165,9 +169,6 @@ Result<WidgetPtr> WidgetFactory::create_root_widget() {
         if (body_it != app_config.end()) {
             spdlog::debug("Found 'body' in app config (fallback)");
             // Create root data bag
-            std::map<std::string, TreeLikePtr> data_trees;
-            data_trees["data"] = _data_tree;
-
             auto root_data_bag_res = DataBag::create(
                 _dispatcher,
                 _plugin_manager,
@@ -190,10 +191,6 @@ Result<WidgetPtr> WidgetFactory::create_root_widget() {
         return Err<WidgetPtr>(
             "WidgetFactory::create_root_widget: no 'widget' or 'body' in app config");
     }
-
-    // Create root data bag
-    std::map<std::string, TreeLikePtr> data_trees;
-    data_trees["data"] = _data_tree;
 
     auto root_data_bag_res = DataBag::create(
         _dispatcher,
@@ -279,29 +276,39 @@ Result<std::shared_ptr<DataBag>> WidgetFactory::_create_data_bag(
         }
     }
 
-    // Check for data-path in definition
+    // Check for data-path in definition (simple path only)
     auto dp_it = widget_def.find("data-path");
     if (dp_it != widget_def.end()) {
         if (auto path_str = get_as<std::string>(dp_it->second)) {
-            // Relative path
-            if (path_str->empty() || (*path_str)[0] != '/') {
-                data_path = data_path / *path_str;
+            // Skip $tree@ prefix if present (just use path part)
+            std::string path_part = *path_str;
+            if (!path_str->empty() && (*path_str)[0] == '$') {
+                auto at_pos = path_str->find('@');
+                if (at_pos != std::string::npos) {
+                    path_part = path_str->substr(at_pos + 1);
+                }
+            }
+
+            if (path_part.empty() || path_part[0] != '/') {
+                // Relative path
+                data_path = data_path / path_part;
             } else {
                 // Absolute path
-                data_path = DataPath::parse(*path_str);
+                data_path = DataPath::parse(path_part);
             }
         }
     }
 
     // Create statics from widget definition
+    // Include "type" so parent widgets can identify child widget types
     Dict statics;
     for (const auto& [key, value] : widget_def) {
-        if (key != "data-path" && key != "type") {
+        if (key != "data-path") {
             statics[key] = value;
         }
     }
 
-    // Build data trees map
+    // Use simple data_trees map with just the main data tree
     std::map<std::string, TreeLikePtr> data_trees;
     data_trees["data"] = _data_tree;
 

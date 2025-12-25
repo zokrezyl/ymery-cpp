@@ -3,11 +3,15 @@ build*/
 cmake-build*/
 
 # Android
-android/app/build/
-android/app/.cxx/
-android/.gradle/
+android/**/.gradle/
+android/**/build/
+android/**/.cxx/
+android/ymery-editor/.gradle/
+android/ymery-editor/app/build/
+android/ymery-editor/app/.cxx/
 *.apk
 *.aab
+local.properties
 
 # IDE and caches
 .idea/
@@ -33,8 +37,8 @@ Makefile.cmake
 *.obj
 
 # Executables
-ymery-cli
-ymery-editor
+/ymery-cli
+/ymery-editor
 
 # imgui.ini (generated at runtime)
 imgui.ini

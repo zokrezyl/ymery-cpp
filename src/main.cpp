@@ -35,8 +35,13 @@ int main(int argc, char* argv[]) {
                       << "  -h, --help                 Show this help\n";
             return 0;
         } else {
-            // Treat as layout path
-            layout_paths.push_back(arg);
+            // Treat as layout path - if it's a file, use its parent directory
+            std::filesystem::path path(arg);
+            if (std::filesystem::is_regular_file(path)) {
+                layout_paths.push_back(path.parent_path());
+            } else {
+                layout_paths.push_back(path);
+            }
         }
     }
 

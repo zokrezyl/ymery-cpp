@@ -67,6 +67,9 @@ private:
     std::shared_ptr<TreeLike> _data_tree;
     std::shared_ptr<PluginManager> _plugin_manager;
 
+    // Named data trees from yaml data: section
+    std::map<std::string, TreeLikePtr> _data_trees;
+
     // Widget cache by uid
     std::map<std::string, std::weak_ptr<Widget>> _widget_cache;
 };
