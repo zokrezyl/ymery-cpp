@@ -25,6 +25,11 @@ public:
         if (auto res = widget->init(); !res) {
             return Err<WidgetPtr>("ImplotLayer::create failed", res);
         }
+
+        // Debug: log creation with data-path
+        auto path_res = data_bag->get_data_path();
+        spdlog::info("ImplotLayer CREATED: data-path='{}'", path_res ? (*path_res).to_string() : "N/A");
+
         return widget;
     }
 

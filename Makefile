@@ -1,8 +1,8 @@
 # Ymery Build System
 # Usage: make <target>
 
-# Use system tools (avoid nix)
-export PATH := /usr/bin:/bin:/usr/local/bin:$(PATH)
+# Use system tools for most builds (avoid nix), but web needs nix emscripten
+SYSTEM_PATH := /usr/bin:/bin:/usr/local/bin:$(PATH)
 
 # Android SDK (adjust paths as needed)
 export JAVA_HOME ?= /usr/lib/jvm/java-17-openjdk-amd64

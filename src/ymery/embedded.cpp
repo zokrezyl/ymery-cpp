@@ -193,7 +193,7 @@ Result<void> EmbeddedApp::_init() {
     }
 
     // Create data tree from plugin
-    auto tree_res = _plugin_manager->create_tree(tree_type);
+    auto tree_res = _plugin_manager->create_tree(tree_type, _dispatcher);
     if (!tree_res) {
         spdlog::warn("Could not create {} from plugin: {}", tree_type, error_msg(tree_res));
         return Err<void>("EmbeddedApp::_init: no tree-like plugin available", tree_res);
@@ -348,7 +348,8 @@ void EmbeddedApp::render_widgets() {
     }
 
     // In embedded mode, force the first window to fill the entire display
-    ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
+    // Use display position offset for embedded rendering at correct screen position
+    ImGui::SetNextWindowPos(ImVec2(_display_pos_x, _display_pos_y), ImGuiCond_Always);
     ImGui::SetNextWindowSize(ImVec2(static_cast<float>(_width), static_cast<float>(_height)), ImGuiCond_Always);
 
     if (_root_widget) {
@@ -356,6 +357,11 @@ void EmbeddedApp::render_widgets() {
             spdlog::warn("EmbeddedApp::render_widgets: {}", error_msg(render_res));
         }
     }
+}
+
+void EmbeddedApp::set_display_pos(float x, float y) {
+    _display_pos_x = x;
+    _display_pos_y = y;
 }
 
 #ifdef YMERY_USE_WEBGPU

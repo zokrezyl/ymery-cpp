@@ -74,6 +74,10 @@ public:
     // Resize handling - call when plugin area changes size
     void resize(uint32_t width, uint32_t height);
 
+    // Set display position offset for embedded rendering
+    // This offsets where ImGui renders within the render target
+    void set_display_pos(float x, float y);
+
     // Input forwarding (from host)
     // Host should forward events when mouse is in plugin bounds
     void on_mouse_pos(float x, float y);
@@ -123,6 +127,8 @@ private:
 
     uint32_t _width = 800;
     uint32_t _height = 600;
+    float _display_pos_x = 0;
+    float _display_pos_y = 0;
 };
 
 using EmbeddedAppPtr = std::shared_ptr<EmbeddedApp>;

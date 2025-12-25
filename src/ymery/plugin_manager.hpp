@@ -15,6 +15,7 @@ namespace ymery {
 class WidgetFactory;
 class DataBag;
 class Widget;
+class PluginManager;
 using WidgetPtr = std::shared_ptr<Widget>;
 
 // Plugin create function types
@@ -25,7 +26,10 @@ using WidgetCreateFn = std::function<Result<WidgetPtr>(
     std::shared_ptr<DataBag>
 )>;
 
-using TreeLikeCreateFn = std::function<Result<TreeLikePtr>()>;
+using TreeLikeCreateFn = std::function<Result<TreeLikePtr>(
+    std::shared_ptr<Dispatcher>,
+    std::shared_ptr<PluginManager>
+)>;
 
 // Plugin metadata
 struct PluginMeta {
@@ -69,7 +73,7 @@ public:
         std::shared_ptr<DataBag> data_bag
     );
 
-    Result<TreeLikePtr> create_tree(const std::string& name);
+    Result<TreeLikePtr> create_tree(const std::string& name, std::shared_ptr<Dispatcher> dispatcher = nullptr);
 
     // Check if plugin exists
     bool has_widget(const std::string& name) const;

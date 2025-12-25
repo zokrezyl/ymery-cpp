@@ -43,8 +43,6 @@ Result<void> Composite::dispose() {
 }
 
 Result<void> Composite::render() {
-    spdlog::debug("Composite::render start");
-
     // Push styles
     if (auto style_res = _push_styles(); !style_res) {
         spdlog::warn("Composite::render: _push_styles failed");
@@ -64,7 +62,6 @@ Result<void> Composite::render() {
         _pop_styles();
         return Err<void>("Composite::render: _begin_container failed", begin_res);
     }
-    spdlog::debug("Composite::render _container_open={}", _container_open);
 
     // Only render children if container is open
     if (_container_open) {
@@ -73,7 +70,6 @@ Result<void> Composite::render() {
             spdlog::warn("Composite::render: _ensure_children failed: {}", error_msg(children_res));
         }
 
-        spdlog::debug("Composite::render rendering {} children", _children.size());
         if (auto render_children_res = _render_children(); !render_children_res) {
             spdlog::warn("Composite::render: _render_children failed");
         }
@@ -105,11 +101,8 @@ Result<void> Composite::_end_container() {
 }
 
 Result<void> Composite::_ensure_children() {
-    if (_children_initialized) {
-        return Ok();
-    }
-
-    spdlog::debug("Composite::_ensure_children starting");
+    // For foreach-child, we need to rebuild children each frame to handle dynamic data
+    // For static children, only initialize once
 
     // Get body spec from statics
     auto body_res = _data_bag->get_static("body");
@@ -134,10 +127,92 @@ Result<void> Composite::_ensure_children() {
         return Ok();
     }
 
-    spdlog::debug("Found {} body specs", children_list->size());
+    // Check if any body item is foreach-child
+    bool has_foreach_child = false;
+    for (const auto& item : *children_list) {
+        if (auto dict = get_as<Dict>(item)) {
+            if (dict->find("foreach-child") != dict->end()) {
+                has_foreach_child = true;
+                break;
+            }
+        }
+    }
+
+    // If no foreach-child and already initialized, skip
+    if (!has_foreach_child && _children_initialized) {
+        return Ok();
+    }
+
+    // For foreach-child, clear and rebuild children each frame
+    if (has_foreach_child) {
+        for (auto& child : _children) {
+            if (child) child->dispose();
+        }
+        _children.clear();
+    }
+
+    spdlog::info("Composite::_ensure_children: {} body specs, has_foreach_child={}", children_list->size(), has_foreach_child);
 
     // Create each child widget
     for (const auto& child_spec : *children_list) {
+        // Check for foreach-child
+        if (auto dict = get_as<Dict>(child_spec)) {
+            spdlog::info("Composite: body item is dict with {} keys", dict->size());
+            for (const auto& [k, v] : *dict) {
+                spdlog::info("  key: '{}'", k);
+            }
+            auto foreach_it = dict->find("foreach-child");
+            if (foreach_it != dict->end()) {
+                spdlog::info("foreach-child: FOUND! Getting children from data bag");
+                // Get data path for debugging
+                if (auto path_res = _data_bag->get_data_path_str(); path_res) {
+                    spdlog::info("foreach-child: current data path = '{}'", *path_res);
+                }
+                // Get children names from data tree
+                auto children_res = _data_bag->get_children_names();
+                if (!children_res) {
+                    spdlog::warn("foreach-child: failed to get children names: {}", error_msg(children_res));
+                    continue;
+                }
+                auto child_names = *children_res;
+                spdlog::info("foreach-child: found {} children", child_names.size());
+
+                // Get the widget spec inside foreach-child
+                auto foreach_val = foreach_it->second;
+                Value widget_spec;
+                if (auto list = get_as<List>(foreach_val)) {
+                    if (!list->empty()) {
+                        widget_spec = (*list)[0];
+                    }
+                } else {
+                    widget_spec = foreach_val;
+                }
+
+                // Create a widget for each child
+                for (const auto& child_name : child_names) {
+                    spdlog::info("foreach-child: creating widget for '{}'", child_name);
+
+                    // Create child DataBag with data-path set to the child name
+                    auto child_bag_res = _data_bag->inherit(child_name, {});
+                    if (!child_bag_res) {
+                        spdlog::error("foreach-child: failed to inherit DataBag for '{}': {}", child_name, error_msg(child_bag_res));
+                        continue;
+                    }
+                    auto child_bag = *child_bag_res;
+
+                    // Create the widget with the child's data bag
+                    auto widget_res = _widget_factory->create_widget(child_bag, widget_spec, _namespace);
+                    if (!widget_res) {
+                        spdlog::error("foreach-child: failed to create widget for '{}': {}", child_name, error_msg(widget_res));
+                        continue;
+                    }
+                    _children.push_back(*widget_res);
+                }
+                continue;
+            }
+        }
+
+        // Regular widget creation
         auto widget_res = _widget_factory->create_widget(_data_bag, child_spec, _namespace);
         if (!widget_res) {
             spdlog::error("Failed to create child widget: {}", error_msg(widget_res));

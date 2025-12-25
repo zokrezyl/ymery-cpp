@@ -1,5 +1,6 @@
 #include "data_bag.hpp"
 #include <regex>
+#include <spdlog/spdlog.h>
 
 namespace ymery {
 

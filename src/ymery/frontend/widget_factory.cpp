@@ -267,40 +267,15 @@ Result<std::shared_ptr<DataBag>> WidgetFactory::_create_data_bag(
     const Dict& widget_def,
     const std::string& namespace_
 ) {
-    // Get parent path or root
-    DataPath data_path = DataPath::root();
-    if (parent) {
-        auto path_res = parent->get_data_path();
-        if (path_res) {
-            data_path = *path_res;
-        }
+    // Debug: show widget_def keys
+    std::string keys_str;
+    for (const auto& [k, _] : widget_def) {
+        if (!keys_str.empty()) keys_str += ", ";
+        keys_str += k;
     }
+    spdlog::info("_create_data_bag: widget_def keys=[{}]", keys_str);
 
-    // Check for data-path in definition (simple path only)
-    auto dp_it = widget_def.find("data-path");
-    if (dp_it != widget_def.end()) {
-        if (auto path_str = get_as<std::string>(dp_it->second)) {
-            // Skip $tree@ prefix if present (just use path part)
-            std::string path_part = *path_str;
-            if (!path_str->empty() && (*path_str)[0] == '$') {
-                auto at_pos = path_str->find('@');
-                if (at_pos != std::string::npos) {
-                    path_part = path_str->substr(at_pos + 1);
-                }
-            }
-
-            if (path_part.empty() || path_part[0] != '/') {
-                // Relative path
-                data_path = data_path / path_part;
-            } else {
-                // Absolute path
-                data_path = DataPath::parse(path_part);
-            }
-        }
-    }
-
-    // Create statics from widget definition
-    // Include "type" so parent widgets can identify child widget types
+    // Create statics from widget definition (excluding data-path)
     Dict statics;
     for (const auto& [key, value] : widget_def) {
         if (key != "data-path") {
@@ -308,7 +283,23 @@ Result<std::shared_ptr<DataBag>> WidgetFactory::_create_data_bag(
         }
     }
 
-    // Use simple data_trees map with just the main data tree
+    // If we have a parent, use inherit() to properly copy data trees and navigate
+    if (parent) {
+        // Get data-path from definition
+        std::string data_path_spec;
+        auto dp_it = widget_def.find("data-path");
+        if (dp_it != widget_def.end()) {
+            if (auto path_str = get_as<std::string>(dp_it->second)) {
+                data_path_spec = *path_str;
+                spdlog::info("_create_data_bag: inheriting with data-path='{}'", data_path_spec);
+            }
+        }
+
+        // Use parent's inherit() to copy data trees and navigate to child path
+        return parent->inherit(data_path_spec, statics);
+    }
+
+    // No parent - create fresh DataBag with factory's data tree
     std::map<std::string, TreeLikePtr> data_trees;
     data_trees["data"] = _data_tree;
 
@@ -317,7 +308,7 @@ Result<std::shared_ptr<DataBag>> WidgetFactory::_create_data_bag(
         _plugin_manager,
         data_trees,
         "data",
-        data_path,
+        DataPath::root(),
         statics
     );
 }

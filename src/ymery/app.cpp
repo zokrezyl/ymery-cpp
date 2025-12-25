@@ -161,7 +161,7 @@ Result<void> App::init() {
     }
 
     // Create data tree from plugin
-    auto tree_res = _plugin_manager->create_tree(tree_type);
+    auto tree_res = _plugin_manager->create_tree(tree_type, _dispatcher);
     if (!tree_res) {
         spdlog::warn("Could not create {} from plugin: {}", tree_type, error_msg(tree_res));
         // Fallback to a minimal implementation if needed

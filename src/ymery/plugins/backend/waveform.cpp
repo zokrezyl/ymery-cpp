@@ -9,6 +9,9 @@
 #include <cmath>
 #include <chrono>
 
+// Forward declarations for plugin create signature
+namespace ymery { class Dispatcher; class PluginManager; }
+
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
@@ -387,7 +390,10 @@ private:
 } // namespace ymery::plugins
 
 extern "C" const char* name() { return "waveform"; }
-extern "C" const char* type() { return "tree"; }
-extern "C" ymery::Result<ymery::TreeLikePtr> create() {
+extern "C" const char* type() { return "device-manager"; }
+extern "C" ymery::Result<ymery::TreeLikePtr> create(
+    std::shared_ptr<ymery::Dispatcher> /*dispatcher*/,
+    std::shared_ptr<ymery::PluginManager> /*plugin_manager*/
+) {
     return ymery::plugins::WaveformManager::create();
 }

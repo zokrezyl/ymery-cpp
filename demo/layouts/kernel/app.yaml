@@ -20,6 +20,16 @@ widgets:
     type: implot
   implot-layer:
     type: implot-layer
+  composite:
+    type: composite
+
+  # Recursive kernel tree display - iterates over children of current data path
+  kernel-recursive:
+    type: composite
+    body:
+      - foreach-child:
+          - tree-node:
+              body: kernel-recursive
 
   # Main window widget
   main-window:
@@ -36,46 +46,11 @@ widgets:
           content: "Tree structure: /providers, /settings, /windows"
       - separator
 
-      # Kernel Tree Structure
+      # Dynamic Kernel Tree Structure
       - collapsing-header:
-          label: "Kernel Tree Structure"
+          label: "Kernel Tree Structure (Dynamic)"
           body:
-            - tree-node:
-                label: "/ (root)"
-                body:
-                  - tree-node:
-                      label: "/providers"
-                      body:
-                        - tree-node:
-                            label: "/providers/waveform"
-                            body:
-                              - text:
-                                  content: "Waveform generator provider"
-                        - tree-node:
-                            label: "/providers/alsa"
-                            body:
-                              - text:
-                                  content: "ALSA audio capture (Linux)"
-                        - tree-node:
-                            label: "/providers/jack"
-                            body:
-                              - text:
-                                  content: "JACK audio capture"
-                        - tree-node:
-                            label: "/providers/pipewire"
-                            body:
-                              - text:
-                                  content: "PipeWire audio capture (Linux)"
-                  - tree-node:
-                      label: "/settings"
-                      body:
-                        - text:
-                            content: "Application settings (stub)"
-                  - tree-node:
-                      label: "/windows"
-                      body:
-                        - text:
-                            content: "Registered UI objects (stub)"
+            - kernel-recursive:
 
       - separator
 

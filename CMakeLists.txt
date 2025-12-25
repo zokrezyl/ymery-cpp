@@ -89,8 +89,8 @@ CPMAddPackage(
     OPTIONS "YAML_CPP_BUILD_TESTS OFF" "YAML_CPP_BUILD_TOOLS OFF"
 )
 
-# tl::expected - better std::expected compatibility for Android NDK
-if(YMERY_ANDROID)
+# tl::expected - std::expected compatibility for Android NDK and Emscripten
+if(YMERY_ANDROID OR YMERY_WEB)
     CPMAddPackage(
         NAME tl_expected
         GITHUB_REPOSITORY TartanLlama/expected
@@ -149,7 +149,11 @@ if(imgui_ADDED)
     endif()
 
     # Renderer backend
-    if(YMERY_USE_WEBGPU)
+    if(YMERY_WEB)
+        # Emscripten WebGPU - use compatibility wrapper for older API
+        list(APPEND IMGUI_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/compat/imgui_impl_wgpu_emscripten.cpp)
+    elseif(YMERY_USE_WEBGPU)
+        # Native WebGPU (wgpu-native)
         list(APPEND IMGUI_SOURCES ${imgui_SOURCE_DIR}/backends/imgui_impl_wgpu.cpp)
     else()
         list(APPEND IMGUI_SOURCES ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp)
@@ -390,7 +394,9 @@ if(YMERY_WEB)
         implot3d
         spdlog::spdlog
     )
-    target_compile_definitions(ymery PUBLIC YMERY_WEB=1)
+    # Add tl::expected include directory (header-only library)
+    target_include_directories(ymery PUBLIC ${tl_expected_SOURCE_DIR}/include)
+    target_compile_definitions(ymery PUBLIC YMERY_WEB=1 YMERY_USE_WEBGPU=1)
 elseif(YMERY_ANDROID)
     target_link_libraries(ymery PUBLIC
         yaml-cpp
@@ -490,4 +496,18 @@ endif()
 # C++ Examples (not for Android)
 if(NOT YMERY_ANDROID)
     add_subdirectory(demo/cpp EXCLUDE_FROM_ALL)
+endif()
+
+# Unit Tests (desktop only)
+if(NOT YMERY_WEB AND NOT YMERY_ANDROID)
+    option(YMERY_BUILD_TESTS "Build unit tests" ON)
+    if(YMERY_BUILD_TESTS)
+        CPMAddPackage(
+            NAME ut
+            GITHUB_REPOSITORY boost-ext/ut
+            GIT_TAG v2.1.0
+        )
+        enable_testing()
+        add_subdirectory(test/ut)
+    endif()
 endif()

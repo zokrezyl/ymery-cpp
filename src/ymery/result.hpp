@@ -1,14 +1,29 @@
 #pragma once
 
-#ifdef YMERY_ANDROID
-// Use tl::expected on Android due to libc++ issues with std::expected and std::any
+#if defined(YMERY_ANDROID) || defined(YMERY_WEB)
+// Use tl::expected on Android and Emscripten due to libc++ issues with std::expected
 #include <tl/expected.hpp>
 #else
 #include <expected>
 #endif
 #include <string>
 #include <memory>
+
+// source_location support - Emscripten's libc++ may lack it
+#if defined(YMERY_WEB) || defined(YMERY_ANDROID)
+// Minimal source_location stub for older libc++
+namespace std {
+struct source_location {
+    static constexpr source_location current() noexcept { return {}; }
+    constexpr const char* file_name() const noexcept { return ""; }
+    constexpr uint_least32_t line() const noexcept { return 0; }
+    constexpr uint_least32_t column() const noexcept { return 0; }
+    constexpr const char* function_name() const noexcept { return ""; }
+};
+}
+#else
 #include <source_location>
+#endif
 
 namespace ymery {
 
@@ -58,8 +73,8 @@ private:
     std::source_location _loc;
 };
 
-#ifdef YMERY_ANDROID
-// Use tl::expected on Android
+#if defined(YMERY_ANDROID) || defined(YMERY_WEB)
+// Use tl::expected on Android and Emscripten
 template<typename T>
 using Result = tl::expected<T, Error>;
 

@@ -13,6 +13,9 @@
 #include <spa/param/audio/format-utils.h>
 #include <spa/debug/types.h>
 #include <spa/utils/result.h>
+
+// Forward declarations for plugin create signature
+namespace ymery { class Dispatcher; class PluginManager; }
 #include <spdlog/spdlog.h>
 
 namespace ymery::plugins {
@@ -601,7 +604,10 @@ private:
 } // namespace ymery::plugins
 
 extern "C" const char* name() { return "pipewire"; }
-extern "C" const char* type() { return "tree"; }
-extern "C" ymery::Result<ymery::TreeLikePtr> create() {
+extern "C" const char* type() { return "device-manager"; }
+extern "C" ymery::Result<ymery::TreeLikePtr> create(
+    std::shared_ptr<ymery::Dispatcher> /*dispatcher*/,
+    std::shared_ptr<ymery::PluginManager> /*plugin_manager*/
+) {
     return ymery::plugins::PipeWireManager::create();
 }

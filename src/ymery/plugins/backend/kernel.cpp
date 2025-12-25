@@ -153,13 +153,16 @@ public:
  */
 class Kernel : public TreeLike {
 public:
-    static Result<TreeLikePtr> create() {
-        auto kernel = std::make_shared<Kernel>();
+    static Result<TreeLikePtr> create(std::shared_ptr<Dispatcher> dispatcher, std::shared_ptr<PluginManager> plugin_manager) {
+        auto kernel = std::make_shared<Kernel>(dispatcher, plugin_manager);
         if (auto res = kernel->init(); !res) {
             return Err<TreeLikePtr>("Kernel::create failed", res);
         }
         return kernel;
     }
+
+    Kernel(std::shared_ptr<Dispatcher> dispatcher, std::shared_ptr<PluginManager> plugin_manager)
+        : _dispatcher(dispatcher), _plugin_manager(plugin_manager) {}
 
     Result<void> init() override {
         // Create sub-managers
@@ -173,7 +176,16 @@ public:
         if (!windows_res) return Err<void>("Kernel: failed to create RegisteredObjectsManager", windows_res);
         _windows_manager = *windows_res;
 
-        spdlog::info("Kernel: initialized");
+        spdlog::info("Kernel: initialized (dispatcher={}, plugin_manager={})",
+            _dispatcher ? "yes" : "no", _plugin_manager ? "yes" : "no");
+
+        // Log available providers at startup
+        auto providers = get_available_providers();
+        spdlog::info("Kernel: available providers: {}", providers.size());
+        for (const auto& p : providers) {
+            spdlog::info("Kernel:   - {}", p);
+        }
+
         return Ok();
     }
 
@@ -190,9 +202,11 @@ public:
 
     Result<std::vector<std::string>> get_children_names(const DataPath& path) override {
         std::string path_str = path.to_string();
+        spdlog::debug("Kernel::get_children_names: path='{}'", path_str);
 
         // Root
         if (path_str == "/" || path_str.empty()) {
+            spdlog::debug("Kernel::get_children_names: returning root children");
             return Ok(std::vector<std::string>{"providers", "settings", "windows"});
         }
 
@@ -201,6 +215,7 @@ public:
 
         std::string branch = parts[0];
         DataPath remaining(std::vector<std::string>(parts.begin() + 1, parts.end()));
+        spdlog::debug("Kernel::get_children_names: branch='{}', remaining='{}'", branch, remaining.to_string());
 
         if (branch == "providers") {
             return _providers_proxy->get_children_names(remaining);
@@ -269,14 +284,31 @@ public:
     }
 
     Result<Value> get(const DataPath& path) override {
-        auto parent = path.dirname();
-        auto key = path.filename();
+        std::string path_str = path.to_string();
 
-        auto meta_res = get_metadata(parent);
-        if (!meta_res) return Err<Value>("get failed", meta_res);
+        // Root - return empty
+        if (path_str == "/" || path_str.empty()) {
+            return Ok(Value{});
+        }
 
-        auto it = meta_res->find(key);
-        if (it != meta_res->end()) return Ok(it->second);
+        auto parts = path.as_list();
+        if (parts.empty()) {
+            return Ok(Value{});
+        }
+
+        std::string branch = parts[0];
+        DataPath remaining(std::vector<std::string>(parts.begin() + 1, parts.end()));
+
+        // Delegate to sub-managers
+        if (branch == "providers") {
+            spdlog::info("Kernel::get: providers path='{}', remaining='{}'", path_str, remaining.to_string());
+            return _providers_proxy->get(remaining);
+        } else if (branch == "settings") {
+            return _settings_manager->get(remaining);
+        } else if (branch == "windows") {
+            return _windows_manager->get(remaining);
+        }
+
         return Ok(Value{});
     }
 
@@ -365,7 +397,7 @@ public:
         }
 
         // Get provider from plugin manager
-        auto tree_res = _plugin_manager->create_tree(provider_name);
+        auto tree_res = _plugin_manager->create_tree(provider_name, _dispatcher);
         if (!tree_res) {
             return Err<TreeLikePtr>("Kernel: failed to create provider '" + provider_name + "'", tree_res);
         }
@@ -375,19 +407,15 @@ public:
         return Ok(*tree_res);
     }
 
-    void set_plugin_manager(std::shared_ptr<PluginManager> pm) {
-        _plugin_manager = pm;
-    }
-
-    void set_dispatcher(std::shared_ptr<Dispatcher> disp) {
-        _dispatcher = disp;
-    }
-
     std::vector<std::string> get_available_providers() {
-        if (!_plugin_manager) return {};
-        // Get tree-like plugins from plugin manager
-        auto res = _plugin_manager->get_children_names(DataPath("/tree"));
-        if (!res) return {};
+        if (!_plugin_manager) {
+            return {};
+        }
+        // Get device-manager plugins from plugin manager (NOT tree-like!)
+        auto res = _plugin_manager->get_children_names(DataPath("/device-manager"));
+        if (!res) {
+            return {};
+        }
         return *res;
     }
 
@@ -506,6 +534,9 @@ Result<void> ProvidersProxy::open(const DataPath& path, const Dict& params) {
 
 extern "C" const char* name() { return "kernel"; }
 extern "C" const char* type() { return "tree"; }
-extern "C" ymery::Result<ymery::TreeLikePtr> create() {
-    return ymery::plugins::Kernel::create();
+extern "C" ymery::Result<ymery::TreeLikePtr> create(
+    std::shared_ptr<ymery::Dispatcher> dispatcher,
+    std::shared_ptr<ymery::PluginManager> plugin_manager
+) {
+    return ymery::plugins::Kernel::create(dispatcher, plugin_manager);
 }

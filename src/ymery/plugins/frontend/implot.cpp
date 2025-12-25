@@ -1,12 +1,12 @@
 // implot widget plugin - Creates plot context, renders body inside
-#include "../../frontend/widget.hpp"
+#include "../../frontend/composite.hpp"
 #include "../../frontend/widget_factory.hpp"
 #include <implot.h>
 #include <imgui.h>
 
 namespace ymery::plugins {
 
-class Implot : public Widget {
+class Implot : public Composite {
 public:
     static Result<WidgetPtr> create(
         std::shared_ptr<WidgetFactory> widget_factory,
@@ -27,7 +27,7 @@ public:
     }
 
 protected:
-    Result<void> _pre_render_head() override {
+    Result<void> _begin_container() override {
         std::string label = "Plot";
         if (auto res = _data_bag->get("label"); res) {
             if (auto l = get_as<std::string>(*res)) {
@@ -46,12 +46,12 @@ protected:
             }
         }
 
-        _is_body_activated = ImPlot::BeginPlot(label.c_str(), size);
+        _container_open = ImPlot::BeginPlot(label.c_str(), size);
         return Ok();
     }
 
-    Result<void> _post_render_head() override {
-        if (_is_body_activated) {
+    Result<void> _end_container() override {
+        if (_container_open) {
             ImPlot::EndPlot();
         }
         return Ok();

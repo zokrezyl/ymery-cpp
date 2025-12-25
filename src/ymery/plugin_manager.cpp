@@ -129,7 +129,7 @@ using PluginWidgetCreateFn = Result<WidgetPtr>(*)(
     const std::string&,
     std::shared_ptr<DataBag>
 );
-using PluginTreeCreateFn = Result<TreeLikePtr>(*)();
+using PluginTreeCreateFn = Result<TreeLikePtr>(*)(std::shared_ptr<Dispatcher>, std::shared_ptr<PluginManager>);
 
 Result<std::shared_ptr<PluginManager>> PluginManager::create(const std::string& plugins_path) {
     auto manager = std::shared_ptr<PluginManager>(new PluginManager());
@@ -198,8 +198,8 @@ Result<void> PluginManager::_ensure_plugins_loaded() {
     }
 
     _plugins_loaded = true;
-    spdlog::info("PluginManager: loaded plugins - widget: {}, tree-like: {}",
-        _plugins["widget"].size(), _plugins["tree-like"].size());
+    spdlog::info("PluginManager: loaded plugins - widget: {}, tree-like: {}, device-manager: {}",
+        _plugins["widget"].size(), _plugins["tree-like"].size(), _plugins["device-manager"].size());
 
     return Ok();
 }
@@ -261,6 +261,15 @@ Result<void> PluginManager::_load_plugin(const std::string& path) {
         }
         meta.create_fn = TreeLikeCreateFn(create_fn);
         _plugins["tree-like"][plugin_name] = meta;
+    }
+    else if (plugin_type == "device-manager") {
+        auto create_fn = reinterpret_cast<PluginTreeCreateFn>(ymery_dlsym(handle, "create"));
+        if (!create_fn) {
+            ymery_dlclose(handle);
+            return Err<void>("Device-manager plugin has no 'create' function: " + path);
+        }
+        meta.create_fn = TreeLikeCreateFn(create_fn);
+        _plugins["device-manager"][plugin_name] = meta;
     }
     else {
         spdlog::warn("Unknown plugin type '{}' for {}", plugin_type, plugin_name);
@@ -453,39 +462,65 @@ Result<WidgetPtr> PluginManager::create_widget(
     }
 }
 
-Result<TreeLikePtr> PluginManager::create_tree(const std::string& name) {
+Result<TreeLikePtr> PluginManager::create_tree(const std::string& name, std::shared_ptr<Dispatcher> dispatcher) {
     if (auto res = _ensure_plugins_loaded(); !res) {
         return Err<TreeLikePtr>("PluginManager: error loading plugins", res);
     }
 
+    // Search in both tree-like and device-manager categories
+    PluginMeta* plugin_meta = nullptr;
+
     auto cat_it = _plugins.find("tree-like");
-    if (cat_it == _plugins.end()) {
-        return Err<TreeLikePtr>("PluginManager: no tree-like plugins loaded");
+    if (cat_it != _plugins.end()) {
+        auto plugin_it = cat_it->second.find(name);
+        if (plugin_it != cat_it->second.end()) {
+            plugin_meta = &plugin_it->second;
+        }
     }
 
-    auto plugin_it = cat_it->second.find(name);
-    if (plugin_it == cat_it->second.end()) {
-        return Err<TreeLikePtr>("PluginManager: tree-like '" + name + "' not found");
+    if (!plugin_meta) {
+        cat_it = _plugins.find("device-manager");
+        if (cat_it != _plugins.end()) {
+            auto plugin_it = cat_it->second.find(name);
+            if (plugin_it != cat_it->second.end()) {
+                plugin_meta = &plugin_it->second;
+            }
+        }
+    }
+
+    if (!plugin_meta) {
+        return Err<TreeLikePtr>("PluginManager: tree/device-manager '" + name + "' not found");
     }
 
     try {
-        auto create_fn = std::any_cast<TreeLikeCreateFn>(plugin_it->second.create_fn);
-        return create_fn();
+        auto create_fn = std::any_cast<TreeLikeCreateFn>(plugin_meta->create_fn);
+        return create_fn(dispatcher, shared_from_this());
     } catch (const std::bad_any_cast&) {
-        return Err<TreeLikePtr>("PluginManager: invalid create function for tree-like '" + name + "'");
+        return Err<TreeLikePtr>("PluginManager: invalid create function for '" + name + "'");
     }
 }
 
 bool PluginManager::has_widget(const std::string& name) const {
+    // Need to cast away const to call _ensure_plugins_loaded
+    const_cast<PluginManager*>(this)->_ensure_plugins_loaded();
     auto cat_it = _plugins.find("widget");
     if (cat_it == _plugins.end()) return false;
     return cat_it->second.find(name) != cat_it->second.end();
 }
 
 bool PluginManager::has_tree(const std::string& name) const {
+    // Need to cast away const to call _ensure_plugins_loaded
+    const_cast<PluginManager*>(this)->_ensure_plugins_loaded();
+    // Check both tree-like and device-manager categories
     auto cat_it = _plugins.find("tree-like");
-    if (cat_it == _plugins.end()) return false;
-    return cat_it->second.find(name) != cat_it->second.end();
+    if (cat_it != _plugins.end() && cat_it->second.find(name) != cat_it->second.end()) {
+        return true;
+    }
+    cat_it = _plugins.find("device-manager");
+    if (cat_it != _plugins.end() && cat_it->second.find(name) != cat_it->second.end()) {
+        return true;
+    }
+    return false;
 }
 
 } // namespace ymery
