@@ -110,6 +110,12 @@ Result<WidgetPtr> WidgetFactory::create_widget(
         }
     }
 
+    // Handle built-in types first
+    if (widget_type == "composite") {
+        spdlog::debug("Creating built-in Composite widget");
+        return Composite::create(shared_from_this(), _dispatcher, namespace_, data_bag);
+    }
+
     // Try to create from plugin manager
     spdlog::debug("Looking up widget type '{}' in plugin manager", widget_type);
     if (_plugin_manager->has_widget(widget_type)) {

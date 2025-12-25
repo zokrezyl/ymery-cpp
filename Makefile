@@ -70,13 +70,16 @@ android-clean: ## Clean Android build
 	rm -rf build-android build-android-editor
 
 # === Web/Emscripten Build ===
-# Web build needs Nix emscripten but also system make/ninja
-WEB_PATH := $(PATH):/usr/bin:/bin
+# Nix emscripten needs EM_CACHE writable and EMSCRIPTEN_ROOT_PATH pointing to bin/ (where em-config wrapper is)
+EM_CACHE_DIR := $(CURDIR)/.em_cache
+EMSCRIPTEN_BIN := $(shell dirname $$(readlink -f $$(which emcc 2>/dev/null) 2>/dev/null) 2>/dev/null)
 
 .PHONY: web
 web: ## Build for Web with Emscripten
-	PATH="$(WEB_PATH)" emcmake $(CMAKE) -B $(BUILD_DIR_WEB) $(CMAKE_GENERATOR) $(CMAKE_COMMON) $(CMAKE_RELEASE)
-	PATH="$(WEB_PATH)" $(CMAKE) --build $(BUILD_DIR_WEB)
+	@mkdir -p $(EM_CACHE_DIR)
+	EM_CACHE="$(EM_CACHE_DIR)" emcmake $(CMAKE) -B $(BUILD_DIR_WEB) $(CMAKE_GENERATOR) $(CMAKE_COMMON) $(CMAKE_RELEASE) \
+		-DEMSCRIPTEN_ROOT_PATH="$(EMSCRIPTEN_BIN)"
+	EM_CACHE="$(EM_CACHE_DIR)" $(CMAKE) --build $(BUILD_DIR_WEB)
 
 # === Individual Targets ===
 
