@@ -17,6 +17,23 @@ Result<std::shared_ptr<Composite>> Composite::create(
     composite->_namespace = ns;
     composite->_data_bag = data_bag;
 
+    // Debug: check if body has foreach-child
+    if (data_bag) {
+        auto body_res = data_bag->get_static("body");
+        if (body_res && body_res->has_value()) {
+            if (auto body_list = get_as<List>(*body_res)) {
+                spdlog::info("Composite::create: body has {} items", body_list->size());
+                for (const auto& item : *body_list) {
+                    if (auto dict = get_as<Dict>(item)) {
+                        for (const auto& [k, v] : *dict) {
+                            spdlog::info("  body item key: '{}'", k);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     if (auto res = composite->init(); !res) {
         return Err<std::shared_ptr<Composite>>("Composite::create: init failed", res);
     }
@@ -188,20 +205,41 @@ Result<void> Composite::_ensure_children() {
                     widget_spec = foreach_val;
                 }
 
-                // Create a widget for each child
+                // Create a widget for each child - like Python, add data-path to widget spec
                 for (const auto& child_name : child_names) {
                     spdlog::info("foreach-child: creating widget for '{}'", child_name);
 
-                    // Create child DataBag with data-path set to the child name
-                    auto child_bag_res = _data_bag->inherit(child_name, {});
-                    if (!child_bag_res) {
-                        spdlog::error("foreach-child: failed to inherit DataBag for '{}': {}", child_name, error_msg(child_bag_res));
-                        continue;
+                    // Clone widget_spec and add data-path (like Python composite.py lines 174-187)
+                    Value child_spec;
+                    if (auto spec_dict = get_as<Dict>(widget_spec)) {
+                        Dict new_spec = *spec_dict;
+                        // Find the widget key and add data-path to its statics
+                        for (auto& [wkey, wval] : new_spec) {
+                            if (auto inner_dict = get_as<Dict>(wval)) {
+                                Dict new_inner = *inner_dict;
+                                new_inner["data-path"] = child_name;
+                                new_spec[wkey] = new_inner;
+                            } else {
+                                Dict new_inner;
+                                new_inner["data-path"] = child_name;
+                                new_spec[wkey] = new_inner;
+                            }
+                            break;  // Only modify first key
+                        }
+                        child_spec = new_spec;
+                    } else if (auto spec_str = get_as<std::string>(widget_spec)) {
+                        // String spec like "tree-node" -> {tree-node: {data-path: child_name}}
+                        Dict new_spec;
+                        Dict inner;
+                        inner["data-path"] = child_name;
+                        new_spec[*spec_str] = inner;
+                        child_spec = new_spec;
+                    } else {
+                        child_spec = widget_spec;
                     }
-                    auto child_bag = *child_bag_res;
 
-                    // Create the widget with the child's data bag
-                    auto widget_res = _widget_factory->create_widget(child_bag, widget_spec, _namespace);
+                    // Create the widget with PARENT data bag - factory handles navigation
+                    auto widget_res = _widget_factory->create_widget(_data_bag, child_spec, _namespace);
                     if (!widget_res) {
                         spdlog::error("foreach-child: failed to create widget for '{}': {}", child_name, error_msg(widget_res));
                         continue;

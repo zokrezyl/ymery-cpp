@@ -31,68 +31,70 @@ all: opengl
 
 .PHONY: opengl
 opengl: ## Build with OpenGL backend (Release)
-	$(CMAKE) -B $(BUILD_DIR_OPENGL) $(CMAKE_GENERATOR) $(CMAKE_COMMON) $(CMAKE_RELEASE) -DYMERY_USE_WEBGPU=OFF
-	$(CMAKE) --build $(BUILD_DIR_OPENGL)
+	PATH="$(SYSTEM_PATH)" $(CMAKE) -B $(BUILD_DIR_OPENGL) $(CMAKE_GENERATOR) $(CMAKE_COMMON) $(CMAKE_RELEASE) -DYMERY_USE_WEBGPU=OFF
+	PATH="$(SYSTEM_PATH)" $(CMAKE) --build $(BUILD_DIR_OPENGL)
 
 .PHONY: webgpu
 webgpu: ## Build with WebGPU backend (Release)
-	$(CMAKE) -B $(BUILD_DIR_WEBGPU) $(CMAKE_GENERATOR) $(CMAKE_COMMON) $(CMAKE_RELEASE) -DYMERY_USE_WEBGPU=ON
-	$(CMAKE) --build $(BUILD_DIR_WEBGPU)
+	PATH="$(SYSTEM_PATH)" $(CMAKE) -B $(BUILD_DIR_WEBGPU) $(CMAKE_GENERATOR) $(CMAKE_COMMON) $(CMAKE_RELEASE) -DYMERY_USE_WEBGPU=ON
+	PATH="$(SYSTEM_PATH)" $(CMAKE) --build $(BUILD_DIR_WEBGPU)
 
 .PHONY: debug
 debug: ## Build with OpenGL backend (Debug)
-	$(CMAKE) -B $(BUILD_DIR_DEBUG) $(CMAKE_GENERATOR) $(CMAKE_COMMON) $(CMAKE_DEBUG) -DYMERY_USE_WEBGPU=OFF
-	$(CMAKE) --build $(BUILD_DIR_DEBUG)
+	PATH="$(SYSTEM_PATH)" $(CMAKE) -B $(BUILD_DIR_DEBUG) $(CMAKE_GENERATOR) $(CMAKE_COMMON) $(CMAKE_DEBUG) -DYMERY_USE_WEBGPU=OFF
+	PATH="$(SYSTEM_PATH)" $(CMAKE) --build $(BUILD_DIR_DEBUG)
 
 .PHONY: debug-webgpu
 debug-webgpu: ## Build with WebGPU backend (Debug)
-	$(CMAKE) -B $(BUILD_DIR_WEBGPU)-debug $(CMAKE_GENERATOR) $(CMAKE_COMMON) $(CMAKE_DEBUG) -DYMERY_USE_WEBGPU=ON
-	$(CMAKE) --build $(BUILD_DIR_WEBGPU)-debug
+	PATH="$(SYSTEM_PATH)" $(CMAKE) -B $(BUILD_DIR_WEBGPU)-debug $(CMAKE_GENERATOR) $(CMAKE_COMMON) $(CMAKE_DEBUG) -DYMERY_USE_WEBGPU=ON
+	PATH="$(SYSTEM_PATH)" $(CMAKE) --build $(BUILD_DIR_WEBGPU)-debug
 
 # === Android Build ===
 
 .PHONY: android
 android: ## Build Android APK (Debug)
-	cd $(ANDROID_DIR)/ymery && ./gradlew assembleDebug
+	cd $(ANDROID_DIR)/ymery && PATH="$(SYSTEM_PATH)" ./gradlew assembleDebug
 
 .PHONY: android-release
 android-release: ## Build Android APK (Release)
-	cd $(ANDROID_DIR)/ymery && ./gradlew assembleRelease
+	cd $(ANDROID_DIR)/ymery && PATH="$(SYSTEM_PATH)" ./gradlew assembleRelease
 
 .PHONY: android-editor
 android-editor: ## Build Android Editor APK (Debug)
-	cd $(ANDROID_DIR)/ymery-editor && ./gradlew assembleDebug
+	cd $(ANDROID_DIR)/ymery-editor && PATH="$(SYSTEM_PATH)" ./gradlew assembleDebug
 
 .PHONY: android-clean
 android-clean: ## Clean Android build
-	cd $(ANDROID_DIR)/ymery && ./gradlew clean
-	cd $(ANDROID_DIR)/ymery-editor && ./gradlew clean
+	cd $(ANDROID_DIR)/ymery && PATH="$(SYSTEM_PATH)" ./gradlew clean
+	cd $(ANDROID_DIR)/ymery-editor && PATH="$(SYSTEM_PATH)" ./gradlew clean
 	rm -rf build-android build-android-editor
 
 # === Web/Emscripten Build ===
+# Web build needs Nix emscripten but also system make/ninja
+WEB_PATH := $(PATH):/usr/bin:/bin
 
 .PHONY: web
 web: ## Build for Web with Emscripten
-	emcmake $(CMAKE) -B $(BUILD_DIR_WEB) $(CMAKE_COMMON) $(CMAKE_RELEASE)
-	$(CMAKE) --build $(BUILD_DIR_WEB)
+	PATH="$(WEB_PATH)" emcmake $(CMAKE) -B $(BUILD_DIR_WEB) $(CMAKE_GENERATOR) $(CMAKE_COMMON) $(CMAKE_RELEASE)
+	PATH="$(WEB_PATH)" $(CMAKE) --build $(BUILD_DIR_WEB)
 
 # === Individual Targets ===
 
 .PHONY: cli
 cli: opengl ## Build ymery-cli (OpenGL)
-	$(CMAKE) --build $(BUILD_DIR_OPENGL) --target ymery-cli
+	PATH="$(SYSTEM_PATH)" $(CMAKE) --build $(BUILD_DIR_OPENGL) --target ymery-cli
 
 .PHONY: editor
 editor: opengl ## Build ymery-editor (OpenGL)
-	$(CMAKE) --build $(BUILD_DIR_OPENGL) --target ymery-editor
+	PATH="$(SYSTEM_PATH)" $(CMAKE) --build $(BUILD_DIR_OPENGL) --target ymery-editor
 
 .PHONY: lib
 lib: opengl ## Build libymery only (OpenGL)
-	$(CMAKE) --build $(BUILD_DIR_OPENGL) --target ymery
+	PATH="$(SYSTEM_PATH)" $(CMAKE) --build $(BUILD_DIR_OPENGL) --target ymery
 
 .PHONY: plugins
 plugins: opengl ## Build plugins (OpenGL)
-	$(CMAKE) --build $(BUILD_DIR_OPENGL) --target plugins
+	PATH="$(SYSTEM_PATH)" $(CMAKE) --build $(BUILD_DIR_OPENGL) --target plugins
 
 # === Run Targets ===
 
@@ -138,7 +140,7 @@ rebuild-webgpu: clean-webgpu webgpu ## Clean and rebuild (WebGPU)
 
 .PHONY: install
 install: opengl ## Install to system (requires sudo)
-	$(CMAKE) --install $(BUILD_DIR_OPENGL)
+	PATH="$(SYSTEM_PATH)" $(CMAKE) --install $(BUILD_DIR_OPENGL)
 
 # === Help ===
 

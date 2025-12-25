@@ -400,8 +400,13 @@ void EmbeddedApp::on_mouse_pos(float x, float y) {
 
     ImGui::SetCurrentContext(_imgui_ctx);
     ImGuiIO& io = ImGui::GetIO();
-    spdlog::debug("EmbeddedApp::on_mouse_pos({}, {}) DisplaySize=({}, {})", x, y, io.DisplaySize.x, io.DisplaySize.y);
-    io.AddMousePosEvent(x, y);
+    // Add display position offset - host passes local coords, but ImGui needs absolute coords
+    // since we use SetNextWindowPos with the display offset
+    float abs_x = x + _display_pos_x;
+    float abs_y = y + _display_pos_y;
+    spdlog::debug("EmbeddedApp::on_mouse_pos({}, {}) -> abs({}, {}) DisplaySize=({}, {})",
+                  x, y, abs_x, abs_y, io.DisplaySize.x, io.DisplaySize.y);
+    io.AddMousePosEvent(abs_x, abs_y);
 }
 
 void EmbeddedApp::on_mouse_button(int button, bool pressed) {
