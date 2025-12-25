@@ -1,0 +1,142 @@
+widgets:
+  # Widget type definitions
+  window:
+    type: window
+  text:
+    type: text
+  button:
+    type: button
+  separator:
+    type: separator
+  row:
+    type: row
+  column:
+    type: column
+  collapsing-header:
+    type: collapsing-header
+  tree-node:
+    type: tree-node
+  implot:
+    type: implot
+  implot-layer:
+    type: implot-layer
+
+  # Main window widget
+  main-window:
+    type: window
+    label: Kernel Demo
+    body:
+      - text:
+          content: "Kernel Plugin Demo"
+          tooltip: "Central manager for providers, settings, and windows"
+      - separator
+      - text:
+          content: "The kernel acts as a central hub that routes requests to providers."
+      - text:
+          content: "Tree structure: /providers, /settings, /windows"
+      - separator
+
+      # Kernel Tree Structure
+      - collapsing-header:
+          label: "Kernel Tree Structure"
+          body:
+            - tree-node:
+                label: "/ (root)"
+                body:
+                  - tree-node:
+                      label: "/providers"
+                      body:
+                        - tree-node:
+                            label: "/providers/waveform"
+                            body:
+                              - text:
+                                  content: "Waveform generator provider"
+                        - tree-node:
+                            label: "/providers/alsa"
+                            body:
+                              - text:
+                                  content: "ALSA audio capture (Linux)"
+                        - tree-node:
+                            label: "/providers/jack"
+                            body:
+                              - text:
+                                  content: "JACK audio capture"
+                        - tree-node:
+                            label: "/providers/pipewire"
+                            body:
+                              - text:
+                                  content: "PipeWire audio capture (Linux)"
+                  - tree-node:
+                      label: "/settings"
+                      body:
+                        - text:
+                            content: "Application settings (stub)"
+                  - tree-node:
+                      label: "/windows"
+                      body:
+                        - text:
+                            content: "Registered UI objects (stub)"
+
+      - separator
+
+      # Waveform via Kernel Proxy
+      - collapsing-header:
+          label: "Waveforms via Kernel Proxy"
+          body:
+            - text:
+                content: "Accessing waveform data through /providers/waveform/..."
+            - separator
+            - collapsing-header:
+                label: Sine Wave
+                body:
+                  - implot:
+                      label: Sine via Kernel
+                      size: [600, 200]
+                      body:
+                        - implot-layer:
+                            label: Sine
+                            data-path: /providers/waveform/opened/sine/0
+            - collapsing-header:
+                label: Square Wave
+                body:
+                  - implot:
+                      label: Square via Kernel
+                      size: [600, 200]
+                      body:
+                        - implot-layer:
+                            label: Square
+                            data-path: /providers/waveform/opened/square/0
+            - collapsing-header:
+                label: Triangle Wave
+                body:
+                  - implot:
+                      label: Triangle via Kernel
+                      size: [600, 200]
+                      body:
+                        - implot-layer:
+                            label: Triangle
+                            data-path: /providers/waveform/opened/triangle/0
+
+      - separator
+
+      # Combined view
+      - collapsing-header:
+          label: "All Waveforms Combined"
+          body:
+            - implot:
+                label: All Waveforms via Kernel
+                size: [600, 300]
+                body:
+                  - implot-layer:
+                      label: Sine
+                      data-path: /providers/waveform/opened/sine/0
+                  - implot-layer:
+                      label: Square
+                      data-path: /providers/waveform/opened/square/0
+                  - implot-layer:
+                      label: Triangle
+                      data-path: /providers/waveform/opened/triangle/0
+
+app:
+  widget: app.main-window
+  data-tree: kernel
