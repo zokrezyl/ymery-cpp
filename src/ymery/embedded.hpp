@@ -1,7 +1,8 @@
 #pragma once
 
 // ymery embedded mode - for integrating ymery into another app's render loop
-// The host app owns the WebGPU context and window, ymery renders with its own ImGui context
+// The host app owns the graphics context and window, ymery renders with its own ImGui context
+// Supports both WebGPU and OpenGL backends via conditional compilation
 
 #include "result.hpp"
 #include "types.hpp"
@@ -13,10 +14,12 @@
 #include <filesystem>
 #include <memory>
 
+#ifdef YMERY_USE_WEBGPU
 // Forward declare WebGPU types
 typedef struct WGPUDeviceImpl* WGPUDevice;
 typedef struct WGPUQueueImpl* WGPUQueue;
 typedef struct WGPURenderPassEncoderImpl* WGPURenderPassEncoder;
+#endif
 
 // Forward declare ImGui types
 struct ImGuiContext;
@@ -26,10 +29,15 @@ namespace ymery {
 
 // Configuration for embedded mode
 struct EmbeddedConfig {
+#ifdef YMERY_USE_WEBGPU
     // WebGPU context (provided by host) - REQUIRED
     WGPUDevice device = nullptr;
     WGPUQueue queue = nullptr;
     int format = 0;  // WGPUTextureFormat, 0 = BGRA8Unorm
+#else
+    // OpenGL configuration
+    const char* glsl_version = "#version 130";  // GLSL version string for ImGui
+#endif
 
     // Layout configuration
     std::vector<std::filesystem::path> layout_paths;
@@ -54,10 +62,14 @@ public:
     // Frame rendering (called by host each frame)
     // 1. begin_frame(deltaTime) - starts ImGui frame
     // 2. render_widgets() - renders ymery widget tree
-    // 3. end_frame(pass) - finalizes and renders to the pass
+    // 3. end_frame() - finalizes and renders (WebGPU: pass encoder, OpenGL: direct)
     void begin_frame(float delta_time);
     void render_widgets();
+#ifdef YMERY_USE_WEBGPU
     void end_frame(WGPURenderPassEncoder pass);
+#else
+    void end_frame();
+#endif
 
     // Resize handling - call when plugin area changes size
     void resize(uint32_t width, uint32_t height);

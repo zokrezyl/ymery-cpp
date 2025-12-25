@@ -10,6 +10,7 @@ endif()
 set(BACKEND_PLUGINS
     simple-data-tree
     data-tree
+    kernel
 )
 
 foreach(plugin ${BACKEND_PLUGINS})
@@ -40,3 +41,103 @@ set_target_properties(waveform PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO "${PLUGIN_OUTPUT_DIR}"
     LIBRARY_OUTPUT_DIRECTORY_MINSIZEREL "${PLUGIN_OUTPUT_DIR}"
 )
+
+# ALSA plugin (Linux only)
+if(UNIX AND NOT APPLE AND NOT YMERY_ANDROID)
+    find_package(ALSA)
+    if(ALSA_FOUND)
+        add_library(alsa-plugin SHARED alsa.cpp)
+        target_link_libraries(alsa-plugin PRIVATE ymery ${ALSA_LIBRARIES})
+        target_include_directories(alsa-plugin PRIVATE ${CMAKE_SOURCE_DIR}/src ${ALSA_INCLUDE_DIRS})
+        set_target_properties(alsa-plugin PROPERTIES
+            PREFIX ""
+            OUTPUT_NAME "alsa"
+            LIBRARY_OUTPUT_DIRECTORY "${PLUGIN_OUTPUT_DIR}"
+            LIBRARY_OUTPUT_DIRECTORY_DEBUG "${PLUGIN_OUTPUT_DIR}"
+            LIBRARY_OUTPUT_DIRECTORY_RELEASE "${PLUGIN_OUTPUT_DIR}"
+            LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO "${PLUGIN_OUTPUT_DIR}"
+            LIBRARY_OUTPUT_DIRECTORY_MINSIZEREL "${PLUGIN_OUTPUT_DIR}"
+        )
+        message(STATUS "ALSA plugin enabled")
+    else()
+        message(STATUS "ALSA not found - alsa plugin disabled")
+    endif()
+endif()
+
+# JACK plugin (Linux and macOS)
+if(UNIX AND NOT YMERY_ANDROID)
+    find_library(JACK_LIBRARY jack)
+    find_path(JACK_INCLUDE_DIR jack/jack.h)
+    if(JACK_LIBRARY AND JACK_INCLUDE_DIR)
+        add_library(jack-plugin SHARED jack.cpp)
+        target_link_libraries(jack-plugin PRIVATE ymery ${JACK_LIBRARY})
+        target_include_directories(jack-plugin PRIVATE ${CMAKE_SOURCE_DIR}/src ${JACK_INCLUDE_DIR})
+        set_target_properties(jack-plugin PROPERTIES
+            PREFIX ""
+            OUTPUT_NAME "jack"
+            LIBRARY_OUTPUT_DIRECTORY "${PLUGIN_OUTPUT_DIR}"
+            LIBRARY_OUTPUT_DIRECTORY_DEBUG "${PLUGIN_OUTPUT_DIR}"
+            LIBRARY_OUTPUT_DIRECTORY_RELEASE "${PLUGIN_OUTPUT_DIR}"
+            LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO "${PLUGIN_OUTPUT_DIR}"
+            LIBRARY_OUTPUT_DIRECTORY_MINSIZEREL "${PLUGIN_OUTPUT_DIR}"
+        )
+        message(STATUS "JACK plugin enabled")
+    else()
+        message(STATUS "JACK not found - jack plugin disabled")
+    endif()
+endif()
+
+# PipeWire plugin (Linux only)
+if(UNIX AND NOT APPLE AND NOT YMERY_ANDROID)
+    find_package(PkgConfig QUIET)
+    if(PkgConfig_FOUND)
+        pkg_check_modules(PIPEWIRE libpipewire-0.3)
+    endif()
+    if(PIPEWIRE_FOUND)
+        add_library(pipewire-plugin SHARED pipewire.cpp)
+        target_link_libraries(pipewire-plugin PRIVATE ymery ${PIPEWIRE_LIBRARIES})
+        target_include_directories(pipewire-plugin PRIVATE ${CMAKE_SOURCE_DIR}/src ${PIPEWIRE_INCLUDE_DIRS})
+        target_compile_options(pipewire-plugin PRIVATE ${PIPEWIRE_CFLAGS_OTHER})
+        set_target_properties(pipewire-plugin PROPERTIES
+            PREFIX ""
+            OUTPUT_NAME "pipewire"
+            LIBRARY_OUTPUT_DIRECTORY "${PLUGIN_OUTPUT_DIR}"
+            LIBRARY_OUTPUT_DIRECTORY_DEBUG "${PLUGIN_OUTPUT_DIR}"
+            LIBRARY_OUTPUT_DIRECTORY_RELEASE "${PLUGIN_OUTPUT_DIR}"
+            LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO "${PLUGIN_OUTPUT_DIR}"
+            LIBRARY_OUTPUT_DIRECTORY_MINSIZEREL "${PLUGIN_OUTPUT_DIR}"
+        )
+        message(STATUS "PipeWire plugin enabled")
+    else()
+        message(STATUS "PipeWire not found - pipewire plugin disabled")
+    endif()
+endif()
+
+# Core Audio plugin (macOS only)
+if(APPLE)
+    find_library(COREAUDIO_LIBRARY CoreAudio)
+    find_library(AUDIOTOOLBOX_LIBRARY AudioToolbox)
+    find_library(COREFOUNDATION_LIBRARY CoreFoundation)
+    if(COREAUDIO_LIBRARY AND AUDIOTOOLBOX_LIBRARY)
+        add_library(coreaudio-plugin SHARED coreaudio.cpp)
+        target_link_libraries(coreaudio-plugin PRIVATE
+            ymery
+            ${COREAUDIO_LIBRARY}
+            ${AUDIOTOOLBOX_LIBRARY}
+            ${COREFOUNDATION_LIBRARY}
+        )
+        target_include_directories(coreaudio-plugin PRIVATE ${CMAKE_SOURCE_DIR}/src)
+        set_target_properties(coreaudio-plugin PROPERTIES
+            PREFIX ""
+            OUTPUT_NAME "coreaudio"
+            LIBRARY_OUTPUT_DIRECTORY "${PLUGIN_OUTPUT_DIR}"
+            LIBRARY_OUTPUT_DIRECTORY_DEBUG "${PLUGIN_OUTPUT_DIR}"
+            LIBRARY_OUTPUT_DIRECTORY_RELEASE "${PLUGIN_OUTPUT_DIR}"
+            LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO "${PLUGIN_OUTPUT_DIR}"
+            LIBRARY_OUTPUT_DIRECTORY_MINSIZEREL "${PLUGIN_OUTPUT_DIR}"
+        )
+        message(STATUS "Core Audio plugin enabled")
+    else()
+        message(STATUS "Core Audio frameworks not found - coreaudio plugin disabled")
+    endif()
+endif()

@@ -3,7 +3,7 @@ project(ymery_android)
 
 # Include the main ymery project
 set(YMERY_ANDROID ON CACHE BOOL "" FORCE)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../../../.. ${CMAKE_CURRENT_BINARY_DIR}/ymery)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../../../../.. ${CMAKE_CURRENT_BINARY_DIR}/ymery)
 
 # Add native_app_glue from NDK
 add_library(native_app_glue STATIC

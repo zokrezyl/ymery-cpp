@@ -53,16 +53,21 @@ debug-webgpu: ## Build with WebGPU backend (Debug)
 
 .PHONY: android
 android: ## Build Android APK (Debug)
-	cd $(ANDROID_DIR) && ./gradlew assembleDebug
+	cd $(ANDROID_DIR)/ymery && ./gradlew assembleDebug
 
 .PHONY: android-release
 android-release: ## Build Android APK (Release)
-	cd $(ANDROID_DIR) && ./gradlew assembleRelease
+	cd $(ANDROID_DIR)/ymery && ./gradlew assembleRelease
+
+.PHONY: android-editor
+android-editor: ## Build Android Editor APK (Debug)
+	cd $(ANDROID_DIR)/ymery-editor && ./gradlew assembleDebug
 
 .PHONY: android-clean
 android-clean: ## Clean Android build
-	cd $(ANDROID_DIR) && ./gradlew clean
-	rm -rf $(ANDROID_DIR)/app/.cxx
+	cd $(ANDROID_DIR)/ymery && ./gradlew clean
+	cd $(ANDROID_DIR)/ymery-editor && ./gradlew clean
+	rm -rf build-android build-android-editor
 
 # === Web/Emscripten Build ===
 

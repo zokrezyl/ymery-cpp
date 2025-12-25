@@ -1,8 +1,12 @@
 #include "embedded.hpp"
 #include <imgui.h>
+#ifdef YMERY_USE_WEBGPU
 #include <imgui_impl_wgpu.h>
-#include <implot.h>
 #include <webgpu/webgpu.h>
+#else
+#include <imgui_impl_opengl3.h>
+#endif
+#include <implot.h>
 #include <spdlog/spdlog.h>
 
 namespace ymery {
@@ -120,12 +124,14 @@ static ImGuiKey glfw_key_to_imgui_key(int key) {
 }
 
 Result<std::shared_ptr<EmbeddedApp>> EmbeddedApp::create(const EmbeddedConfig& config) {
+#ifdef YMERY_USE_WEBGPU
     if (!config.device) {
         return Err<std::shared_ptr<EmbeddedApp>>("EmbeddedApp::create: device is required");
     }
     if (!config.queue) {
         return Err<std::shared_ptr<EmbeddedApp>>("EmbeddedApp::create: queue is required");
     }
+#endif
 
     auto app = std::shared_ptr<EmbeddedApp>(new EmbeddedApp());
     app->_config = config;
@@ -243,6 +249,7 @@ Result<void> EmbeddedApp::_init_imgui() {
     // Style
     ImGui::StyleColorsDark();
 
+#ifdef YMERY_USE_WEBGPU
     // Initialize WebGPU backend (no GLFW backend - we handle input manually)
     ImGui_ImplWGPU_InitInfo wgpu_info = {};
     wgpu_info.Device = _config.device;
@@ -259,15 +266,30 @@ Result<void> EmbeddedApp::_init_imgui() {
         _imgui_ctx = nullptr;
         return Err<void>("EmbeddedApp::_init_imgui: ImGui_ImplWGPU_Init failed");
     }
+    spdlog::info("EmbeddedApp: ImGui WebGPU context initialized ({}x{})", _width, _height);
+#else
+    // Initialize OpenGL backend (no GLFW backend - we handle input manually)
+    if (!ImGui_ImplOpenGL3_Init(_config.glsl_version)) {
+        ImPlot::DestroyContext(_implot_ctx);
+        ImGui::DestroyContext(_imgui_ctx);
+        _implot_ctx = nullptr;
+        _imgui_ctx = nullptr;
+        return Err<void>("EmbeddedApp::_init_imgui: ImGui_ImplOpenGL3_Init failed");
+    }
+    spdlog::info("EmbeddedApp: ImGui OpenGL context initialized ({}x{})", _width, _height);
+#endif
 
-    spdlog::info("EmbeddedApp: ImGui context initialized ({}x{})", _width, _height);
     return Ok();
 }
 
 void EmbeddedApp::_shutdown_imgui() {
     if (_imgui_ctx) {
         ImGui::SetCurrentContext(_imgui_ctx);
+#ifdef YMERY_USE_WEBGPU
         ImGui_ImplWGPU_Shutdown();
+#else
+        ImGui_ImplOpenGL3_Shutdown();
+#endif
 
         if (_implot_ctx) {
             ImPlot::DestroyContext(_implot_ctx);
@@ -302,7 +324,11 @@ void EmbeddedApp::begin_frame(float delta_time) {
     ImGuiIO& io = ImGui::GetIO();
     io.DeltaTime = delta_time > 0.0f ? delta_time : 1.0f / 60.0f;
 
+#ifdef YMERY_USE_WEBGPU
     ImGui_ImplWGPU_NewFrame();
+#else
+    ImGui_ImplOpenGL3_NewFrame();
+#endif
     ImGui::NewFrame();
 }
 
@@ -313,6 +339,18 @@ void EmbeddedApp::render_widgets() {
     ImGui::SetCurrentContext(_imgui_ctx);
     ImPlot::SetCurrentContext(_implot_ctx);
 
+    // Debug: log mouse state before rendering
+    ImGuiIO& io = ImGui::GetIO();
+    static int frame_count = 0;
+    if (io.MouseDown[0] || (frame_count++ % 60 == 0)) {
+        spdlog::debug("render_widgets: MousePos=({}, {}) MouseDown={} DisplaySize=({}, {})",
+            io.MousePos.x, io.MousePos.y, io.MouseDown[0], io.DisplaySize.x, io.DisplaySize.y);
+    }
+
+    // In embedded mode, force the first window to fill the entire display
+    ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(static_cast<float>(_width), static_cast<float>(_height)), ImGuiCond_Always);
+
     if (_root_widget) {
         if (auto render_res = _root_widget->render(); !render_res) {
             spdlog::warn("EmbeddedApp::render_widgets: {}", error_msg(render_res));
@@ -320,6 +358,7 @@ void EmbeddedApp::render_widgets() {
     }
 }
 
+#ifdef YMERY_USE_WEBGPU
 void EmbeddedApp::end_frame(WGPURenderPassEncoder pass) {
     if (!_imgui_ctx) return;
 
@@ -328,6 +367,16 @@ void EmbeddedApp::end_frame(WGPURenderPassEncoder pass) {
     ImGui::Render();
     ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), pass);
 }
+#else
+void EmbeddedApp::end_frame() {
+    if (!_imgui_ctx) return;
+
+    ImGui::SetCurrentContext(_imgui_ctx);
+
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+#endif
 
 void EmbeddedApp::resize(uint32_t width, uint32_t height) {
     _width = width;
@@ -345,6 +394,7 @@ void EmbeddedApp::on_mouse_pos(float x, float y) {
 
     ImGui::SetCurrentContext(_imgui_ctx);
     ImGuiIO& io = ImGui::GetIO();
+    spdlog::debug("EmbeddedApp::on_mouse_pos({}, {}) DisplaySize=({}, {})", x, y, io.DisplaySize.x, io.DisplaySize.y);
     io.AddMousePosEvent(x, y);
 }
 
@@ -353,6 +403,7 @@ void EmbeddedApp::on_mouse_button(int button, bool pressed) {
 
     ImGui::SetCurrentContext(_imgui_ctx);
     ImGuiIO& io = ImGui::GetIO();
+    spdlog::debug("EmbeddedApp::on_mouse_button({}, {}) MousePos=({}, {})", button, pressed, io.MousePos.x, io.MousePos.y);
     if (button >= 0 && button < ImGuiMouseButton_COUNT) {
         io.AddMouseButtonEvent(button, pressed);
     }
@@ -412,7 +463,9 @@ bool EmbeddedApp::wants_mouse() const {
     if (!_imgui_ctx) return false;
 
     ImGui::SetCurrentContext(_imgui_ctx);
-    return ImGui::GetIO().WantCaptureMouse;
+    ImGuiIO& io = ImGui::GetIO();
+    spdlog::debug("EmbeddedApp::wants_mouse() MousePos=({}, {}) WantCaptureMouse={}", io.MousePos.x, io.MousePos.y, io.WantCaptureMouse);
+    return io.WantCaptureMouse;
 }
 
 } // namespace ymery
