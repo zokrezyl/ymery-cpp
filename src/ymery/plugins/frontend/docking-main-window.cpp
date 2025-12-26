@@ -68,23 +68,16 @@ public:
         // Classify children into splits, dockable windows, and regular widgets
         _classify_children();
 
-        // Create fullscreen dockspace window
-        ImGuiViewport* viewport = ImGui::GetMainViewport();
-
-        // Get dockspace ID (use a fixed string hash so it's consistent)
-        ImGuiID dockspace_id = ImHashStr("MainDockSpace");
-
-        // First time setup: build dock layout before creating the dockspace window
-        if (!_layout_initialized) {
-            _layout_initialized = true;
-            spdlog::info("DockingMainWindow: first frame, setting up docking layout");
-            // Call DockSpace first to initialize the dock node
-            ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_KeepAliveOnly);
-            // Now configure the layout
-            _setup_splits_and_windows(dockspace_id);
-            ImGui::DockBuilderFinish(dockspace_id);
+        // Menu bar - EXACTLY like ymery-editor render_menu_bar()
+        if (ImGui::BeginMainMenuBar()) {
+            if (_menu_bar.widget) {
+                _menu_bar.widget->render();
+            }
+            ImGui::EndMainMenuBar();
         }
 
+        // Dockspace - EXACTLY like ymery-editor render_dockspace()
+        ImGuiViewport* viewport = ImGui::GetMainViewport();
         ImGui::SetNextWindowPos(viewport->WorkPos);
         ImGui::SetNextWindowSize(viewport->WorkSize);
         ImGui::SetNextWindowViewport(viewport->ID);
@@ -95,8 +88,7 @@ public:
                                          ImGuiWindowFlags_NoResize |
                                          ImGuiWindowFlags_NoMove |
                                          ImGuiWindowFlags_NoBringToFrontOnFocus |
-                                         ImGuiWindowFlags_NoNavFocus |
-                                         ImGuiWindowFlags_MenuBar;
+                                         ImGuiWindowFlags_NoNavFocus;
 
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
@@ -105,27 +97,72 @@ public:
         ImGui::Begin("DockSpaceWindow", nullptr, window_flags);
         ImGui::PopStyleVar(3);
 
-        // Render menu bar if present (widget handles BeginMenuBar/EndMenuBar)
-        if (_menu_bar.widget) {
-            _menu_bar.widget->render();
-        }
-
-        // Render the dockspace
+        // Create the dockspace
+        ImGuiID dockspace_id = ImGui::GetID("MainDockSpace");
+        spdlog::info("PLUGIN: DockSpace dockspace_id={}", dockspace_id);
         ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
+
+        // First time setup - INLINE like ymery-editor (static bool)
+        static bool first_time = true;
+        spdlog::info("PLUGIN: first_time={}", first_time);
+
+        if (first_time && !_splits.empty()) {
+            first_time = false;
+
+            spdlog::info("PLUGIN: DockBuilderRemoveNode({})", dockspace_id);
+            ImGui::DockBuilderRemoveNode(dockspace_id);
+            spdlog::info("PLUGIN: DockBuilderAddNode({})", dockspace_id);
+            ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_None);
+            spdlog::info("PLUGIN: DockBuilderSetNodeSize({}, {}x{})", dockspace_id, viewport->WorkSize.x, viewport->WorkSize.y);
+            ImGui::DockBuilderSetNodeSize(dockspace_id, viewport->WorkSize);
+
+            // Store the main dock space
+            _dock_ids["MainDockSpace"] = dockspace_id;
+
+            // Process splits
+            for (const auto& split : _splits) {
+                ImGuiID initial_id = dockspace_id;
+                if (auto it = _dock_ids.find(split.initial_dock); it != _dock_ids.end()) {
+                    initial_id = it->second;
+                }
+
+                ImGuiID new_id;
+                ImGuiID remaining_id;
+                ImGui::DockBuilderSplitNode(initial_id, split.direction, split.ratio, &new_id, &remaining_id);
+
+                spdlog::info("PLUGIN: SplitNode({}, dir={}, {}) -> new_id={}, remaining_id={}",
+                    initial_id, (int)split.direction, split.ratio, new_id, remaining_id);
+
+                _dock_ids[split.new_dock] = new_id;
+                _dock_ids[split.initial_dock] = remaining_id;
+            }
+
+            // Dock windows to their spaces
+            for (const auto& dw : _dockable_windows) {
+                ImGuiID dock_id = dockspace_id;
+                if (auto it = _dock_ids.find(dw.dock_space_name); it != _dock_ids.end()) {
+                    dock_id = it->second;
+                }
+                spdlog::info("PLUGIN: DockBuilderDockWindow('{}', {})", dw.label, dock_id);
+                ImGui::DockBuilderDockWindow(dw.label.c_str(), dock_id);
+            }
+
+            spdlog::info("PLUGIN: DockBuilderFinish({})", dockspace_id);
+            ImGui::DockBuilderFinish(dockspace_id);
+        }
 
         ImGui::End();
 
-        // Render dockable windows
-        for (auto& dw : _dockable_windows) {
-            if (ImGui::Begin(dw.label.c_str())) {
-                if (dw.widget) {
-                    dw.widget->render();
-                }
+        // Render dockable windows - EXACTLY like ymery-editor
+        for (const auto& dw : _dockable_windows) {
+            ImGui::Begin(dw.label.c_str());
+            if (dw.widget) {
+                dw.widget->render();
             }
             ImGui::End();
         }
 
-        // Render regular widgets (non-docking)
+        // Render regular widgets
         for (auto& widget : _regular_widgets) {
             widget->render();
         }
@@ -226,45 +263,6 @@ private:
 
         spdlog::info("DockingMainWindow: classified {} splits, {} dockable_windows, {} regular",
             _splits.size(), _dockable_windows.size(), _regular_widgets.size());
-    }
-
-    void _setup_splits_and_windows(ImGuiID dockspace_id) {
-        spdlog::info("DockingMainWindow: setting up splits and windows, dockspace_id={}", dockspace_id);
-
-        // Store the main dock space
-        _dock_ids["MainDockSpace"] = dockspace_id;
-
-        // Process splits
-        for (const auto& split : _splits) {
-            ImGuiID initial_id = dockspace_id;
-            if (auto it = _dock_ids.find(split.initial_dock); it != _dock_ids.end()) {
-                initial_id = it->second;
-            }
-
-            ImGuiID new_id;
-            ImGuiID remaining_id;
-            ImGui::DockBuilderSplitNode(initial_id, split.direction, split.ratio, &new_id, &remaining_id);
-
-            spdlog::info("DockingMainWindow: split '{}' (id={}) -> '{}' (id={}), remaining id={}",
-                split.initial_dock, initial_id, split.new_dock, new_id, remaining_id);
-
-            _dock_ids[split.new_dock] = new_id;
-            // Update the initial dock with the remaining space
-            _dock_ids[split.initial_dock] = remaining_id;
-        }
-
-        // Dock windows to their spaces
-        for (const auto& dw : _dockable_windows) {
-            ImGuiID dock_id = dockspace_id;
-            if (auto it = _dock_ids.find(dw.dock_space_name); it != _dock_ids.end()) {
-                dock_id = it->second;
-            }
-            spdlog::info("DockingMainWindow: docking window '{}' to dock '{}' (id={})",
-                dw.label, dw.dock_space_name, dock_id);
-            ImGui::DockBuilderDockWindow(dw.label.c_str(), dock_id);
-        }
-
-        spdlog::info("DockingMainWindow: docking layout setup complete");
     }
 };
 

@@ -561,9 +561,7 @@ Result<void> App::_init_graphics() {
     ImPlot::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-#ifdef ImGuiConfigFlags_DockingEnable
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-#endif
 
     // Setup style
     ImGui::StyleColorsDark();

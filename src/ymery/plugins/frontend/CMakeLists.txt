@@ -83,7 +83,7 @@ foreach(plugin ${IMPLOT_PLUGINS})
     )
 endforeach()
 
-# Node editor widgets - DISABLED due to imgui_node_editor compatibility issues
+# Node editor widgets - DISABLED (requires pthom's patched imgui)
 # set(NODE_EDITOR_PLUGINS node-editor node node-pin)
 # foreach(plugin ${NODE_EDITOR_PLUGINS})
 #     add_library(${plugin} SHARED ${plugin}.cpp)
@@ -93,6 +93,10 @@ endforeach()
 #         PREFIX ""
 #         OUTPUT_NAME "${plugin}"
 #         LIBRARY_OUTPUT_DIRECTORY "${PLUGIN_OUTPUT_DIR}"
+#         LIBRARY_OUTPUT_DIRECTORY_DEBUG "${PLUGIN_OUTPUT_DIR}"
+#         LIBRARY_OUTPUT_DIRECTORY_RELEASE "${PLUGIN_OUTPUT_DIR}"
+#         LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO "${PLUGIN_OUTPUT_DIR}"
+#         LIBRARY_OUTPUT_DIRECTORY_MINSIZEREL "${PLUGIN_OUTPUT_DIR}"
 #     )
 # endforeach()
 

@@ -1,0 +1,35 @@
+widgets:
+  # Widget type definitions
+  window:
+    type: window
+  text:
+    type: text
+  separator:
+    type: separator
+  node-editor:
+    type: node-editor
+  node:
+    type: node
+  node-pin:
+    type: node-pin
+
+  # Main window widget
+  main-window:
+    type: window
+    label: Node Editor Demo
+    body:
+      - text:
+          content: "Node Editor Demo"
+          tooltip: "Node graph editor for visual programming"
+      - separator
+      - text:
+          content: "This demo showcases the node editor widget."
+      - text:
+          content: "Drag nodes to move them. Connect pins by dragging."
+      - separator
+      - node-editor:
+          label: Test Editor
+          size: [800, 500]
+
+app:
+  widget: app.main-window

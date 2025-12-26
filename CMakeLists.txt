@@ -231,13 +231,22 @@ if(implot_ADDED)
     target_link_libraries(implot PUBLIC imgui)
 endif()
 
-# imgui-node-editor - DISABLED due to compatibility issues with ImGui 1.90+
+# imgui-node-editor - DISABLED
+# Requires pthom's patched imgui (1.90.1 with hooks) but ymery uses vanilla 1.91.6
+# pthom fork: https://github.com/pthom/imgui-node-editor (branch imgui_bundle)
+# pthom imgui: https://github.com/pthom/imgui (branch imgui_bundle)
 # CPMAddPackage(
 #     NAME imgui_node_editor
-#     GITHUB_REPOSITORY thedmd/imgui-node-editor
-#     VERSION 0.9.3
+#     GITHUB_REPOSITORY pthom/imgui-node-editor
+#     GIT_TAG imgui_bundle
 #     DOWNLOAD_ONLY YES
 # )
+# if(imgui_node_editor_ADDED)
+#     file(GLOB IMGUI_NODE_EDITOR_SOURCES ${imgui_node_editor_SOURCE_DIR}/*.cpp)
+#     add_library(imgui_node_editor STATIC ${IMGUI_NODE_EDITOR_SOURCES})
+#     target_include_directories(imgui_node_editor PUBLIC ${imgui_node_editor_SOURCE_DIR})
+#     target_link_libraries(imgui_node_editor PUBLIC imgui)
+# endif()
 
 # imgui_markdown - markdown renderer
 CPMAddPackage(

@@ -651,29 +651,40 @@ void EditorApp::render_dockspace() {
 
     // Create the dockspace
     ImGuiID dockspace_id = ImGui::GetID("EditorDockSpace");
+    spdlog::info("EDITOR: DockSpace dockspace_id={}", dockspace_id);
     ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
 
     // First time setup: create default layout
     static bool first_time = true;
+    spdlog::info("EDITOR: first_time={}", first_time);
     if (first_time) {
         first_time = false;
 
+        spdlog::info("EDITOR: DockBuilderRemoveNode({})", dockspace_id);
         ImGui::DockBuilderRemoveNode(dockspace_id);
+        spdlog::info("EDITOR: DockBuilderAddNode({})", dockspace_id);
         ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_None);
+        spdlog::info("EDITOR: DockBuilderSetNodeSize({}, {}x{})", dockspace_id, viewport->WorkSize.x, viewport->WorkSize.y);
         ImGui::DockBuilderSetNodeSize(dockspace_id, viewport->WorkSize);
 
         // Split into left and right
         ImGuiID dock_left, dock_right;
         ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Left, 0.25f, &dock_left, &dock_right);
+        spdlog::info("EDITOR: SplitNode({}, Left, 0.25) -> dock_left={}, dock_right={}", dockspace_id, dock_left, dock_right);
 
         // Split right into top (Layout View) and bottom (Preview)
         ImGuiID dock_right_top, dock_right_bottom;
         ImGui::DockBuilderSplitNode(dock_right, ImGuiDir_Up, 0.5f, &dock_right_top, &dock_right_bottom);
+        spdlog::info("EDITOR: SplitNode({}, Up, 0.5) -> dock_right_top={}, dock_right_bottom={}", dock_right, dock_right_top, dock_right_bottom);
 
+        spdlog::info("EDITOR: DockBuilderDockWindow('Widget Browser', {})", dock_left);
         ImGui::DockBuilderDockWindow("Widget Browser", dock_left);
+        spdlog::info("EDITOR: DockBuilderDockWindow('Layout View', {})", dock_right_top);
         ImGui::DockBuilderDockWindow("Layout View", dock_right_top);
+        spdlog::info("EDITOR: DockBuilderDockWindow('Preview', {})", dock_right_bottom);
         ImGui::DockBuilderDockWindow("Preview", dock_right_bottom);
 
+        spdlog::info("EDITOR: DockBuilderFinish({})", dockspace_id);
         ImGui::DockBuilderFinish(dockspace_id);
     }
 
