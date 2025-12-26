@@ -347,10 +347,9 @@ void EmbeddedApp::render_widgets() {
             io.MousePos.x, io.MousePos.y, io.MouseDown[0], io.DisplaySize.x, io.DisplaySize.y);
     }
 
-    // In embedded mode, force the first window to fill the entire display
-    // Use display position offset for embedded rendering at correct screen position
+    // In embedded mode, position and size the window within the framebuffer
     ImGui::SetNextWindowPos(ImVec2(_display_pos_x, _display_pos_y), ImGuiCond_Always);
-    ImGui::SetNextWindowSize(ImVec2(static_cast<float>(_width), static_cast<float>(_height)), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(_display_w, _display_h), ImGuiCond_Always);
 
     if (_root_widget) {
         if (auto render_res = _root_widget->render(); !render_res) {
@@ -359,9 +358,11 @@ void EmbeddedApp::render_widgets() {
     }
 }
 
-void EmbeddedApp::set_display_pos(float x, float y) {
+void EmbeddedApp::set_display_pos(float x, float y, float w, float h) {
     _display_pos_x = x;
     _display_pos_y = y;
+    _display_w = w;
+    _display_h = h;
 }
 
 #ifdef YMERY_USE_WEBGPU
