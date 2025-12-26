@@ -31,6 +31,10 @@ set(WIDGET_PLUGINS
     tab-bar
     tab-item
     child
+    menu-bar
+    main-menu-bar
+    menu
+    menu-item
 )
 
 foreach(plugin ${WIDGET_PLUGINS})
@@ -160,11 +164,17 @@ target_include_directories(editor-widget-tree PRIVATE ${CMAKE_SOURCE_DIR}/src)
 set_target_properties(editor-widget-tree PROPERTIES PREFIX "" OUTPUT_NAME "editor-widget-tree")
 set_plugin_output_dirs(editor-widget-tree)
 
-add_library(editor-canvas SHARED editor/canvas.cpp)
-target_link_libraries(editor-canvas PRIVATE ymery imgui spdlog::spdlog)
-target_include_directories(editor-canvas PRIVATE ${CMAKE_SOURCE_DIR}/src)
-set_target_properties(editor-canvas PROPERTIES PREFIX "" OUTPUT_NAME "editor-canvas")
-set_plugin_output_dirs(editor-canvas)
+add_library(editor SHARED editor/editor.cpp)
+target_link_libraries(editor PRIVATE ymery imgui spdlog::spdlog)
+target_include_directories(editor PRIVATE ${CMAKE_SOURCE_DIR}/src)
+set_target_properties(editor PROPERTIES PREFIX "" OUTPUT_NAME "editor")
+set_plugin_output_dirs(editor)
+
+add_library(editor-code-preview SHARED editor/code-preview.cpp)
+target_link_libraries(editor-code-preview PRIVATE ymery imgui imgui_color_text_edit spdlog::spdlog)
+target_include_directories(editor-code-preview PRIVATE ${CMAKE_SOURCE_DIR}/src)
+set_target_properties(editor-code-preview PROPERTIES PREFIX "" OUTPUT_NAME "editor-code-preview")
+set_plugin_output_dirs(editor-code-preview)
 
 add_library(editor-properties SHARED editor/properties.cpp)
 target_link_libraries(editor-properties PRIVATE ymery imgui spdlog::spdlog)
@@ -196,6 +206,20 @@ target_link_libraries(dockable-window PRIVATE ymery imgui)
 target_include_directories(dockable-window PRIVATE ${CMAKE_SOURCE_DIR}/src)
 set_target_properties(dockable-window PROPERTIES PREFIX "" OUTPUT_NAME "dockable-window")
 set_plugin_output_dirs(dockable-window)
+
+# Piano widget
+add_library(piano SHARED piano.cpp)
+target_link_libraries(piano PRIVATE ymery imgui)
+target_include_directories(piano PRIVATE ${CMAKE_SOURCE_DIR}/src)
+set_target_properties(piano PROPERTIES PREFIX "" OUTPUT_NAME "piano")
+set_plugin_output_dirs(piano)
+
+# Hex editor widget
+add_library(hex-editor SHARED hex-editor.cpp)
+target_link_libraries(hex-editor PRIVATE ymery imgui)
+target_include_directories(hex-editor PRIVATE ${CMAKE_SOURCE_DIR}/src)
+set_target_properties(hex-editor PROPERTIES PREFIX "" OUTPUT_NAME "hex-editor")
+set_plugin_output_dirs(hex-editor)
 
 # Copy meta.yaml files to build directory
 file(GLOB META_YAML_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.meta.yaml")

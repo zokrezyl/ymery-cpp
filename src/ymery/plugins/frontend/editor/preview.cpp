@@ -1,12 +1,11 @@
 // editor-preview widget plugin - live preview of the layout being edited
-// Uses the widget factory to render actual plugins - no hardcoded widget rendering
+// Simply renders the YAML structure via widget factory - no special logic
 #include "../../../frontend/widget.hpp"
 #include "../../../frontend/widget_factory.hpp"
 #include "../../../types.hpp"
 #include "shared_model.hpp"
 #include <imgui.h>
 #include <spdlog/spdlog.h>
-#include <map>
 
 namespace ymery::plugins {
 
@@ -45,70 +44,18 @@ protected:
             return Ok();
         }
 
-        _render_node(model.root());
+        // Create widget from YAML and render it
+        // Recreate each frame to reflect editor changes
+        auto res = _widget_factory->create_widget(_data_bag, model.root(), _namespace);
+        if (res) {
+            (*res)->render();
+        } else {
+            std::string err = error_msg(res);
+            spdlog::error("EditorPreview: failed to create widget: {}", err);
+            ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "Error: %s", err.c_str());
+        }
 
         return Ok();
-    }
-
-private:
-    // Cache of created widgets by node id
-    std::map<int, WidgetPtr> _widget_cache;
-
-    void _render_node(LayoutNode* node) {
-        if (!node) return;
-
-        ImGui::PushID(node->id);
-
-        // Handle same-line positioning
-        if (node->position == LayoutPosition::SameLine && node->parent) {
-            auto& siblings = node->parent->children;
-            for (size_t i = 0; i < siblings.size(); ++i) {
-                if (siblings[i].get() == node && i > 0) {
-                    ImGui::SameLine();
-                    break;
-                }
-            }
-        }
-
-        const std::string& type = node->widget_type;
-
-        // Get or create widget from cache
-        WidgetPtr widget;
-        auto it = _widget_cache.find(node->id);
-        if (it != _widget_cache.end()) {
-            widget = it->second;
-        } else {
-            // Build spec: {widget_type: {label: "..."}}
-            Dict props;
-            props["label"] = node->label;
-            Dict spec;
-            spec[type] = Value(props);
-
-            // Create widget via factory (uses plugins)
-            auto res = _widget_factory->create_widget(_data_bag, Value(spec), _namespace);
-            if (res) {
-                widget = *res;
-                _widget_cache[node->id] = widget;
-            }
-        }
-
-        // Render the widget
-        if (widget) {
-            widget->render();
-
-            // For container widgets, render children
-            for (auto& child : node->children) {
-                _render_node(child.get());
-            }
-        } else {
-            // Fallback for unknown widgets
-            ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.3f, 1.0f), "[%s: %s]", type.c_str(), node->label.c_str());
-            for (auto& child : node->children) {
-                _render_node(child.get());
-            }
-        }
-
-        ImGui::PopID();
     }
 };
 

@@ -24,6 +24,10 @@ struct DockableWindowInfo {
     WidgetPtr widget;
 };
 
+struct MenuBarInfo {
+    WidgetPtr widget;
+};
+
 class DockingMainWindow : public Composite {
 public:
     static Result<WidgetPtr> create(
@@ -66,6 +70,21 @@ public:
 
         // Create fullscreen dockspace window
         ImGuiViewport* viewport = ImGui::GetMainViewport();
+
+        // Get dockspace ID (use a fixed string hash so it's consistent)
+        ImGuiID dockspace_id = ImHashStr("MainDockSpace");
+
+        // First time setup: build dock layout before creating the dockspace window
+        if (!_layout_initialized) {
+            _layout_initialized = true;
+            spdlog::info("DockingMainWindow: first frame, setting up docking layout");
+            // Call DockSpace first to initialize the dock node
+            ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_KeepAliveOnly);
+            // Now configure the layout
+            _setup_splits_and_windows(dockspace_id);
+            ImGui::DockBuilderFinish(dockspace_id);
+        }
+
         ImGui::SetNextWindowPos(viewport->WorkPos);
         ImGui::SetNextWindowSize(viewport->WorkSize);
         ImGui::SetNextWindowViewport(viewport->ID);
@@ -86,15 +105,13 @@ public:
         ImGui::Begin("DockSpaceWindow", nullptr, window_flags);
         ImGui::PopStyleVar(3);
 
-        // Create the dockspace
-        ImGuiID dockspace_id = ImGui::GetID("MainDockSpace");
-        ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
-
-        // First time setup: create layout from splits
-        if (!_layout_initialized) {
-            _layout_initialized = true;
-            _setup_docking_layout(dockspace_id, viewport->WorkSize);
+        // Render menu bar if present (widget handles BeginMenuBar/EndMenuBar)
+        if (_menu_bar.widget) {
+            _menu_bar.widget->render();
         }
+
+        // Render the dockspace
+        ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
 
         ImGui::End();
 
@@ -124,6 +141,7 @@ private:
     std::vector<DockingSplitInfo> _splits;
     std::vector<DockableWindowInfo> _dockable_windows;
     std::vector<WidgetPtr> _regular_widgets;
+    MenuBarInfo _menu_bar;
     std::map<std::string, ImGuiID> _dock_ids;
 
     void _classify_children() {
@@ -133,6 +151,7 @@ private:
         _splits.clear();
         _dockable_windows.clear();
         _regular_widgets.clear();
+        _menu_bar.widget = nullptr;
 
         for (auto& child : _children) {
             // Check if it's a docking-split by checking the widget type
@@ -149,7 +168,11 @@ private:
 
             spdlog::info("DockingMainWindow: child widget_type = '{}'", widget_type);
 
-            if (widget_type == "docking-split") {
+            if (widget_type == "menu-bar" || widget_type == "main-menu-bar") {
+                _menu_bar.widget = child;
+                spdlog::info("DockingMainWindow: found menu-bar widget");
+            }
+            else if (widget_type == "docking-split") {
                 DockingSplitInfo split;
 
                 if (auto res = child_bag->get("initial-dock"); res && res->has_value()) {
@@ -205,12 +228,8 @@ private:
             _splits.size(), _dockable_windows.size(), _regular_widgets.size());
     }
 
-    void _setup_docking_layout(ImGuiID dockspace_id, ImVec2 size) {
-        spdlog::info("DockingMainWindow: setting up docking layout, dockspace_id={}", dockspace_id);
-
-        ImGui::DockBuilderRemoveNode(dockspace_id);
-        ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_None);
-        ImGui::DockBuilderSetNodeSize(dockspace_id, size);
+    void _setup_splits_and_windows(ImGuiID dockspace_id) {
+        spdlog::info("DockingMainWindow: setting up splits and windows, dockspace_id={}", dockspace_id);
 
         // Store the main dock space
         _dock_ids["MainDockSpace"] = dockspace_id;
@@ -245,7 +264,6 @@ private:
             ImGui::DockBuilderDockWindow(dw.label.c_str(), dock_id);
         }
 
-        ImGui::DockBuilderFinish(dockspace_id);
         spdlog::info("DockingMainWindow: docking layout setup complete");
     }
 };

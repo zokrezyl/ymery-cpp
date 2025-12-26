@@ -400,8 +400,18 @@ Result<void> App::_init_graphics() {
     }
 
     // Create surface
-#ifdef YMERY_WEB
-    // Emscripten: create surface from canvas
+#ifdef YMERY_WEB_DAWN
+    // Emscripten + Dawn WebGPU: create surface from canvas
+    WGPUEmscriptenSurfaceSourceCanvasHTMLSelector canvas_desc = {};
+    canvas_desc.chain.sType = WGPUSType_EmscriptenSurfaceSourceCanvasHTMLSelector;
+    canvas_desc.selector = {.data = "#canvas", .length = 7};
+
+    WGPUSurfaceDescriptor surface_desc = {};
+    surface_desc.nextInChain = &canvas_desc.chain;
+
+    _wgpu_surface = wgpuInstanceCreateSurface(_wgpu_instance, &surface_desc);
+#elif defined(YMERY_WEB)
+    // Emscripten: create surface from canvas (old API)
     WGPUSurfaceDescriptorFromCanvasHTMLSelector canvas_desc = {};
     canvas_desc.chain.sType = WGPUSType_SurfaceDescriptorFromCanvasHTMLSelector;
     canvas_desc.selector = "#canvas";
@@ -439,6 +449,21 @@ Result<void> App::_init_graphics() {
         bool done = false;
     } adapter_data;
 
+#ifdef YMERY_WEB_DAWN
+    WGPURequestAdapterCallbackInfo adapter_callback_info = {};
+    adapter_callback_info.mode = WGPUCallbackMode_AllowSpontaneous;
+    adapter_callback_info.callback = [](WGPURequestAdapterStatus status, WGPUAdapter adapter, WGPUStringView message, void* userdata1, void* userdata2) {
+        auto* data = static_cast<AdapterUserData*>(userdata1);
+        if (status == WGPURequestAdapterStatus_Success) {
+            data->adapter = adapter;
+        } else {
+            spdlog::error("Failed to get WebGPU adapter");
+        }
+        data->done = true;
+    };
+    adapter_callback_info.userdata1 = &adapter_data;
+    wgpuInstanceRequestAdapter(_wgpu_instance, &adapter_opts, adapter_callback_info);
+#else
     wgpuInstanceRequestAdapter(_wgpu_instance, &adapter_opts,
         [](WGPURequestAdapterStatus status, WGPUAdapter adapter, const char* message, void* userdata) {
             auto* data = static_cast<AdapterUserData*>(userdata);
@@ -449,9 +474,13 @@ Result<void> App::_init_graphics() {
             }
             data->done = true;
         }, &adapter_data);
+#endif
 
     while (!adapter_data.done) {
         // Busy wait for adapter (could use proper async)
+#ifdef YMERY_WEB_DAWN
+        emscripten_sleep(10);
+#endif
     }
 
     _wgpu_adapter = adapter_data.adapter;
@@ -461,13 +490,30 @@ Result<void> App::_init_graphics() {
 
     // Request device
     WGPUDeviceDescriptor device_desc = {};
+#ifndef YMERY_WEB_DAWN
     device_desc.deviceLostCallback = wgpu_device_lost_callback;
+#endif
 
     struct DeviceUserData {
         WGPUDevice device = nullptr;
         bool done = false;
     } device_data;
 
+#ifdef YMERY_WEB_DAWN
+    WGPURequestDeviceCallbackInfo device_callback_info = {};
+    device_callback_info.mode = WGPUCallbackMode_AllowSpontaneous;
+    device_callback_info.callback = [](WGPURequestDeviceStatus status, WGPUDevice device, WGPUStringView message, void* userdata1, void* userdata2) {
+        auto* data = static_cast<DeviceUserData*>(userdata1);
+        if (status == WGPURequestDeviceStatus_Success) {
+            data->device = device;
+        } else {
+            spdlog::error("Failed to get WebGPU device");
+        }
+        data->done = true;
+    };
+    device_callback_info.userdata1 = &device_data;
+    wgpuAdapterRequestDevice(_wgpu_adapter, &device_desc, device_callback_info);
+#else
     wgpuAdapterRequestDevice(_wgpu_adapter, &device_desc,
         [](WGPURequestDeviceStatus status, WGPUDevice device, const char* message, void* userdata) {
             auto* data = static_cast<DeviceUserData*>(userdata);
@@ -478,9 +524,13 @@ Result<void> App::_init_graphics() {
             }
             data->done = true;
         }, &device_data);
+#endif
 
     while (!device_data.done) {
         // Busy wait for device
+#ifdef YMERY_WEB_DAWN
+        emscripten_sleep(10);
+#endif
     }
 
     _wgpu_device = device_data.device;
@@ -491,7 +541,14 @@ Result<void> App::_init_graphics() {
     _wgpu_queue = wgpuDeviceGetQueue(_wgpu_device);
 
     // Get preferred surface format
+#ifdef YMERY_WEB_DAWN
+    WGPUSurfaceCapabilities caps = {};
+    wgpuSurfaceGetCapabilities(_wgpu_surface, _wgpu_adapter, &caps);
+    _wgpu_preferred_format = (caps.formatCount > 0) ? caps.formats[0] : WGPUTextureFormat_BGRA8Unorm;
+    wgpuSurfaceCapabilitiesFreeMembers(caps);
+#else
     _wgpu_preferred_format = wgpuSurfaceGetPreferredFormat(_wgpu_surface, _wgpu_adapter);
+#endif
 
     // Configure surface
     int width, height;
@@ -504,7 +561,9 @@ Result<void> App::_init_graphics() {
     ImPlot::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+#ifdef ImGuiConfigFlags_DockingEnable
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+#endif
 
     // Setup style
     ImGui::StyleColorsDark();
@@ -572,9 +631,16 @@ Result<void> App::_end_frame() {
     // Get current surface texture
     WGPUSurfaceTexture surface_texture;
     wgpuSurfaceGetCurrentTexture(_wgpu_surface, &surface_texture);
+#ifdef YMERY_WEB_DAWN
+    if (surface_texture.status != WGPUSurfaceGetCurrentTextureStatus_SuccessOptimal &&
+        surface_texture.status != WGPUSurfaceGetCurrentTextureStatus_SuccessSuboptimal) {
+        return Err<void>("Failed to get surface texture");
+    }
+#else
     if (surface_texture.status != WGPUSurfaceGetCurrentTextureStatus_Success) {
         return Err<void>("Failed to get surface texture");
     }
+#endif
 
     // Create texture view
     WGPUTextureViewDescriptor view_desc = {};

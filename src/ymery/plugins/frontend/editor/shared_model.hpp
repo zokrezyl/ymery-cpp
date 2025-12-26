@@ -1,47 +1,41 @@
 // Shared layout model between editor-canvas and editor-preview
-// Matches ymery-editor's LayoutModel exactly
+// Uses YAML-equivalent Value/Dict structure directly
 #pragma once
 
+#include "../../../types.hpp"
 #include <string>
 #include <vector>
-#include <map>
 #include <memory>
 #include <atomic>
 
 namespace ymery::plugins {
 
-// Container widget types
-inline const std::vector<std::string> CONTAINER_TYPES = {
-    "window", "row", "column", "group", "child",
-    "tab-bar", "tab-item", "tree-node", "collapsing-header",
-    "popup", "popup-modal", "tooltip", "implot", "implot-group",
-    "coolbar"
-};
+// Selection path - tracks which node is selected in the tree
+using SelectionPath = std::vector<size_t>;  // indices into body lists
 
-inline bool is_container_type(const std::string& type) {
-    return std::find(CONTAINER_TYPES.begin(), CONTAINER_TYPES.end(), type) != CONTAINER_TYPES.end();
+// Fast PRNG for UID generation (xorshift32)
+inline uint32_t g_uid_state = 0x12345678;
+
+inline std::string generate_uid(const std::string& widget_type) {
+    // xorshift32 - fast PRNG
+    uint32_t x = g_uid_state;
+    x ^= x << 13;
+    x ^= x >> 17;
+    x ^= x << 5;
+    g_uid_state = x;
+
+    // Generate 10 char alphanumeric string
+    static const char chars[] = "abcdefghijklmnopqrstuvwxyz0123456789";
+    std::string uid;
+    uid.reserve(widget_type.size() + 11);
+    uid = widget_type + "-";
+    for (int i = 0; i < 10; ++i) {
+        x ^= x << 13; x ^= x >> 17; x ^= x << 5;
+        uid += chars[x % 36];
+    }
+    g_uid_state = x;
+    return uid;
 }
-
-enum class LayoutPosition {
-    NewLine,
-    SameLine
-};
-
-struct LayoutNode {
-    int id;
-    std::string widget_type;
-    std::string label;
-    std::map<std::string, std::string> properties;
-    std::vector<std::unique_ptr<LayoutNode>> children;
-    LayoutNode* parent = nullptr;
-    LayoutPosition position = LayoutPosition::NewLine;
-
-    LayoutNode(int id_, const std::string& type)
-        : id(id_), widget_type(type), label(type) {}
-
-    bool is_container() const { return is_container_type(widget_type); }
-    bool can_have_children() const { return is_container(); }
-};
 
 class SharedLayoutModel {
 public:
@@ -50,161 +44,545 @@ public:
         return inst;
     }
 
-    bool empty() const { return !_root; }
-    LayoutNode* root() const { return _root.get(); }
-    LayoutNode* selected() const { return _selected; }
+    // The YAML structure - this IS what gets rendered
+    Value& root() { return _root; }
+    const Value& root() const { return _root; }
 
+    bool empty() const {
+        // Empty if root is not a Dict or has no widget key
+        auto dict = get_as<Dict>(_root);
+        return !dict || dict->empty();
+    }
+
+    // Selection tracking
+    const SelectionPath& selection() const { return _selection; }
+    void select(const SelectionPath& path) { _selection = path; }
+    void clear_selection() { _selection.clear(); }
+
+    // Get the selected node (returns pointer to the Value, or nullptr)
+    Value* get_selected() {
+        return _navigate(_root, _selection);
+    }
+
+    // Set root widget: creates {widget_type: {uid: "type-xxx", label: "widget_type"}}
     void set_root(const std::string& widget_type) {
-        _root = std::make_unique<LayoutNode>(_next_id(), widget_type);
-        _selected = _root.get();
+        Dict props;
+        props["uid"] = generate_uid(widget_type);
+        props["label"] = widget_type;
+        Dict root;
+        root[widget_type] = Value(props);
+        _root = Value(root);
+        _selection.clear();
     }
 
     void clear() {
-        _root.reset();
-        _selected = nullptr;
+        _root = Value();
+        _selection.clear();
     }
 
-    void select(LayoutNode* node) { _selected = node; }
+    // Add child to root widget's body list
+    void add_child_to_root(const std::string& widget_type, bool same_line = false) {
+        auto root_dict = get_as<Dict>(_root);
+        if (!root_dict || root_dict->empty()) return;
 
-    LayoutNode* find_by_id(int id) {
-        return _find_recursive(_root.get(), id);
-    }
+        // Get root widget type and props
+        std::string root_type = root_dict->begin()->first;
+        auto root_props = get_as<Dict>(root_dict->begin()->second);
 
-    void add_child(LayoutNode* parent, const std::string& widget_type) {
-        if (!parent) return;
-        auto child = std::make_unique<LayoutNode>(_next_id(), widget_type);
-        child->parent = parent;
-        parent->children.push_back(std::move(child));
-    }
+        Dict props;
+        if (root_props) {
+            props = *root_props;
+        }
 
-    void insert_after(LayoutNode* target, const std::string& widget_type, LayoutPosition pos = LayoutPosition::NewLine) {
-        if (!target || !target->parent) return;
-        auto* parent = target->parent;
-        auto child = std::make_unique<LayoutNode>(_next_id(), widget_type);
-        child->parent = parent;
-        child->position = pos;
-
-        for (size_t i = 0; i < parent->children.size(); ++i) {
-            if (parent->children[i].get() == target) {
-                parent->children.insert(parent->children.begin() + i + 1, std::move(child));
-                break;
+        // Get or create body list
+        List body;
+        auto body_it = props.find("body");
+        if (body_it != props.end()) {
+            if (auto existing = get_as<List>(body_it->second)) {
+                body = *existing;
             }
         }
-    }
 
-    void insert_before(LayoutNode* target, const std::string& widget_type, LayoutPosition pos = LayoutPosition::NewLine) {
-        if (!target || !target->parent) return;
-        auto* parent = target->parent;
-        auto child = std::make_unique<LayoutNode>(_next_id(), widget_type);
-        child->parent = parent;
-        child->position = pos;
-
-        for (size_t i = 0; i < parent->children.size(); ++i) {
-            if (parent->children[i].get() == target) {
-                parent->children.insert(parent->children.begin() + i, std::move(child));
-                break;
-            }
+        // Create new widget: {widget_type: {uid: "...", label: "widget_type"}}
+        Dict new_props;
+        new_props["uid"] = generate_uid(widget_type);
+        new_props["label"] = widget_type;
+        if (same_line) {
+            new_props["same-line"] = true;
         }
+        Dict new_widget;
+        new_widget[widget_type] = Value(new_props);
+        body.push_back(Value(new_widget));
+
+        // Rebuild root
+        props["body"] = Value(body);
+        Dict new_root;
+        new_root[root_type] = Value(props);
+        _root = Value(new_root);
     }
 
-    void change_type(LayoutNode* node, const std::string& new_type) {
-        if (node) {
-            node->widget_type = new_type;
-            // Keep label unless it matches old type
-            if (node->label == node->widget_type || node->label.empty()) {
-                node->label = new_type;
-            }
-        }
-    }
-
-    void remove(LayoutNode* node) {
-        if (!node) return;
-        if (!node->parent) {
-            // Root node - clear everything
-            if (_selected == node) _selected = nullptr;
-            _root.reset();
+    // Add child at a specific path (rebuilds tree)
+    void add_child(const SelectionPath& parent_path, const std::string& widget_type, bool same_line = false) {
+        if (parent_path.empty()) {
+            add_child_to_root(widget_type, same_line);
             return;
         }
-        auto* parent = node->parent;
-        for (auto it = parent->children.begin(); it != parent->children.end(); ++it) {
-            if (it->get() == node) {
-                if (_selected == node) _selected = nullptr;
-                parent->children.erase(it);
-                break;
-            }
-        }
+        // For nested paths, rebuild the whole tree
+        _root = _add_child_recursive(_root, parent_path, 0, widget_type, same_line);
     }
 
+    // Insert sibling before the node at path
+    void insert_before(const SelectionPath& path, const std::string& widget_type, bool same_line = false) {
+        if (path.empty()) {
+            // Root node - wrap in column first
+            wrap_root_in_column();
+            SelectionPath child_path = {0};
+            _root = _insert_sibling_recursive(_root, child_path, 0, widget_type, false, same_line);
+            return;
+        }
+        _root = _insert_sibling_recursive(_root, path, 0, widget_type, false, same_line);
+    }
+
+    // Insert sibling after the node at path
+    void insert_after(const SelectionPath& path, const std::string& widget_type, bool same_line = false) {
+        if (path.empty()) {
+            // Root node - wrap in column first
+            wrap_root_in_column();
+            SelectionPath child_path = {0};
+            _root = _insert_sibling_recursive(_root, child_path, 0, widget_type, true, same_line);
+            return;
+        }
+        _root = _insert_sibling_recursive(_root, path, 0, widget_type, true, same_line);
+    }
+
+    // Wrap root in a column container
     void wrap_root_in_column() {
-        if (!_root) return;
-        auto column = std::make_unique<LayoutNode>(_next_id(), "column");
-        _root->parent = column.get();
-        column->children.push_back(std::move(_root));
-        _root = std::move(column);
+        if (empty()) return;
+
+        // Current root becomes a child
+        Value old_root = _root;
+
+        // Create column with old root as child
+        List body;
+        body.push_back(old_root);
+
+        Dict props;
+        props["uid"] = generate_uid("column");
+        props["label"] = std::string("column");
+        props["body"] = Value(body);
+
+        Dict new_root;
+        new_root["column"] = Value(props);
+        _root = Value(new_root);
     }
 
-    bool can_move_up(LayoutNode* node) const {
-        if (!node || !node->parent) return false;
-        auto& siblings = node->parent->children;
-        for (size_t i = 0; i < siblings.size(); ++i) {
-            if (siblings[i].get() == node) return i > 0;
+    // Remove node at path
+    void remove(const SelectionPath& path) {
+        if (path.empty()) {
+            clear();  // Remove root = clear all
+            return;
         }
-        return false;
+        _root = _remove_recursive(_root, path, 0);
+        _selection.clear();
     }
 
-    bool can_move_down(LayoutNode* node) const {
-        if (!node || !node->parent) return false;
-        auto& siblings = node->parent->children;
-        for (size_t i = 0; i < siblings.size(); ++i) {
-            if (siblings[i].get() == node) return i < siblings.size() - 1;
-        }
-        return false;
+    // Change widget type at path
+    void change_type(const SelectionPath& path, const std::string& new_type) {
+        _root = _change_type_recursive(_root, path, 0, new_type);
     }
 
-    void move_up(LayoutNode* node) {
-        if (!can_move_up(node)) return;
-        auto& siblings = node->parent->children;
-        for (size_t i = 1; i < siblings.size(); ++i) {
-            if (siblings[i].get() == node) {
-                std::swap(siblings[i], siblings[i-1]);
-                break;
-            }
+    // Set label at path
+    void set_label_at(const SelectionPath& path, const std::string& label) {
+        _root = _set_label_recursive(_root, path, 0, label);
+    }
+
+    // Move node up (swap with previous sibling)
+    bool can_move_up(const SelectionPath& path) const {
+        if (path.empty()) return false;
+        return path.back() > 0;
+    }
+
+    void move_up(const SelectionPath& path) {
+        if (!can_move_up(path)) return;
+        _root = _swap_siblings_recursive(_root, path, 0, -1);
+        // Update selection
+        SelectionPath new_sel = path;
+        new_sel.back()--;
+        _selection = new_sel;
+    }
+
+    // Move node down (swap with next sibling)
+    bool can_move_down(const SelectionPath& path) const {
+        if (path.empty()) return false;
+        // Need to check sibling count - use helper
+        return _can_move_down_check(_root, path, 0);
+    }
+
+    void move_down(const SelectionPath& path) {
+        if (!can_move_down(path)) return;
+        _root = _swap_siblings_recursive(_root, path, 0, 1);
+        // Update selection
+        SelectionPath new_sel = path;
+        new_sel.back()++;
+        _selection = new_sel;
+    }
+
+    // Get widget type from a widget Value
+    static std::string get_widget_type(const Value& widget) {
+        auto dict = get_as<Dict>(widget);
+        if (!dict || dict->empty()) return "";
+        return dict->begin()->first;
+    }
+
+    // Get props from a widget Value
+    static Dict* get_props(Value& widget) {
+        auto dict = get_as<Dict>(widget);
+        if (!dict || dict->empty()) return nullptr;
+        auto& props_val = dict->begin()->second;
+        return const_cast<Dict*>(get_as<Dict>(props_val).operator->());
+    }
+
+    // Get label from widget
+    static std::string get_label(const Value& widget) {
+        auto dict = get_as<Dict>(widget);
+        if (!dict || dict->empty()) return "";
+        auto props = get_as<Dict>(dict->begin()->second);
+        if (!props) return "";
+        auto label_it = props->find("label");
+        if (label_it == props->end()) return "";
+        auto label = get_as<std::string>(label_it->second);
+        return label ? *label : "";
+    }
+
+    // Get uid from widget
+    static std::string get_uid(const Value& widget) {
+        auto dict = get_as<Dict>(widget);
+        if (!dict || dict->empty()) return "";
+        auto props = get_as<Dict>(dict->begin()->second);
+        if (!props) return "";
+        auto uid_it = props->find("uid");
+        if (uid_it == props->end()) return "";
+        auto uid = get_as<std::string>(uid_it->second);
+        return uid ? *uid : "";
+    }
+
+    // Set label on widget
+    static void set_label(Value& widget, const std::string& label) {
+        auto dict = get_as<Dict>(widget);
+        if (!dict || dict->empty()) return;
+        auto& [type, props_val] = *dict->begin();
+        auto props = get_as<Dict>(props_val);
+        if (!props) {
+            Dict new_props;
+            new_props["label"] = label;
+            (*dict)[type] = Value(new_props);
+        } else {
+            (*props)["label"] = label;
+            (*dict)[type] = Value(*props);
         }
     }
 
-    void move_down(LayoutNode* node) {
-        if (!can_move_down(node)) return;
-        auto& siblings = node->parent->children;
-        for (size_t i = 0; i < siblings.size() - 1; ++i) {
-            if (siblings[i].get() == node) {
-                std::swap(siblings[i], siblings[i+1]);
-                break;
-            }
-        }
+    // Get body list from widget (or empty)
+    static List get_body(const Value& widget) {
+        auto dict = get_as<Dict>(widget);
+        if (!dict || dict->empty()) return {};
+        auto props = get_as<Dict>(dict->begin()->second);
+        if (!props) return {};
+        auto body_it = props->find("body");
+        if (body_it == props->end()) return {};
+        auto body = get_as<List>(body_it->second);
+        return body ? *body : List{};
     }
 
-    void set_same_line(LayoutNode* node, bool same_line) {
-        if (node) {
-            node->position = same_line ? LayoutPosition::SameLine : LayoutPosition::NewLine;
-        }
+    // Check if widget type is a container
+    static bool is_container(const std::string& type) {
+        static const std::vector<std::string> containers = {
+            "window", "row", "column", "group", "child",
+            "tab-bar", "tab-item", "tree-node", "collapsing-header",
+            "popup", "popup-modal", "tooltip", "implot", "implot-group",
+            "coolbar", "dockable-window", "docking-main-window", "docking-split"
+        };
+        return std::find(containers.begin(), containers.end(), type) != containers.end();
     }
 
 private:
     SharedLayoutModel() = default;
 
-    std::unique_ptr<LayoutNode> _root;
-    LayoutNode* _selected = nullptr;
-    std::atomic<int> _id_counter{0};
+    Value _root;
+    SelectionPath _selection;
 
-    int _next_id() { return ++_id_counter; }
+    // Navigate to a node by path
+    Value* _navigate(Value& node, const SelectionPath& path) {
+        if (path.empty()) return &node;
 
-    LayoutNode* _find_recursive(LayoutNode* node, int id) {
-        if (!node) return nullptr;
-        if (node->id == id) return node;
-        for (auto& child : node->children) {
-            if (auto* found = _find_recursive(child.get(), id)) return found;
+        Value* current = &node;
+        for (size_t idx : path) {
+            List body = get_body(*current);
+            if (idx >= body.size()) return nullptr;
+            // Need to navigate into the actual tree, not copies
+            // This is tricky with std::any...
+            // For now, return nullptr - we'll fix navigation later
         }
-        return nullptr;
+        return current;
+    }
+
+    // Recursively rebuild tree with new child added at path
+    Value _add_child_recursive(const Value& node, const SelectionPath& path, size_t depth, const std::string& widget_type, bool same_line = false) {
+        auto dict = get_as<Dict>(node);
+        if (!dict || dict->empty()) return node;
+
+        std::string type = dict->begin()->first;
+        auto props = get_as<Dict>(dict->begin()->second);
+        Dict new_props = props ? *props : Dict{};
+
+        // Get current body
+        List body;
+        auto body_it = new_props.find("body");
+        if (body_it != new_props.end()) {
+            if (auto existing = get_as<List>(body_it->second)) {
+                body = *existing;
+            }
+        }
+
+        if (depth >= path.size()) {
+            // We're at the target - add child here
+            Dict child_props;
+            child_props["uid"] = generate_uid(widget_type);
+            child_props["label"] = widget_type;
+            if (same_line) {
+                child_props["same-line"] = true;
+            }
+            Dict child_widget;
+            child_widget[widget_type] = Value(child_props);
+            body.push_back(Value(child_widget));
+        } else {
+            // Recurse into the child at path[depth]
+            size_t idx = path[depth];
+            if (idx < body.size()) {
+                body[idx] = _add_child_recursive(body[idx], path, depth + 1, widget_type, same_line);
+            }
+        }
+
+        new_props["body"] = Value(body);
+        Dict new_node;
+        new_node[type] = Value(new_props);
+        return Value(new_node);
+    }
+
+    // Insert sibling at path (before or after)
+    Value _insert_sibling_recursive(const Value& node, const SelectionPath& path, size_t depth, const std::string& widget_type, bool after, bool same_line = false) {
+        auto dict = get_as<Dict>(node);
+        if (!dict || dict->empty()) return node;
+
+        std::string type = dict->begin()->first;
+        auto props = get_as<Dict>(dict->begin()->second);
+        Dict new_props = props ? *props : Dict{};
+
+        List body;
+        auto body_it = new_props.find("body");
+        if (body_it != new_props.end()) {
+            if (auto existing = get_as<List>(body_it->second)) {
+                body = *existing;
+            }
+        }
+
+        if (depth == path.size() - 1) {
+            // Insert here
+            size_t idx = path[depth];
+            if (idx <= body.size()) {
+                Dict child_props;
+                child_props["uid"] = generate_uid(widget_type);
+                child_props["label"] = widget_type;
+                if (same_line) {
+                    child_props["same-line"] = true;
+                }
+                Dict child_widget;
+                child_widget[widget_type] = Value(child_props);
+                size_t insert_pos = after ? idx + 1 : idx;
+                if (insert_pos > body.size()) insert_pos = body.size();
+                body.insert(body.begin() + insert_pos, Value(child_widget));
+            }
+        } else if (depth < path.size() - 1) {
+            size_t idx = path[depth];
+            if (idx < body.size()) {
+                body[idx] = _insert_sibling_recursive(body[idx], path, depth + 1, widget_type, after, same_line);
+            }
+        }
+
+        new_props["body"] = Value(body);
+        Dict new_node;
+        new_node[type] = Value(new_props);
+        return Value(new_node);
+    }
+
+    // Remove node at path
+    Value _remove_recursive(const Value& node, const SelectionPath& path, size_t depth) {
+        auto dict = get_as<Dict>(node);
+        if (!dict || dict->empty()) return node;
+
+        std::string type = dict->begin()->first;
+        auto props = get_as<Dict>(dict->begin()->second);
+        Dict new_props = props ? *props : Dict{};
+
+        List body;
+        auto body_it = new_props.find("body");
+        if (body_it != new_props.end()) {
+            if (auto existing = get_as<List>(body_it->second)) {
+                body = *existing;
+            }
+        }
+
+        if (depth == path.size() - 1) {
+            // Remove here
+            size_t idx = path[depth];
+            if (idx < body.size()) {
+                body.erase(body.begin() + idx);
+            }
+        } else if (depth < path.size() - 1) {
+            size_t idx = path[depth];
+            if (idx < body.size()) {
+                body[idx] = _remove_recursive(body[idx], path, depth + 1);
+            }
+        }
+
+        new_props["body"] = Value(body);
+        Dict new_node;
+        new_node[type] = Value(new_props);
+        return Value(new_node);
+    }
+
+    // Change type at path
+    Value _change_type_recursive(const Value& node, const SelectionPath& path, size_t depth, const std::string& new_type) {
+        auto dict = get_as<Dict>(node);
+        if (!dict || dict->empty()) return node;
+
+        std::string type = dict->begin()->first;
+        auto props = get_as<Dict>(dict->begin()->second);
+        Dict new_props = props ? *props : Dict{};
+
+        if (path.empty() || depth >= path.size()) {
+            // Change this node's type
+            Dict new_node;
+            new_node[new_type] = Value(new_props);
+            return Value(new_node);
+        }
+
+        List body;
+        auto body_it = new_props.find("body");
+        if (body_it != new_props.end()) {
+            if (auto existing = get_as<List>(body_it->second)) {
+                body = *existing;
+            }
+        }
+
+        size_t idx = path[depth];
+        if (idx < body.size()) {
+            body[idx] = _change_type_recursive(body[idx], path, depth + 1, new_type);
+        }
+
+        new_props["body"] = Value(body);
+        Dict new_node;
+        new_node[type] = Value(new_props);
+        return Value(new_node);
+    }
+
+    // Set label at path
+    Value _set_label_recursive(const Value& node, const SelectionPath& path, size_t depth, const std::string& label) {
+        auto dict = get_as<Dict>(node);
+        if (!dict || dict->empty()) return node;
+
+        std::string type = dict->begin()->first;
+        auto props = get_as<Dict>(dict->begin()->second);
+        Dict new_props = props ? *props : Dict{};
+
+        if (path.empty() || depth >= path.size()) {
+            // Set label on this node
+            new_props["label"] = label;
+            Dict new_node;
+            new_node[type] = Value(new_props);
+            return Value(new_node);
+        }
+
+        List body;
+        auto body_it = new_props.find("body");
+        if (body_it != new_props.end()) {
+            if (auto existing = get_as<List>(body_it->second)) {
+                body = *existing;
+            }
+        }
+
+        size_t idx = path[depth];
+        if (idx < body.size()) {
+            body[idx] = _set_label_recursive(body[idx], path, depth + 1, label);
+        }
+
+        new_props["body"] = Value(body);
+        Dict new_node;
+        new_node[type] = Value(new_props);
+        return Value(new_node);
+    }
+
+    // Swap siblings (direction: -1 = up, +1 = down)
+    Value _swap_siblings_recursive(const Value& node, const SelectionPath& path, size_t depth, int direction) {
+        auto dict = get_as<Dict>(node);
+        if (!dict || dict->empty()) return node;
+
+        std::string type = dict->begin()->first;
+        auto props = get_as<Dict>(dict->begin()->second);
+        Dict new_props = props ? *props : Dict{};
+
+        List body;
+        auto body_it = new_props.find("body");
+        if (body_it != new_props.end()) {
+            if (auto existing = get_as<List>(body_it->second)) {
+                body = *existing;
+            }
+        }
+
+        if (depth == path.size() - 1) {
+            // Swap here
+            size_t idx = path[depth];
+            size_t other_idx = idx + direction;
+            if (idx < body.size() && other_idx < body.size()) {
+                std::swap(body[idx], body[other_idx]);
+            }
+        } else if (depth < path.size() - 1) {
+            size_t idx = path[depth];
+            if (idx < body.size()) {
+                body[idx] = _swap_siblings_recursive(body[idx], path, depth + 1, direction);
+            }
+        }
+
+        new_props["body"] = Value(body);
+        Dict new_node;
+        new_node[type] = Value(new_props);
+        return Value(new_node);
+    }
+
+    // Check if can move down (has next sibling)
+    bool _can_move_down_check(const Value& node, const SelectionPath& path, size_t depth) const {
+        auto dict = get_as<Dict>(node);
+        if (!dict || dict->empty()) return false;
+
+        auto props = get_as<Dict>(dict->begin()->second);
+        if (!props) return false;
+
+        auto body_it = props->find("body");
+        if (body_it == props->end()) return false;
+
+        auto body = get_as<List>(body_it->second);
+        if (!body) return false;
+
+        if (depth == path.size() - 1) {
+            size_t idx = path[depth];
+            return idx + 1 < body->size();
+        } else if (depth < path.size() - 1) {
+            size_t idx = path[depth];
+            if (idx < body->size()) {
+                return _can_move_down_check((*body)[idx], path, depth + 1);
+            }
+        }
+        return false;
     }
 };
 

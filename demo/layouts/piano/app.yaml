@@ -1,0 +1,117 @@
+widgets:
+  # Widget type definitions
+  window:
+    type: window
+  text:
+    type: text
+  separator:
+    type: separator
+  collapsing-header:
+    type: collapsing-header
+  piano:
+    type: piano
+  slider-int:
+    type: slider-int
+  row:
+    type: row
+
+  # Main window widget
+  main-window:
+    type: window
+    label: Piano Demo
+    body:
+      - text:
+          content: "Piano Keyboard Demo"
+          tooltip: "Interactive piano keyboard widget"
+      - separator
+      - text:
+          content: "Click and drag on the keys to play notes."
+      - text:
+          content: "The note and velocity values are displayed below each piano."
+      - separator
+      - collapsing-header:
+          label: Full 88-Key Piano
+          body:
+            - piano:
+                label: Full Piano
+                size: [800, 120]
+                begin_note: 21
+                end_note: 108
+            - row:
+                body:
+                  - text:
+                      content: "Note: "
+                  - text:
+                      data-path: full-piano.note
+                      content: "-"
+                  - text:
+                      content: " | Velocity: "
+                  - text:
+                      data-path: full-piano.velocity
+                      content: "-"
+      - collapsing-header:
+          label: 2-Octave Piano (C3-C5)
+          body:
+            - piano:
+                label: Two Octaves
+                size: [400, 100]
+                begin_note: 48
+                end_note: 72
+            - row:
+                body:
+                  - text:
+                      content: "Note: "
+                  - text:
+                      data-path: two-octave.note
+                      content: "-"
+                  - text:
+                      content: " | Velocity: "
+                  - text:
+                      data-path: two-octave.velocity
+                      content: "-"
+      - collapsing-header:
+          label: 1-Octave Piano (C4-C5)
+          body:
+            - piano:
+                label: One Octave
+                size: [200, 80]
+                begin_note: 60
+                end_note: 72
+            - row:
+                body:
+                  - text:
+                      content: "Note: "
+                  - text:
+                      data-path: one-octave.note
+                      content: "-"
+                  - text:
+                      content: " | Velocity: "
+                  - text:
+                      data-path: one-octave.velocity
+                      content: "-"
+      - separator
+      - collapsing-header:
+          label: Compact Pianos
+          body:
+            - text:
+                content: "Multiple small pianos in a row:"
+            - row:
+                body:
+                  - piano:
+                      label: Bass
+                      size: [150, 60]
+                      begin_note: 36
+                      end_note: 48
+                  - piano:
+                      label: Middle
+                      size: [150, 60]
+                      begin_note: 48
+                      end_note: 60
+                  - piano:
+                      label: Treble
+                      size: [150, 60]
+                      begin_note: 60
+                      end_note: 72
+
+app:
+  widget: app.main-window

@@ -1,0 +1,82 @@
+widgets:
+  # Widget type definitions
+  window:
+    type: window
+  text:
+    type: text
+  separator:
+    type: separator
+  collapsing-header:
+    type: collapsing-header
+  hex-editor:
+    type: hex-editor
+  row:
+    type: row
+
+  # Main window widget
+  main-window:
+    type: window
+    label: Hex Editor Demo
+    body:
+      - text:
+          content: "Hex Editor Demo"
+          tooltip: "Interactive hex editor widget"
+      - separator
+      - text:
+          content: "Click on bytes to select. Use arrow keys to navigate."
+      - text:
+          content: "Type hex characters (0-9, A-F) to edit bytes."
+      - text:
+          content: "Ctrl+C to copy selected bytes to clipboard."
+      - separator
+      - collapsing-header:
+          label: Default Hex Editor (256 bytes)
+          body:
+            - hex-editor:
+                label: Default
+                size: [0, 200]
+      - collapsing-header:
+          label: Large Buffer (1024 bytes)
+          body:
+            - hex-editor:
+                label: Large
+                size: [0, 300]
+                buffer_size: 1024
+      - collapsing-header:
+          label: Read-Only Mode
+          body:
+            - hex-editor:
+                label: ReadOnly
+                size: [0, 150]
+                buffer_size: 128
+                read_only: true
+      - collapsing-header:
+          label: Custom Display Options
+          body:
+            - text:
+                content: "Fixed 16 bytes per line, lowercase hex:"
+            - hex-editor:
+                label: Custom1
+                size: [0, 150]
+                buffer_size: 256
+                bytes_per_line: 16
+                lowercase: true
+            - separator
+            - text:
+                content: "No ASCII column:"
+            - hex-editor:
+                label: NoAscii
+                size: [0, 150]
+                buffer_size: 128
+                show_ascii: false
+            - separator
+            - text:
+                content: "No address column:"
+            - hex-editor:
+                label: NoAddress
+                size: [0, 150]
+                buffer_size: 128
+                show_address: false
+
+app:
+  widget: app.main-window

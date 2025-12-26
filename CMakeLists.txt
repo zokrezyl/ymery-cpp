@@ -281,6 +281,22 @@ if(imspinner_ADDED)
     target_include_directories(imspinner INTERFACE ${imspinner_SOURCE_DIR})
 endif()
 
+# ImGuiColorTextEdit - Syntax highlighting text editor
+CPMAddPackage(
+    NAME imgui_color_text_edit
+    GITHUB_REPOSITORY BalazsJako/ImGuiColorTextEdit
+    GIT_TAG master
+    DOWNLOAD_ONLY YES
+)
+
+if(imgui_color_text_edit_ADDED)
+    add_library(imgui_color_text_edit STATIC
+        ${imgui_color_text_edit_SOURCE_DIR}/TextEditor.cpp
+    )
+    target_include_directories(imgui_color_text_edit PUBLIC ${imgui_color_text_edit_SOURCE_DIR})
+    target_link_libraries(imgui_color_text_edit PUBLIC imgui)
+endif()
+
 # imgui-toggle - Toggle switch widgets
 CPMAddPackage(
     NAME imgui_toggle
@@ -483,7 +499,7 @@ if(NOT YMERY_ANDROID)
         # Emscripten linker flags (emscripten 4.x+ uses ports)
         set_target_properties(ymery-cli PROPERTIES
             SUFFIX ".html"
-            LINK_FLAGS "--use-port=contrib.glfw3 --use-port=emdawnwebgpu -sWASM=1 -sALLOW_MEMORY_GROWTH=1 -sNO_EXIT_RUNTIME=0 -sASSERTIONS=1 --preload-file ${CMAKE_SOURCE_DIR}/layout@/layout"
+            LINK_FLAGS "--use-port=contrib.glfw3 --use-port=emdawnwebgpu -sWASM=1 -sALLOW_MEMORY_GROWTH=1 -sNO_EXIT_RUNTIME=0 -sASSERTIONS=1"
         )
     else()
         # Native: enable symbol exports for plugins

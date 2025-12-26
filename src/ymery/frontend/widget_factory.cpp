@@ -264,6 +264,23 @@ Result<Dict> WidgetFactory::_resolve_widget_definition(const std::string& full_n
         return Ok(it->second);
     }
 
+    // Not in YAML definitions - check if it's a plugin widget
+    // Extract widget name without namespace (e.g., "app.implot" -> "implot")
+    std::string widget_name = full_name;
+    size_t dot_pos = full_name.rfind('.');
+    if (dot_pos != std::string::npos) {
+        widget_name = full_name.substr(dot_pos + 1);
+    }
+
+    if (_plugin_manager->has_widget(widget_name)) {
+        // Create minimal definition for plugin widget
+        Dict def;
+        def["type"] = widget_name;
+        spdlog::debug("Using plugin widget '{}' directly", widget_name);
+        return Ok(def);
+    }
+
+    spdlog::error("Widget '{}' not found in YAML definitions or plugins", full_name);
     return Err<Dict>(
         "WidgetFactory::_resolve_widget_definition: widget '" + full_name + "' not found");
 }

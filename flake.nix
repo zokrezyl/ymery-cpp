@@ -26,8 +26,22 @@
             shellHook = ''
               export EM_CACHE="$PWD/.em_cache"
               mkdir -p "$EM_CACHE"
-              echo "Emscripten web build environment ready"
-              echo "Run: cmake -B build-web -G Ninja && cmake --build build-web"
+              # Workaround: Nix emscripten has file_packager.py but not file_packager wrapper
+              # Create wrapper in tools dir overlay
+              export EMSCRIPTEN_TOOLS_ORIG="$(dirname $(which emcc))/../share/emscripten/tools"
+              mkdir -p "$EM_CACHE/tools"
+              if [ -f "$EMSCRIPTEN_TOOLS_ORIG/file_packager.py" ]; then
+                cat > "$EM_CACHE/tools/file_packager" << 'WRAPPER'
+#!/usr/bin/env python3
+import sys, os
+script_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, script_dir)
+exec(open(os.environ.get("EMSCRIPTEN_TOOLS_ORIG") + "/file_packager.py").read())
+WRAPPER
+                chmod +x "$EM_CACHE/tools/file_packager"
+                # Copy all tools and replace file_packager
+                cp -rn "$EMSCRIPTEN_TOOLS_ORIG"/* "$EM_CACHE/tools/" 2>/dev/null || true
+              fi
             '';
           };
 

@@ -32,22 +32,22 @@ all: opengl
 .PHONY: opengl
 opengl: ## Build with OpenGL backend (Release)
 	PATH="$(SYSTEM_PATH)" $(CMAKE) -B $(BUILD_DIR_OPENGL) $(CMAKE_GENERATOR) $(CMAKE_COMMON) $(CMAKE_RELEASE) -DYMERY_USE_WEBGPU=OFF
-	PATH="$(SYSTEM_PATH)" $(CMAKE) --build $(BUILD_DIR_OPENGL)
+	PATH="$(SYSTEM_PATH)" $(CMAKE) --build --parallel $(BUILD_DIR_OPENGL)
 
 .PHONY: webgpu
 webgpu: ## Build with WebGPU backend (Release)
 	PATH="$(SYSTEM_PATH)" $(CMAKE) -B $(BUILD_DIR_WEBGPU) $(CMAKE_GENERATOR) $(CMAKE_COMMON) $(CMAKE_RELEASE) -DYMERY_USE_WEBGPU=ON
-	PATH="$(SYSTEM_PATH)" $(CMAKE) --build $(BUILD_DIR_WEBGPU)
+	PATH="$(SYSTEM_PATH)" $(CMAKE) --build --parallel $(BUILD_DIR_WEBGPU)
 
 .PHONY: debug
 debug: ## Build with OpenGL backend (Debug)
 	PATH="$(SYSTEM_PATH)" $(CMAKE) -B $(BUILD_DIR_DEBUG) $(CMAKE_GENERATOR) $(CMAKE_COMMON) $(CMAKE_DEBUG) -DYMERY_USE_WEBGPU=OFF
-	PATH="$(SYSTEM_PATH)" $(CMAKE) --build $(BUILD_DIR_DEBUG)
+	PATH="$(SYSTEM_PATH)" $(CMAKE) --build --parallel $(BUILD_DIR_DEBUG)
 
 .PHONY: debug-webgpu
 debug-webgpu: ## Build with WebGPU backend (Debug)
 	PATH="$(SYSTEM_PATH)" $(CMAKE) -B $(BUILD_DIR_WEBGPU)-debug $(CMAKE_GENERATOR) $(CMAKE_COMMON) $(CMAKE_DEBUG) -DYMERY_USE_WEBGPU=ON
-	PATH="$(SYSTEM_PATH)" $(CMAKE) --build $(BUILD_DIR_WEBGPU)-debug
+	PATH="$(SYSTEM_PATH)" $(CMAKE) --build --parallel $(BUILD_DIR_WEBGPU)-debug
 
 # === Android Build ===
 
@@ -74,25 +74,25 @@ android-clean: ## Clean Android build
 
 .PHONY: web
 web: ## Build for Web with Emscripten (uses nix flake)
-	nix develop .#web --command bash -c "$(CMAKE) -B $(BUILD_DIR_WEB) $(CMAKE_GENERATOR) $(CMAKE_COMMON) $(CMAKE_RELEASE) -DCMAKE_TOOLCHAIN_FILE=$(CURDIR)/cmake/EmscriptenNix.cmake && $(CMAKE) --build $(BUILD_DIR_WEB)"
+	nix develop .#web --command bash -c "$(CMAKE) -B $(BUILD_DIR_WEB) $(CMAKE_GENERATOR) $(CMAKE_COMMON) $(CMAKE_RELEASE) -DCMAKE_TOOLCHAIN_FILE=$(CURDIR)/cmake/EmscriptenNix.cmake && $(CMAKE) --build --parallel $(BUILD_DIR_WEB)"
 
 # === Individual Targets ===
 
 .PHONY: cli
 cli: opengl ## Build ymery-cli (OpenGL)
-	PATH="$(SYSTEM_PATH)" $(CMAKE) --build $(BUILD_DIR_OPENGL) --target ymery-cli
+	PATH="$(SYSTEM_PATH)" $(CMAKE) --build --parallel $(BUILD_DIR_OPENGL) --target ymery-cli
 
 .PHONY: editor
 editor: opengl ## Build ymery-editor (OpenGL)
-	PATH="$(SYSTEM_PATH)" $(CMAKE) --build $(BUILD_DIR_OPENGL) --target ymery-editor
+	PATH="$(SYSTEM_PATH)" $(CMAKE) --build --parallel $(BUILD_DIR_OPENGL) --target ymery-editor
 
 .PHONY: lib
 lib: opengl ## Build libymery only (OpenGL)
-	PATH="$(SYSTEM_PATH)" $(CMAKE) --build $(BUILD_DIR_OPENGL) --target ymery
+	PATH="$(SYSTEM_PATH)" $(CMAKE) --build --parallel $(BUILD_DIR_OPENGL) --target ymery
 
 .PHONY: plugins
 plugins: opengl ## Build plugins (OpenGL)
-	PATH="$(SYSTEM_PATH)" $(CMAKE) --build $(BUILD_DIR_OPENGL) --target plugins
+	PATH="$(SYSTEM_PATH)" $(CMAKE) --build --parallel $(BUILD_DIR_OPENGL) --target plugins
 
 # === Run Targets ===
 
