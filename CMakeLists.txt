@@ -34,6 +34,11 @@ if(EMSCRIPTEN)
     message(STATUS "Building for Web (Emscripten)")
     set(YMERY_WEB ON)
     set(YMERY_USE_WEBGPU ON)  # Web always uses WebGPU
+    # Workaround for spdlog/fmt consteval issues with Emscripten clang
+    add_compile_definitions(
+        FMT_CONSTEVAL=constexpr
+        SPDLOG_NO_SOURCE_LOC
+    )
 else()
     set(YMERY_WEB OFF)
 endif()
@@ -166,8 +171,9 @@ if(imgui_ADDED)
     )
 
     if(YMERY_WEB)
-        # Emscripten - use USE_GLFW and USE_WEBGPU
+        # Emscripten - use GLFW port and Dawn WebGPU port (emscripten 4.x+)
         target_compile_definitions(imgui PUBLIC YMERY_USE_WEBGPU=1 YMERY_WEB=1)
+        target_compile_options(imgui PUBLIC --use-port=contrib.glfw3 --use-port=emdawnwebgpu)
     elseif(YMERY_ANDROID)
         # Android - OpenGL ES
         target_compile_definitions(imgui PUBLIC YMERY_ANDROID=1)
@@ -448,10 +454,10 @@ if(NOT YMERY_ANDROID)
     target_link_libraries(ymery-cli PRIVATE ymery)
 
     if(YMERY_WEB)
-        # Emscripten linker flags
+        # Emscripten linker flags (emscripten 4.x+ uses ports)
         set_target_properties(ymery-cli PROPERTIES
             SUFFIX ".html"
-            LINK_FLAGS "-s USE_GLFW=3 -s USE_WEBGPU=1 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s NO_EXIT_RUNTIME=0 -s ASSERTIONS=1 --preload-file ${CMAKE_SOURCE_DIR}/layout@/layout"
+            LINK_FLAGS "--use-port=contrib.glfw3 --use-port=emdawnwebgpu -sWASM=1 -sALLOW_MEMORY_GROWTH=1 -sNO_EXIT_RUNTIME=0 -sASSERTIONS=1 --preload-file ${CMAKE_SOURCE_DIR}/layout@/layout"
         )
     else()
         # Native: enable symbol exports for plugins

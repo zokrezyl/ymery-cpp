@@ -261,6 +261,10 @@ public:
 
     Result<std::vector<std::string>> get_children_names(const DataPath& path) override {
         std::string path_str = path.to_string();
+        // Normalize: ensure path starts with / for consistent matching
+        if (!path_str.empty() && path_str[0] != '/') {
+            path_str = "/" + path_str;
+        }
 
         // Root
         if (path_str == "/" || path_str.empty()) {
@@ -318,6 +322,10 @@ public:
 
     Result<Dict> get_metadata(const DataPath& path) override {
         std::string path_str = path.to_string();
+        // Normalize: ensure path starts with / for consistent matching
+        if (!path_str.empty() && path_str[0] != '/') {
+            path_str = "/" + path_str;
+        }
 
         // Root
         if (path_str == "/" || path_str.empty()) {

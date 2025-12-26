@@ -70,16 +70,11 @@ android-clean: ## Clean Android build
 	rm -rf build-android build-android-editor
 
 # === Web/Emscripten Build ===
-# Nix emscripten needs EM_CACHE writable and EMSCRIPTEN_ROOT_PATH pointing to bin/ (where em-config wrapper is)
-EM_CACHE_DIR := $(CURDIR)/.em_cache
-EMSCRIPTEN_BIN := $(shell dirname $$(readlink -f $$(which emcc 2>/dev/null) 2>/dev/null) 2>/dev/null)
+# Uses nix flake with custom toolchain (fixes em-config path issue)
 
 .PHONY: web
-web: ## Build for Web with Emscripten
-	@mkdir -p $(EM_CACHE_DIR)
-	EM_CACHE="$(EM_CACHE_DIR)" emcmake $(CMAKE) -B $(BUILD_DIR_WEB) $(CMAKE_GENERATOR) $(CMAKE_COMMON) $(CMAKE_RELEASE) \
-		-DEMSCRIPTEN_ROOT_PATH="$(EMSCRIPTEN_BIN)"
-	EM_CACHE="$(EM_CACHE_DIR)" $(CMAKE) --build $(BUILD_DIR_WEB)
+web: ## Build for Web with Emscripten (uses nix flake)
+	nix develop .#web --command bash -c "$(CMAKE) -B $(BUILD_DIR_WEB) $(CMAKE_GENERATOR) $(CMAKE_COMMON) $(CMAKE_RELEASE) -DCMAKE_TOOLCHAIN_FILE=$(CURDIR)/cmake/EmscriptenNix.cmake && $(CMAKE) --build $(BUILD_DIR_WEB)"
 
 # === Individual Targets ===
 
@@ -118,7 +113,7 @@ run-webgpu: webgpu ## Run ymery-cli with WebGPU
 .PHONY: clean
 clean: ## Clean all build directories
 	rm -rf $(BUILD_DIR_OPENGL) $(BUILD_DIR_WEBGPU) $(BUILD_DIR_DEBUG) $(BUILD_DIR_WEB)
-	rm -rf $(BUILD_DIR_WEBGPU)-debug
+	rm -rf $(BUILD_DIR_WEBGPU)-debug .em_tmp .em_cache
 
 .PHONY: clean-opengl
 clean-opengl: ## Clean OpenGL build

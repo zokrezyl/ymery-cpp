@@ -136,13 +136,24 @@ Result<void> Composite::_ensure_children() {
         return Ok();
     }
 
-    // Body should be a list
-    auto children_list = get_as<List>(body_val);
-    if (!children_list) {
-        spdlog::warn("'body' is not a list");
+    // Normalize body to list (like Python composite.py lines 104-109)
+    List body_list;
+    if (auto children_list = get_as<List>(body_val)) {
+        body_list = *children_list;
+    } else if (auto body_str = get_as<std::string>(body_val)) {
+        // Body is a string - convert to single-item list
+        spdlog::info("Composite: body is string '{}', converting to list", *body_str);
+        body_list.push_back(body_val);
+    } else if (auto body_dict = get_as<Dict>(body_val)) {
+        // Body is a dict - convert to single-item list
+        spdlog::info("Composite: body is dict, converting to list");
+        body_list.push_back(body_val);
+    } else {
+        spdlog::warn("'body' is not a list, string, or dict");
         _children_initialized = true;
         return Ok();
     }
+    auto children_list = &body_list;
 
     // Check if any body item is foreach-child
     bool has_foreach_child = false;

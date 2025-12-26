@@ -64,7 +64,28 @@ protected:
             }
         }
 
-        _container_open = ImGui::TreeNode(label.c_str());
+        // Check if data tree has children at our path (for leaf vs expandable)
+        bool has_data_children = false;
+        if (auto children_res = _data_bag->get_children_names(); children_res) {
+            has_data_children = !children_res->empty();
+        }
+
+        // Use data path as stable ID (widgets may be recreated but path stays same)
+        std::string stable_id = label;
+        if (auto path_res = _data_bag->get_data_path_str(); path_res) {
+            stable_id = *path_res;
+        }
+        std::string imgui_id = label + "###" + stable_id;
+
+        if (has_data_children) {
+            // Has children in data tree - render as expandable tree node
+            _container_open = ImGui::TreeNode(imgui_id.c_str());
+        } else {
+            // No children in data tree - render as leaf (no arrow, never opens)
+            ImGui::TreeNodeEx(imgui_id.c_str(),
+                ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen);
+            _container_open = false;  // Leaf nodes never open
+        }
         return Ok();
     }
 
