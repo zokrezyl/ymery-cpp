@@ -181,7 +181,7 @@ private:
 
 } // namespace ymery::plugins
 
-extern "C" const char* name() { return "editor-code-preview"; }
+extern "C" const char* name() { return "code-preview"; }
 extern "C" const char* type() { return "widget"; }
 extern "C" ymery::Result<ymery::WidgetPtr> create(
     std::shared_ptr<ymery::WidgetFactory> wf,

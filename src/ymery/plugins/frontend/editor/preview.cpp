@@ -61,7 +61,7 @@ protected:
 
 } // namespace ymery::plugins
 
-extern "C" const char* name() { return "editor-preview"; }
+extern "C" const char* name() { return "preview"; }
 extern "C" const char* type() { return "widget"; }
 extern "C" ymery::Result<ymery::WidgetPtr> create(
     std::shared_ptr<ymery::WidgetFactory> wf,

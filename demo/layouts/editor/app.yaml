@@ -43,6 +43,11 @@ widgets:
           new-dock: "RightPanel"
           direction: "right"
           ratio: 0.25
+      - docking-split:
+          initial-dock: "RightPanel"
+          new-dock: "BottomRightPanel"
+          direction: "down"
+          ratio: 0.50
 
       # Dockable windows
       - dockable-window:
@@ -56,14 +61,21 @@ widgets:
           label: "Layout Editor"
           dock-space-name: "MainDockSpace"
           body:
-            - editor-canvas:
+            - editor:
                 title: ""
 
       - dockable-window:
           label: "Preview"
           dock-space-name: "RightPanel"
           body:
-            - editor-preview:
+            - preview:
+                title: ""
+
+      - dockable-window:
+          label: "Code Preview"
+          dock-space-name: "BottomRightPanel"
+          body:
+            - code-preview:
                 title: ""
 
   # Widget type definitions
@@ -83,10 +95,12 @@ widgets:
     type: separator
   editor-widget-tree:
     type: editor-widget-tree
-  editor-canvas:
-    type: editor-canvas
-  editor-preview:
-    type: editor-preview
+  editor:
+    type: editor
+  preview:
+    type: preview
+  code-preview:
+    type: code-preview
 
 app:
   widget: app.main-widget
