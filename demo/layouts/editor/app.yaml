@@ -3,6 +3,35 @@ widgets:
     type: docking-main-window
     title: Ymery Widget Editor
     body:
+      # Menu bar - matching ymery-editor
+      - main-menu-bar:
+          body:
+            - menu:
+                label: "File"
+                body:
+                  - menu-item:
+                      label: "New"
+                  - separator: {}
+                  - menu-item:
+                      label: "Export YAML..."
+                  - separator: {}
+                  - menu-item:
+                      label: "Exit"
+            - menu:
+                label: "Edit"
+                body:
+                  - menu-item:
+                      label: "Clear All"
+            - menu:
+                label: "View"
+                body:
+                  - menu-item:
+                      label: "Widget Browser"
+                  - menu-item:
+                      label: "Layout Editor"
+                  - menu-item:
+                      label: "Preview"
+
       # Docking splits - create 3 panel layout (left | center | right)
       - docking-split:
           initial-dock: "MainDockSpace"
@@ -44,6 +73,14 @@ widgets:
     type: docking-split
   dockable-window:
     type: dockable-window
+  main-menu-bar:
+    type: main-menu-bar
+  menu:
+    type: menu
+  menu-item:
+    type: menu-item
+  separator:
+    type: separator
   editor-widget-tree:
     type: editor-widget-tree
   editor-canvas:

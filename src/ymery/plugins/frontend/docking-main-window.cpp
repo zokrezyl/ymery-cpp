@@ -99,21 +99,15 @@ public:
 
         // Create the dockspace
         ImGuiID dockspace_id = ImGui::GetID("MainDockSpace");
-        spdlog::info("PLUGIN: DockSpace dockspace_id={}", dockspace_id);
         ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
 
         // First time setup - INLINE like ymery-editor (static bool)
         static bool first_time = true;
-        spdlog::info("PLUGIN: first_time={}", first_time);
-
         if (first_time && !_splits.empty()) {
             first_time = false;
 
-            spdlog::info("PLUGIN: DockBuilderRemoveNode({})", dockspace_id);
             ImGui::DockBuilderRemoveNode(dockspace_id);
-            spdlog::info("PLUGIN: DockBuilderAddNode({})", dockspace_id);
             ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_None);
-            spdlog::info("PLUGIN: DockBuilderSetNodeSize({}, {}x{})", dockspace_id, viewport->WorkSize.x, viewport->WorkSize.y);
             ImGui::DockBuilderSetNodeSize(dockspace_id, viewport->WorkSize);
 
             // Store the main dock space
@@ -130,9 +124,6 @@ public:
                 ImGuiID remaining_id;
                 ImGui::DockBuilderSplitNode(initial_id, split.direction, split.ratio, &new_id, &remaining_id);
 
-                spdlog::info("PLUGIN: SplitNode({}, dir={}, {}) -> new_id={}, remaining_id={}",
-                    initial_id, (int)split.direction, split.ratio, new_id, remaining_id);
-
                 _dock_ids[split.new_dock] = new_id;
                 _dock_ids[split.initial_dock] = remaining_id;
             }
@@ -143,11 +134,9 @@ public:
                 if (auto it = _dock_ids.find(dw.dock_space_name); it != _dock_ids.end()) {
                     dock_id = it->second;
                 }
-                spdlog::info("PLUGIN: DockBuilderDockWindow('{}', {})", dw.label, dock_id);
                 ImGui::DockBuilderDockWindow(dw.label.c_str(), dock_id);
             }
 
-            spdlog::info("PLUGIN: DockBuilderFinish({})", dockspace_id);
             ImGui::DockBuilderFinish(dockspace_id);
         }
 

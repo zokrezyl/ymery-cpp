@@ -1,4 +1,5 @@
-// main-menu-bar widget plugin - creates menu bar at top of screen
+// main-menu-bar widget plugin - container for menus in main menu bar
+// Used inside docking-main-window which handles BeginMainMenuBar/EndMainMenuBar
 #include "../../frontend/composite.hpp"
 #include "../../types.hpp"
 #include <imgui.h>
@@ -26,15 +27,13 @@ public:
     }
 
 protected:
+    // No Begin/End needed - parent (docking-main-window) handles BeginMainMenuBar/EndMainMenuBar
     Result<void> _pre_render_head() override {
-        _is_body_activated = ImGui::BeginMainMenuBar();
+        _is_body_activated = true;
         return Ok();
     }
 
     Result<void> _post_render_head() override {
-        if (_is_body_activated) {
-            ImGui::EndMainMenuBar();
-        }
         return Ok();
     }
 };
