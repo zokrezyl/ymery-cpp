@@ -35,9 +35,11 @@ if(EMSCRIPTEN)
     set(YMERY_WEB ON)
     set(YMERY_USE_WEBGPU ON)  # Web always uses WebGPU
     # Workaround for spdlog/fmt consteval issues with Emscripten clang
+    # YMERY_WEB_DAWN: use Dawn WebGPU (emdawnwebgpu) instead of old html5_webgpu
     add_compile_definitions(
         FMT_CONSTEVAL=constexpr
         SPDLOG_NO_SOURCE_LOC
+        YMERY_WEB_DAWN=1
     )
 else()
     set(YMERY_WEB OFF)
@@ -119,12 +121,22 @@ if(NOT YMERY_WEB AND NOT YMERY_ANDROID)
     )
 endif()
 
-CPMAddPackage(
-    NAME imgui
-    GITHUB_REPOSITORY ocornut/imgui
-    VERSION 1.91.6-docking
-    DOWNLOAD_ONLY YES
-)
+# ImGui - use master for web (Dawn WebGPU support), docking for others
+if(YMERY_WEB)
+    CPMAddPackage(
+        NAME imgui
+        GITHUB_REPOSITORY ocornut/imgui
+        GIT_TAG master
+        DOWNLOAD_ONLY YES
+    )
+else()
+    CPMAddPackage(
+        NAME imgui
+        GITHUB_REPOSITORY ocornut/imgui
+        VERSION 1.91.6-docking
+        DOWNLOAD_ONLY YES
+    )
+endif()
 
 # WebGPU native library (wgpu-native v0.19 - compatible with ImGui)
 # Not needed for Emscripten - browser provides WebGPU
@@ -193,13 +205,22 @@ if(imgui_ADDED)
     endif()
 endif()
 
-# ImPlot - plotting library
-CPMAddPackage(
-    NAME implot
-    GITHUB_REPOSITORY epezent/implot
-    VERSION 0.16
-    DOWNLOAD_ONLY YES
-)
+# ImPlot - plotting library (use master for web to match imgui master)
+if(YMERY_WEB)
+    CPMAddPackage(
+        NAME implot
+        GITHUB_REPOSITORY epezent/implot
+        GIT_TAG master
+        DOWNLOAD_ONLY YES
+    )
+else()
+    CPMAddPackage(
+        NAME implot
+        GITHUB_REPOSITORY epezent/implot
+        VERSION 0.16
+        DOWNLOAD_ONLY YES
+    )
+endif()
 
 if(implot_ADDED)
     add_library(implot STATIC
@@ -371,8 +392,13 @@ set(YMERY_CORE_SOURCES
     src/ymery/embedded.cpp
 )
 
-# App.cpp has backend support for GLFW (desktop), WebGPU, and Android (EGL)
-list(APPEND YMERY_CORE_SOURCES src/ymery/app.cpp)
+# App initialization
+# app-core.cpp: Platform-independent core initialization (dispatcher, plugins, widget tree)
+# app.cpp: Platform-specific code (graphics backends: GLFW/OpenGL, WebGPU, Android/EGL)
+list(APPEND YMERY_CORE_SOURCES
+    src/ymery/app-core.cpp
+    src/ymery/app.cpp
+)
 
 # Core library
 if(YMERY_WEB OR YMERY_ANDROID)

@@ -69,6 +69,10 @@ private:
     Result<void> _begin_frame();
     Result<void> _end_frame();
 
+    // Platform-independent core initialization (implemented in app-core.cpp)
+    Result<void> _init_core();
+    void _dispose_core();
+
     AppConfig _config;
 
     std::shared_ptr<Lang> _lang;

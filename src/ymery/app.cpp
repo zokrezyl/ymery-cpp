@@ -31,7 +31,9 @@
 #ifdef YMERY_WEB
 #include <emscripten.h>
 #include <emscripten/html5.h>
+#ifndef YMERY_WEB_DAWN
 #include <emscripten/html5_webgpu.h>
+#endif
 #elif defined(YMERY_USE_WEBGPU) && !defined(YMERY_ANDROID)
 // For X11 surface creation with wgpu-native
 #define GLFW_EXPOSE_NATIVE_X11
@@ -114,92 +116,26 @@ Result<std::shared_ptr<App>> App::create(struct android_app* android_app, const 
 Result<void> App::init() {
     spdlog::info("App::init starting");
 
-    // Initialize graphics backend
+    // Initialize graphics backend (platform-specific)
     if (auto gfx_res = _init_graphics(); !gfx_res) {
         spdlog::error("App::init: graphics init failed");
         return Err<void>("App::init: graphics init failed", gfx_res);
     }
     spdlog::info("Graphics initialized");
 
-    // Create dispatcher
-    auto disp_res = Dispatcher::create();
-    if (!disp_res) {
-        return Err<void>("App::init: dispatcher create failed", disp_res);
+    // Initialize core components (platform-independent, implemented in app-core.cpp)
+    if (auto core_res = _init_core(); !core_res) {
+        return Err<void>("App::init: core init failed", core_res);
     }
-    _dispatcher = *disp_res;
-
-    // Build colon-separated plugin path string
-    std::string plugins_path;
-    for (const auto& p : _config.plugin_paths) {
-        if (!plugins_path.empty()) plugins_path += ":";
-        plugins_path += p.string();
-    }
-
-    // Create plugin manager (TreeLike that holds all plugins)
-    auto pm_res = PluginManager::create(plugins_path);
-    if (!pm_res) {
-        return Err<void>("App::init: plugin manager create failed", pm_res);
-    }
-    _plugin_manager = *pm_res;
-
-    // Load YAML modules
-    auto lang_res = Lang::create(_config.layout_paths, _config.main_module);
-    if (!lang_res) {
-        return Err<void>("App::init: lang create failed", lang_res);
-    }
-    _lang = *lang_res;
-
-    // Get data tree type from app config (default: simple-data-tree)
-    std::string tree_type = "simple-data-tree";
-    const auto& app_config = _lang->app_config();
-    auto tree_it = app_config.find("data-tree");
-    if (tree_it != app_config.end()) {
-        if (auto t = get_as<std::string>(tree_it->second)) {
-            tree_type = *t;
-            spdlog::info("Using data-tree type from config: {}", tree_type);
-        }
-    }
-
-    // Create data tree from plugin
-    auto tree_res = _plugin_manager->create_tree(tree_type, _dispatcher);
-    if (!tree_res) {
-        spdlog::warn("Could not create {} from plugin: {}", tree_type, error_msg(tree_res));
-        // Fallback to a minimal implementation if needed
-        return Err<void>("App::init: no tree-like plugin available", tree_res);
-    }
-    _data_tree = *tree_res;
-
-    // Create widget factory with plugin manager
-    auto wf_res = WidgetFactory::create(_lang, _dispatcher, _data_tree, _plugin_manager);
-    if (!wf_res) {
-        return Err<void>("App::init: widget factory create failed", wf_res);
-    }
-    _widget_factory = *wf_res;
-
-    // Create root widget
-    spdlog::info("Creating root widget");
-    auto root_res = _widget_factory->create_root_widget();
-    if (!root_res) {
-        spdlog::error("App::init: root widget create failed: {}", error_msg(root_res));
-        return Err<void>("App::init: root widget create failed", root_res);
-    }
-    _root_widget = *root_res;
-    spdlog::info("Root widget created successfully");
 
     return Ok();
 }
 
 Result<void> App::dispose() {
-    if (_root_widget) {
-        _root_widget->dispose();
-        _root_widget.reset();
-    }
+    // Dispose core components (platform-independent, implemented in app-core.cpp)
+    _dispose_core();
 
-    if (_plugin_manager) {
-        _plugin_manager->dispose();
-        _plugin_manager.reset();
-    }
-
+    // Shutdown graphics (platform-specific)
     _shutdown_graphics();
 
     return Ok();
