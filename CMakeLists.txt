@@ -155,8 +155,8 @@ if(imgui_ADDED)
 
     # Renderer backend
     if(YMERY_WEB)
-        # Emscripten WebGPU - use compatibility wrapper for older API
-        list(APPEND IMGUI_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/compat/imgui_impl_wgpu_emscripten.cpp)
+        # Emscripten WebGPU - ImGui 1.91+ auto-detects Dawn for Emscripten 4.x
+        list(APPEND IMGUI_SOURCES ${imgui_SOURCE_DIR}/backends/imgui_impl_wgpu.cpp)
     elseif(YMERY_USE_WEBGPU)
         # Native WebGPU (wgpu-native)
         list(APPEND IMGUI_SOURCES ${imgui_SOURCE_DIR}/backends/imgui_impl_wgpu.cpp)

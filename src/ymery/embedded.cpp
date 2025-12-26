@@ -135,8 +135,8 @@ Result<std::shared_ptr<EmbeddedApp>> EmbeddedApp::create(const EmbeddedConfig& c
 
     auto app = std::shared_ptr<EmbeddedApp>(new EmbeddedApp());
     app->_config = config;
-    app->_width = config.width;
-    app->_height = config.height;
+    app->_fb_width = config.width;
+    app->_fb_height = config.height;
 
     if (auto res = app->_init(); !res) {
         return Err<std::shared_ptr<EmbeddedApp>>("EmbeddedApp::create: init failed", res);
@@ -243,8 +243,8 @@ Result<void> EmbeddedApp::_init_imgui() {
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.IniFilename = nullptr;  // Don't save settings
 
-    // Set display size
-    io.DisplaySize = ImVec2(static_cast<float>(_width), static_cast<float>(_height));
+    // Set display size (framebuffer size)
+    io.DisplaySize = ImVec2(static_cast<float>(_fb_width), static_cast<float>(_fb_height));
 
     // Style
     ImGui::StyleColorsDark();
@@ -266,7 +266,7 @@ Result<void> EmbeddedApp::_init_imgui() {
         _imgui_ctx = nullptr;
         return Err<void>("EmbeddedApp::_init_imgui: ImGui_ImplWGPU_Init failed");
     }
-    spdlog::info("EmbeddedApp: ImGui WebGPU context initialized ({}x{})", _width, _height);
+    spdlog::info("EmbeddedApp: ImGui WebGPU context initialized ({}x{})", _fb_width, _fb_height);
 #else
     // Initialize OpenGL backend (no GLFW backend - we handle input manually)
     if (!ImGui_ImplOpenGL3_Init(_config.glsl_version)) {
@@ -276,7 +276,7 @@ Result<void> EmbeddedApp::_init_imgui() {
         _imgui_ctx = nullptr;
         return Err<void>("EmbeddedApp::_init_imgui: ImGui_ImplOpenGL3_Init failed");
     }
-    spdlog::info("EmbeddedApp: ImGui OpenGL context initialized ({}x{})", _width, _height);
+    spdlog::info("EmbeddedApp: ImGui OpenGL context initialized ({}x{})", _fb_width, _fb_height);
 #endif
 
     return Ok();
@@ -386,14 +386,18 @@ void EmbeddedApp::end_frame() {
 #endif
 
 void EmbeddedApp::resize(uint32_t width, uint32_t height) {
-    _width = width;
-    _height = height;
+    _fb_width = width;
+    _fb_height = height;
 
     if (_imgui_ctx) {
         ImGui::SetCurrentContext(_imgui_ctx);
         ImGuiIO& io = ImGui::GetIO();
         io.DisplaySize = ImVec2(static_cast<float>(width), static_cast<float>(height));
     }
+}
+
+void EmbeddedApp::set_framebuffer_size(uint32_t width, uint32_t height) {
+    resize(width, height);  // Same as resize for now
 }
 
 void EmbeddedApp::on_mouse_pos(float x, float y) {
