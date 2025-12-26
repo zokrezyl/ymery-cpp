@@ -54,6 +54,9 @@ public:
         return !dict || dict->empty();
     }
 
+    // Version number - increments on each modification
+    uint64_t version() const { return _version; }
+
     // Selection tracking
     const SelectionPath& selection() const { return _selection; }
     void select(const SelectionPath& path) { _selection = path; }
@@ -73,11 +76,13 @@ public:
         root[widget_type] = Value(props);
         _root = Value(root);
         _selection.clear();
+        _bump_version();
     }
 
     void clear() {
         _root = Value();
         _selection.clear();
+        _bump_version();
     }
 
     // Add child to root widget's body list
@@ -119,6 +124,7 @@ public:
         Dict new_root;
         new_root[root_type] = Value(props);
         _root = Value(new_root);
+        _bump_version();
     }
 
     // Add child at a specific path (rebuilds tree)
@@ -129,6 +135,7 @@ public:
         }
         // For nested paths, rebuild the whole tree
         _root = _add_child_recursive(_root, parent_path, 0, widget_type, same_line);
+        _bump_version();
     }
 
     // Insert sibling before the node at path
@@ -138,9 +145,11 @@ public:
             wrap_root_in_column();
             SelectionPath child_path = {0};
             _root = _insert_sibling_recursive(_root, child_path, 0, widget_type, false, same_line);
+            _bump_version();
             return;
         }
         _root = _insert_sibling_recursive(_root, path, 0, widget_type, false, same_line);
+        _bump_version();
     }
 
     // Insert sibling after the node at path
@@ -150,9 +159,11 @@ public:
             wrap_root_in_column();
             SelectionPath child_path = {0};
             _root = _insert_sibling_recursive(_root, child_path, 0, widget_type, true, same_line);
+            _bump_version();
             return;
         }
         _root = _insert_sibling_recursive(_root, path, 0, widget_type, true, same_line);
+        _bump_version();
     }
 
     // Wrap root in a column container
@@ -174,6 +185,7 @@ public:
         Dict new_root;
         new_root["column"] = Value(props);
         _root = Value(new_root);
+        _bump_version();
     }
 
     // Remove node at path
@@ -184,16 +196,19 @@ public:
         }
         _root = _remove_recursive(_root, path, 0);
         _selection.clear();
+        _bump_version();
     }
 
     // Change widget type at path
     void change_type(const SelectionPath& path, const std::string& new_type) {
         _root = _change_type_recursive(_root, path, 0, new_type);
+        _bump_version();
     }
 
     // Set label at path
     void set_label_at(const SelectionPath& path, const std::string& label) {
         _root = _set_label_recursive(_root, path, 0, label);
+        _bump_version();
     }
 
     // Move node up (swap with previous sibling)
@@ -209,6 +224,7 @@ public:
         SelectionPath new_sel = path;
         new_sel.back()--;
         _selection = new_sel;
+        _bump_version();
     }
 
     // Move node down (swap with next sibling)
@@ -225,6 +241,7 @@ public:
         SelectionPath new_sel = path;
         new_sel.back()++;
         _selection = new_sel;
+        _bump_version();
     }
 
     // Get widget type from a widget Value
@@ -308,8 +325,11 @@ public:
 private:
     SharedLayoutModel() = default;
 
+    void _bump_version() { ++_version; }
+
     Value _root;
     SelectionPath _selection;
+    uint64_t _version = 0;
 
     // Navigate to a node by path
     Value* _navigate(Value& node, const SelectionPath& path) {

@@ -34,6 +34,10 @@ protected:
         auto& model = SharedLayoutModel::instance();
 
         if (model.empty()) {
+            // Clear cached widget when model is empty
+            _cached_widget = nullptr;
+            _cached_version = 0;
+
             ImVec2 avail = ImGui::GetContentRegionAvail();
             ImVec2 text_size = ImGui::CalcTextSize("No widgets in layout");
             ImGui::SetCursorPos(ImVec2(
@@ -44,19 +48,44 @@ protected:
             return Ok();
         }
 
-        // Create widget from YAML and render it
-        // Recreate each frame to reflect editor changes
-        auto res = _widget_factory->create_widget(_data_bag, model.root(), _namespace);
-        if (res) {
-            (*res)->render();
-        } else {
-            std::string err = error_msg(res);
-            spdlog::error("EditorPreview: failed to create widget: {}", err);
-            ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "Error: %s", err.c_str());
+        // Only recreate widget when model changes
+        uint64_t current_version = model.version();
+        if (!_cached_widget || _cached_version != current_version) {
+            spdlog::info("Preview: model changed (v{} -> v{}), recreating widget", _cached_version, current_version);
+            // Debug: log the model structure
+            if (auto root_dict = get_as<Dict>(model.root())) {
+                for (const auto& [k, v] : *root_dict) {
+                    spdlog::info("Preview: root key = '{}'", k);
+                    if (auto props = get_as<Dict>(v)) {
+                        for (const auto& [pk, pv] : *props) {
+                            spdlog::info("Preview:   prop '{}' type={}", pk, pv.type().name());
+                        }
+                    }
+                }
+            }
+            auto res = _widget_factory->create_widget(_data_bag, model.root(), "app");
+            if (res) {
+                _cached_widget = *res;
+                _cached_version = current_version;
+            } else {
+                std::string err = error_msg(res);
+                spdlog::error("EditorPreview: failed to create widget: {}", err);
+                ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "Error: %s", err.c_str());
+                return Ok();
+            }
+        }
+
+        // Render cached widget
+        if (_cached_widget) {
+            _cached_widget->render();
         }
 
         return Ok();
     }
+
+private:
+    WidgetPtr _cached_widget;
+    uint64_t _cached_version = 0;
 };
 
 } // namespace ymery::plugins

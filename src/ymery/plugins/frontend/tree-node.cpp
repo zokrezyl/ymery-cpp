@@ -70,18 +70,31 @@ protected:
             has_data_children = !children_res->empty();
         }
 
-        // Use data path as stable ID (widgets may be recreated but path stays same)
-        std::string stable_id = label;
-        if (auto path_res = _data_bag->get_data_path_str(); path_res) {
-            stable_id = *path_res;
+        // Also check for body children in statics (widget structure)
+        bool has_body_children = false;
+        if (auto body_res = _data_bag->get_static("body"); body_res && body_res->has_value()) {
+            spdlog::info("TreeNode: body_res has value");
+            if (auto body_list = get_as<List>(*body_res)) {
+                has_body_children = !body_list->empty();
+                spdlog::info("TreeNode: body is List with {} items", body_list->size());
+            } else {
+                spdlog::info("TreeNode: body is NOT a List");
+            }
+        } else {
+            spdlog::info("TreeNode: no body in statics");
         }
-        std::string imgui_id = label + "###" + stable_id;
 
-        if (has_data_children) {
-            // Has children in data tree - render as expandable tree node
+        bool has_children = has_data_children || has_body_children;
+        spdlog::info("TreeNode: label={}, has_data_children={}, has_body_children={}, has_children={}",
+                     label, has_data_children, has_body_children, has_children);
+
+        std::string imgui_id = label + "##" + _uid;
+
+        if (has_children) {
+            // Has children - render as expandable tree node
             _container_open = ImGui::TreeNode(imgui_id.c_str());
         } else {
-            // No children in data tree - render as leaf (no arrow, never opens)
+            // No children - render as leaf (no arrow, never opens)
             ImGui::TreeNodeEx(imgui_id.c_str(),
                 ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen);
             _container_open = false;  // Leaf nodes never open
