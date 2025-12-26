@@ -78,10 +78,11 @@ private:
         if (it != _widget_cache.end()) {
             widget = it->second;
         } else {
-            // Build spec as a Dict with widget type
+            // Build spec: {widget_type: {label: "..."}}
+            Dict props;
+            props["label"] = node->label;
             Dict spec;
-            spec["widget"] = type;
-            spec["label"] = node->label;
+            spec[type] = Value(props);
 
             // Create widget via factory (uses plugins)
             auto res = _widget_factory->create_widget(_data_bag, Value(spec), _namespace);
