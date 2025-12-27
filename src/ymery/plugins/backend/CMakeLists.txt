@@ -11,6 +11,7 @@ set(BACKEND_PLUGINS
     simple-data-tree
     data-tree
     kernel
+    filesystem
 )
 
 foreach(plugin ${BACKEND_PLUGINS})

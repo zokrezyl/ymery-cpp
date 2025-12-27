@@ -46,6 +46,19 @@ protected:
 private:
     SelectionPath _current_path;  // Path being rendered
 
+    // Insert mode tracking for '+' buttons
+    enum class InsertMode {
+        None,
+        InsertBeforeNewLine,
+        InsertBeforeSameLine,
+        InsertAfterNewLine,
+        InsertAfterSameLine,
+        AddChild,
+        AddChildSameLine
+    };
+    InsertMode _pending_insert_mode = InsertMode::None;
+    SelectionPath _pending_insert_path;  // Path where insert will happen
+
     void _render_empty_state() {
         auto& model = SharedLayoutModel::instance();
 
@@ -121,13 +134,47 @@ private:
             display = type + ": " + label;
         }
 
+        std::string insert_popup_id = "insert_" + uid;
+
+        // Calculate main button width for centering
+        ImVec2 main_btn_size = ImGui::CalcTextSize(display.c_str());
+        main_btn_size.x += ImGui::GetStyle().FramePadding.x * 2;
+        float small_btn_width = ImGui::CalcTextSize("+").x + 8;  // SmallButton padding
+        float center_offset = (small_btn_width + main_btn_size.x) / 2.0f;
+
+        // Small button style
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 0));
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(2, 2));
+
+        // Row 1: [+] insert before (new line) - centered above widget
+        ImGui::Indent(center_offset);
+        if (ImGui::SmallButton(("+##before_nl_" + uid).c_str())) {
+            _pending_insert_mode = InsertMode::InsertBeforeNewLine;
+            _pending_insert_path = _current_path;
+            ImGui::OpenPopup(insert_popup_id.c_str());
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Insert before (new line)");
+        ImGui::Unindent(center_offset);
+
+        // Row 2: [+] widget_button [+]
+        if (ImGui::SmallButton(("+##before_sl_" + uid).c_str())) {
+            _pending_insert_mode = InsertMode::InsertBeforeSameLine;
+            _pending_insert_path = _current_path;
+            ImGui::OpenPopup(insert_popup_id.c_str());
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Insert before (same line)");
+
+        ImGui::SameLine();
+
+        ImGui::PopStyleVar(2);  // Restore normal style for main button
+
         // Selection highlight
         bool is_selected = (_current_path == model.selection());
         if (is_selected) {
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
         }
 
-        // Use ##uid for unique button ID
+        // Main widget button
         std::string button_label = display + "##" + uid;
         if (ImGui::Button(button_label.c_str())) {
             model.select(_current_path);
@@ -143,11 +190,6 @@ private:
             ImGui::OpenPopup(popup_id.c_str());
         }
 
-        if (ImGui::BeginPopup(popup_id.c_str())) {
-            _render_context_menu(widget, type, is_container);
-            ImGui::EndPopup();
-        }
-
         // Drop target for adding children
         if (is_container && ImGui::BeginDragDropTarget()) {
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("WIDGET_TYPE")) {
@@ -156,6 +198,55 @@ private:
                 spdlog::info("Added {} as child of {}", new_type, type);
             }
             ImGui::EndDragDropTarget();
+        }
+
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 0));
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(2, 2));
+
+        ImGui::SameLine();
+        if (ImGui::SmallButton(("+##after_sl_" + uid).c_str())) {
+            _pending_insert_mode = InsertMode::InsertAfterSameLine;
+            _pending_insert_path = _current_path;
+            ImGui::OpenPopup(insert_popup_id.c_str());
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Insert after (same line)");
+
+        // Row 3: [+] insert after (new line) + [C] add child - centered below widget
+        float bottom_row_offset = is_container ? (center_offset - small_btn_width / 2) : center_offset;
+        ImGui::Indent(bottom_row_offset);
+        if (ImGui::SmallButton(("+##after_nl_" + uid).c_str())) {
+            _pending_insert_mode = InsertMode::InsertAfterNewLine;
+            _pending_insert_path = _current_path;
+            ImGui::OpenPopup(insert_popup_id.c_str());
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Insert after (new line)");
+
+        // [C] add child - next to lower '+' (for containers only)
+        if (is_container) {
+            ImGui::SameLine();
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.6f, 0.2f, 1.0f));
+            if (ImGui::SmallButton(("C##addchild_" + uid).c_str())) {
+                _pending_insert_mode = InsertMode::AddChild;
+                _pending_insert_path = _current_path;
+                ImGui::OpenPopup(insert_popup_id.c_str());
+            }
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Add child");
+            ImGui::PopStyleColor();
+        }
+        ImGui::Unindent(bottom_row_offset);
+
+        ImGui::PopStyleVar(2);
+
+        // Insert popup (shared for all '+' buttons of this widget)
+        if (ImGui::BeginPopup(insert_popup_id.c_str())) {
+            _render_insert_popup();
+            ImGui::EndPopup();
+        }
+
+        // Context menu popup
+        if (ImGui::BeginPopup(popup_id.c_str())) {
+            _render_context_menu(widget, type, is_container);
+            ImGui::EndPopup();
         }
 
         // Render children
@@ -170,6 +261,51 @@ private:
         }
 
         ImGui::PopID();
+    }
+
+    void _render_insert_popup() {
+        auto& model = SharedLayoutModel::instance();
+
+        const char* title = "Select widget";
+        switch (_pending_insert_mode) {
+            case InsertMode::InsertBeforeNewLine: title = "Insert Before (new line)"; break;
+            case InsertMode::InsertBeforeSameLine: title = "Insert Before (same line)"; break;
+            case InsertMode::InsertAfterNewLine: title = "Insert After (new line)"; break;
+            case InsertMode::InsertAfterSameLine: title = "Insert After (same line)"; break;
+            case InsertMode::AddChild: title = "Add Child"; break;
+            case InsertMode::AddChildSameLine: title = "Add Child (same line)"; break;
+            default: break;
+        }
+
+        ImGui::Text("%s", title);
+        ImGui::Separator();
+
+        _render_widget_menu([this, &model](const std::string& new_type) {
+            switch (_pending_insert_mode) {
+                case InsertMode::InsertBeforeNewLine:
+                    model.insert_before(_pending_insert_path, new_type, false);
+                    break;
+                case InsertMode::InsertBeforeSameLine:
+                    model.insert_before(_pending_insert_path, new_type, true);
+                    break;
+                case InsertMode::InsertAfterNewLine:
+                    model.insert_after(_pending_insert_path, new_type, false);
+                    break;
+                case InsertMode::InsertAfterSameLine:
+                    model.insert_after(_pending_insert_path, new_type, true);
+                    break;
+                case InsertMode::AddChild:
+                    model.add_child(_pending_insert_path, new_type, false);
+                    break;
+                case InsertMode::AddChildSameLine:
+                    model.add_child(_pending_insert_path, new_type, true);
+                    break;
+                default:
+                    break;
+            }
+            _pending_insert_mode = InsertMode::None;
+            ImGui::CloseCurrentPopup();
+        });
     }
 
     void _render_context_menu(const Value& widget, const std::string& type, bool is_container) {

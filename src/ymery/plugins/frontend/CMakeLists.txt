@@ -15,13 +15,19 @@ set(WIDGET_PLUGINS
     tooltip
     input-text
     input-int
+    input-float
     slider-int
     slider-float
+    drag-int
+    drag-float
     checkbox
     combo
     color-edit
+    color-button
     separator
+    separator-text
     spacing
+    bullet-text
     window
     column
     row
@@ -35,6 +41,14 @@ set(WIDGET_PLUGINS
     main-menu-bar
     menu
     menu-item
+    same-line
+    listbox
+    selectable
+    radio-button
+    indent
+    table
+    table-row
+    table-column
 )
 
 foreach(plugin ${WIDGET_PLUGINS})
@@ -117,6 +131,13 @@ target_link_libraries(knob PRIVATE ymery imgui imgui_knobs)
 target_include_directories(knob PRIVATE ${CMAKE_SOURCE_DIR}/src)
 set_target_properties(knob PROPERTIES PREFIX "" OUTPUT_NAME "knob")
 set_plugin_output_dirs(knob)
+
+# Knob-int widget (requires imgui_knobs)
+add_library(knob-int SHARED knob-int.cpp)
+target_link_libraries(knob-int PRIVATE ymery imgui imgui_knobs)
+target_include_directories(knob-int PRIVATE ${CMAKE_SOURCE_DIR}/src)
+set_target_properties(knob-int PROPERTIES PREFIX "" OUTPUT_NAME "knob-int")
+set_plugin_output_dirs(knob-int)
 
 # Spinner widget (requires imspinner - header only)
 add_library(spinner SHARED spinner.cpp)

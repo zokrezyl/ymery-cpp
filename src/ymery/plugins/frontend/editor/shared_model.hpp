@@ -108,13 +108,19 @@ public:
             }
         }
 
+        // If same_line, insert a same-line widget first
+        if (same_line) {
+            Dict sl_props;
+            sl_props["uid"] = generate_uid("same-line");
+            Dict sl_widget;
+            sl_widget["same-line"] = Value(sl_props);
+            body.push_back(Value(sl_widget));
+        }
+
         // Create new widget: {widget_type: {uid: "...", label: "widget_type"}}
         Dict new_props;
         new_props["uid"] = generate_uid(widget_type);
         new_props["label"] = widget_type;
-        if (same_line) {
-            new_props["same-line"] = true;
-        }
         Dict new_widget;
         new_widget[widget_type] = Value(new_props);
         body.push_back(Value(new_widget));
@@ -366,12 +372,17 @@ private:
 
         if (depth >= path.size()) {
             // We're at the target - add child here
+            // If same_line, insert a same-line widget first
+            if (same_line) {
+                Dict sl_props;
+                sl_props["uid"] = generate_uid("same-line");
+                Dict sl_widget;
+                sl_widget["same-line"] = Value(sl_props);
+                body.push_back(Value(sl_widget));
+            }
             Dict child_props;
             child_props["uid"] = generate_uid(widget_type);
             child_props["label"] = widget_type;
-            if (same_line) {
-                child_props["same-line"] = true;
-            }
             Dict child_widget;
             child_widget[widget_type] = Value(child_props);
             body.push_back(Value(child_widget));
@@ -410,16 +421,24 @@ private:
             // Insert here
             size_t idx = path[depth];
             if (idx <= body.size()) {
+                size_t insert_pos = after ? idx + 1 : idx;
+                if (insert_pos > body.size()) insert_pos = body.size();
+
+                // If same_line, insert a same-line widget first
+                if (same_line) {
+                    Dict sl_props;
+                    sl_props["uid"] = generate_uid("same-line");
+                    Dict sl_widget;
+                    sl_widget["same-line"] = Value(sl_props);
+                    body.insert(body.begin() + insert_pos, Value(sl_widget));
+                    insert_pos++;  // Move insert position after same-line
+                }
+
                 Dict child_props;
                 child_props["uid"] = generate_uid(widget_type);
                 child_props["label"] = widget_type;
-                if (same_line) {
-                    child_props["same-line"] = true;
-                }
                 Dict child_widget;
                 child_widget[widget_type] = Value(child_props);
-                size_t insert_pos = after ? idx + 1 : idx;
-                if (insert_pos > body.size()) insert_pos = body.size();
                 body.insert(body.begin() + insert_pos, Value(child_widget));
             }
         } else if (depth < path.size() - 1) {
