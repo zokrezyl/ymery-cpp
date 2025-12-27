@@ -49,6 +49,10 @@ set(WIDGET_PLUGINS
     table
     table-row
     table-column
+    imgui-main-window
+    hello-imgui-main-window
+    hello-imgui-menu
+    hello-imgui-app-menu-items
 )
 
 foreach(plugin ${WIDGET_PLUGINS})
@@ -245,6 +249,20 @@ target_link_libraries(hex-editor PRIVATE ymery imgui)
 target_include_directories(hex-editor PRIVATE ${CMAKE_SOURCE_DIR}/src)
 set_target_properties(hex-editor PROPERTIES PREFIX "" OUTPUT_NAME "hex-editor")
 set_plugin_output_dirs(hex-editor)
+
+# Logs view widget (spdlog messages)
+add_library(logs-view SHARED logs-view.cpp)
+target_link_libraries(logs-view PRIVATE ymery imgui spdlog::spdlog)
+target_include_directories(logs-view PRIVATE ${CMAKE_SOURCE_DIR}/src)
+set_target_properties(logs-view PROPERTIES PREFIX "" OUTPUT_NAME "logs-view")
+set_plugin_output_dirs(logs-view)
+
+# Errors view widget (Result Errors)
+add_library(errors-view SHARED errors-view.cpp)
+target_link_libraries(errors-view PRIVATE ymery imgui spdlog::spdlog)
+target_include_directories(errors-view PRIVATE ${CMAKE_SOURCE_DIR}/src)
+set_target_properties(errors-view PROPERTIES PREFIX "" OUTPUT_NAME "errors-view")
+set_plugin_output_dirs(errors-view)
 
 # Copy meta.yaml files to build directory
 file(GLOB META_YAML_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.meta.yaml")

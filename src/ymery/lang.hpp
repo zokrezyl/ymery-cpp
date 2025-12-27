@@ -5,6 +5,7 @@
 #include <yaml-cpp/yaml.h>
 #include <map>
 #include <set>
+#include <queue>
 #include <vector>
 #include <filesystem>
 
@@ -31,7 +32,11 @@ private:
     Lang() = default;
 
     // Module loading
-    Result<void> _load_module(const std::string& module_name, const std::string& namespace_);
+    Result<void> _load_module(
+        const std::string& module_name,
+        const std::string& namespace_,
+        std::queue<std::pair<std::string, std::string>>& to_load
+    );
     Result<std::filesystem::path> _resolve_module_path(const std::string& module_name);
 
     // YAML to Dict conversion

@@ -56,16 +56,29 @@ Result<void> Widget::dispose() {
 }
 
 Result<void> Widget::render() {
-    _push_styles();
+    // Clear errors from previous render cycle
+    _error_messages.clear();
 
-    if (auto res = _pre_render_head(); !res) {
-        _pop_styles();
-        return Err<void>("Widget::render: _pre_render_head failed", res);
+    // Push styles - continue even on error
+    if (auto res = _push_styles(); !res) {
+        _handle_error(Err<void>("Widget::render: _push_styles failed", res));
     }
 
-    _detect_and_execute_events();
+    // Pre-render head - continue even on error
+    if (_error_messages.empty()) {
+        if (auto res = _pre_render_head(); !res) {
+            _handle_error(Err<void>("Widget::render: _pre_render_head failed", res));
+        }
+    }
 
-    // Show tooltip if widget has tooltip property (always check, regardless of derived overrides)
+    // Detect and execute events - continue even on error
+    if (_error_messages.empty()) {
+        if (auto res = _detect_and_execute_events(); !res) {
+            _handle_error(Err<void>("Widget::render: _detect_and_execute_events failed", res));
+        }
+    }
+
+    // Show tooltip if widget has tooltip property
     if (ImGui::IsItemHovered()) {
         if (auto tooltip_res = _data_bag->get_static("tooltip"); tooltip_res) {
             if (auto tooltip_text = get_as<std::string>(*tooltip_res)) {
@@ -74,18 +87,53 @@ Result<void> Widget::render() {
         }
     }
 
-    if (_is_body_activated) {
+    // Body handling - continue even on error
+    if (_error_messages.empty() && _is_body_activated) {
         if (auto res = _ensure_body(); !res) {
-            _pop_styles();
-            return Err<void>("Widget::render: _ensure_body failed", res);
+            _handle_error(Err<void>("Widget::render: _ensure_body failed", res));
         }
         if (_body) {
-            _body->render();
+            if (auto res = _body->render(); !res) {
+                _handle_error(Err<void>("Widget::render: body render failed", res));
+            }
         }
     }
 
-    _post_render_head();
-    _pop_styles();
+    // Post-render head - continue even on error
+    if (auto res = _post_render_head(); !res) {
+        _handle_error(Err<void>("Widget::render: _post_render_head failed", res));
+    }
+
+    // Pop styles - always try to cleanup
+    if (auto res = _pop_styles(); !res) {
+        _handle_error(Err<void>("Widget::render: _pop_styles failed", res));
+    }
+
+    // Render accumulated errors in-widget
+    return _render_errors();
+}
+
+void Widget::_handle_error(const Result<void>& result) {
+    if (!result) {
+        _error_messages.push_back(result.error().to_string());
+    }
+}
+
+Result<void> Widget::_render_errors() {
+    if (_error_messages.empty()) {
+        return Ok();
+    }
+
+    // Render errors inline using ImGui
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
+    ImGui::TextUnformatted("Errors:");
+    ImGui::Separator();
+
+    for (const auto& msg : _error_messages) {
+        ImGui::TextWrapped("%s", msg.c_str());
+    }
+
+    ImGui::PopStyleColor();
     return Ok();
 }
 
