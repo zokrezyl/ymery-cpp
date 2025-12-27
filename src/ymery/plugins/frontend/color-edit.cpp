@@ -46,7 +46,8 @@ protected:
             }
         }
 
-        if (ImGui::ColorEdit4(label.c_str(), _color)) {
+        std::string imgui_id = label + "###" + _uid;
+        if (ImGui::ColorEdit4(imgui_id.c_str(), _color)) {
             List new_color;
             for (int i = 0; i < 4; ++i) {
                 new_color.push_back(Value(static_cast<double>(_color[i])));

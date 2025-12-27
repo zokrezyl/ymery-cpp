@@ -49,17 +49,17 @@ public:
         auto& buffer = get_log_buffer();
 
         // Toolbar
-        if (ImGui::Button("Clear")) {
+        if (ImGui::Button(("Clear###clear_" + _uid).c_str())) {
             buffer.clear();
         }
         ImGui::SameLine();
-        ImGui::Checkbox("Auto-scroll", &_auto_scroll);
+        ImGui::Checkbox(("Auto-scroll###autoscroll_" + _uid).c_str(), &_auto_scroll);
         ImGui::SameLine();
-        ImGui::Checkbox("Time", &_show_timestamp);
+        ImGui::Checkbox(("Time###time_" + _uid).c_str(), &_show_timestamp);
         ImGui::SameLine();
-        ImGui::Checkbox("Level", &_show_level);
+        ImGui::Checkbox(("Level###level_" + _uid).c_str(), &_show_level);
         ImGui::SameLine();
-        ImGui::Checkbox("Source", &_show_source);
+        ImGui::Checkbox(("Source###source_" + _uid).c_str(), &_show_source);
         ImGui::SameLine();
         ImGui::Text("Logs: %zu/%zu", buffer.size(), buffer.max_size());
 
@@ -67,12 +67,12 @@ public:
         ImGui::SameLine();
         ImGui::SetNextItemWidth(100);
         const char* level_names[] = { "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "CRITICAL" };
-        ImGui::Combo("##MinLevel", &_min_level, level_names, IM_ARRAYSIZE(level_names));
+        ImGui::Combo(("###minlevel_" + _uid).c_str(), &_min_level, level_names, IM_ARRAYSIZE(level_names));
 
         ImGui::Separator();
 
         // Log entries in scrollable region
-        ImGui::BeginChild("LogEntries", ImVec2(0, 0), ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar);
+        ImGui::BeginChild(("LogEntries###logentries_" + _uid).c_str(), ImVec2(0, 0), ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar);
 
         // Get a copy of entries (thread-safe)
         auto entries = buffer.entries();

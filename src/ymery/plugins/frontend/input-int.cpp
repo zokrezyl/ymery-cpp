@@ -40,7 +40,8 @@ protected:
             }
         }
 
-        if (ImGui::InputInt(label.c_str(), &_value)) {
+        std::string imgui_id = label + "###" + _uid;
+        if (ImGui::InputInt(imgui_id.c_str(), &_value)) {
             _data_bag->set("value", Value(_value));
         }
         return Ok();

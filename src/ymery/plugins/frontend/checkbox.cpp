@@ -40,7 +40,8 @@ protected:
             }
         }
 
-        if (ImGui::Checkbox(label.c_str(), &_checked)) {
+        std::string imgui_id = label + "###" + _uid;
+        if (ImGui::Checkbox(imgui_id.c_str(), &_checked)) {
             _data_bag->set("value", Value(_checked));
         }
         return Ok();

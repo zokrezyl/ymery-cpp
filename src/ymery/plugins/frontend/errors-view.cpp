@@ -47,22 +47,22 @@ public:
         auto& buffer = get_thread_error_buffer();
 
         // Toolbar
-        if (ImGui::Button("Clear")) {
+        if (ImGui::Button(("Clear###clear_" + _uid).c_str())) {
             buffer.clear();
         }
         ImGui::SameLine();
-        ImGui::Checkbox("Auto-scroll", &_auto_scroll);
+        ImGui::Checkbox(("Auto-scroll###autoscroll_" + _uid).c_str(), &_auto_scroll);
         ImGui::SameLine();
-        ImGui::Checkbox("Timestamps", &_show_timestamp);
+        ImGui::Checkbox(("Timestamps###timestamps_" + _uid).c_str(), &_show_timestamp);
         ImGui::SameLine();
-        ImGui::Checkbox("Locations", &_show_location);
+        ImGui::Checkbox(("Locations###locations_" + _uid).c_str(), &_show_location);
         ImGui::SameLine();
         ImGui::Text("Errors: %zu/%zu", buffer.size(), buffer.max_size());
 
         ImGui::Separator();
 
         // Error entries in scrollable region
-        ImGui::BeginChild("ErrorEntries", ImVec2(0, 0), ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar);
+        ImGui::BeginChild(("ErrorEntries###errorentries_" + _uid).c_str(), ImVec2(0, 0), ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar);
 
         int entry_idx = 0;
         for (const auto& entry : buffer.entries()) {

@@ -55,7 +55,8 @@ protected:
             }
         }
 
-        _container_open = ImGui::BeginCoolBar("coolbar", flags, config);
+        std::string imgui_id = "coolbar###" + _uid;
+        _container_open = ImGui::BeginCoolBar(imgui_id.c_str(), flags, config);
         _is_body_activated = _container_open;
         return Ok();
     }

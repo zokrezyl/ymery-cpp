@@ -51,7 +51,8 @@ protected:
             }
         }
 
-        if (ImGui::SliderInt(label.c_str(), &_value, _min, _max)) {
+        std::string imgui_id = label + "###" + _uid;
+        if (ImGui::SliderInt(imgui_id.c_str(), &_value, _min, _max)) {
             _data_bag->set("value", Value(_value));
         }
         return Ok();

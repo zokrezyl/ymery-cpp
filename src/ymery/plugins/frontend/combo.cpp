@@ -58,7 +58,8 @@ protected:
         }
         items_str += '\0';
 
-        if (ImGui::Combo(label.c_str(), &_selected, items_str.c_str())) {
+        std::string imgui_id = label + "###" + _uid;
+        if (ImGui::Combo(imgui_id.c_str(), &_selected, items_str.c_str())) {
             _data_bag->set("value", Value(_selected));
         }
         return Ok();
