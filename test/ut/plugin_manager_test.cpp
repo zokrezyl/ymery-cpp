@@ -49,11 +49,12 @@ suite plugin_manager_tests = [] {
         auto children = *children_res;
         expect(children.size() > 0_ul) << "Expected device-manager plugins";
 
+        // waveform and filesystem are always built
         bool has_waveform = std::find(children.begin(), children.end(), "waveform") != children.end();
-        bool has_alsa = std::find(children.begin(), children.end(), "alsa") != children.end();
+        bool has_filesystem = std::find(children.begin(), children.end(), "filesystem") != children.end();
 
         expect(has_waveform) << "Missing 'waveform' in device-manager list";
-        expect(has_alsa) << "Missing 'alsa' in device-manager list";
+        expect(has_filesystem) << "Missing 'filesystem' in device-manager list";
 
         // kernel should NOT be in device-manager list (it's in tree-like)
         bool has_kernel = std::find(children.begin(), children.end(), "kernel") != children.end();
