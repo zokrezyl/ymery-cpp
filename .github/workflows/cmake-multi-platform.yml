@@ -90,13 +90,13 @@ jobs:
       uses: android-actions/setup-android@v3
 
     - name: Build Main App APK
-      working-directory: android
+      working-directory: android/ymery
       run: |
         chmod +x ./gradlew 2>/dev/null || true
         ./gradlew assembleDebug --no-daemon
 
     - name: Build Editor APK
-      working-directory: android-editor
+      working-directory: android/ymery-editor
       run: |
         chmod +x ./gradlew 2>/dev/null || true
         ./gradlew assembleDebug --no-daemon
@@ -105,10 +105,10 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ymery-android-debug
-        path: android/app/build/outputs/apk/debug/*.apk
+        path: android/ymery/app/build/outputs/apk/debug/*.apk
 
     - name: Upload Editor APK
       uses: actions/upload-artifact@v4
       with:
         name: ymery-editor-android-debug
-        path: android-editor/app/build/outputs/apk/debug/*.apk
+        path: android/ymery-editor/app/build/outputs/apk/debug/*.apk

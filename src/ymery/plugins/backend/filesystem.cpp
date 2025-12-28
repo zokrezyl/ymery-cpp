@@ -2,6 +2,7 @@
 // Implements TreeLike interface for filesystem navigation
 #include "../../types.hpp"
 #include "../../result.hpp"
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <string>
