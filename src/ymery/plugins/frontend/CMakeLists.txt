@@ -270,6 +270,16 @@ target_include_directories(errors-view PRIVATE ${CMAKE_SOURCE_DIR}/src)
 set_target_properties(errors-view PROPERTIES PREFIX "" OUTPUT_NAME "errors-view")
 set_plugin_output_dirs(errors-view)
 
+# Shader-toy widget (WebGPU custom shader POC)
+add_library(shader-toy SHARED shader-toy.cpp)
+target_link_libraries(shader-toy PRIVATE ymery_lib imgui)
+if(YMERY_USE_WEBGPU AND NOT YMERY_WEB)
+    target_link_libraries(shader-toy PRIVATE webgpu)
+endif()
+target_include_directories(shader-toy PRIVATE ${CMAKE_SOURCE_DIR}/src)
+set_target_properties(shader-toy PROPERTIES PREFIX "" OUTPUT_NAME "shader-toy")
+set_plugin_output_dirs(shader-toy)
+
 # Copy meta.yaml files to build directory
 file(GLOB META_YAML_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.meta.yaml")
 foreach(meta_file ${META_YAML_FILES})
