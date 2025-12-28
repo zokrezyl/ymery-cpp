@@ -1,0 +1,42 @@
+# Test layout for tree-node widget testing
+# Used by imgui_test_engine GUI tests
+
+widgets:
+  window:
+    type: window
+  text:
+    type: text
+  tree-node:
+    type: tree-node
+  composite:
+    type: composite
+
+  # Static tree nodes for predictable testing
+  static-tree:
+    type: composite
+    body:
+      - tree-node:
+          label: "Node A"
+          body:
+            - tree-node:
+                label: "Child A1"
+            - tree-node:
+                label: "Child A2"
+      - tree-node:
+          label: "Node B"
+          body:
+            - tree-node:
+                label: "Child B1"
+
+  # Main test window
+  test-window:
+    type: window
+    label: Tree Node Test
+    body:
+      - text:
+          content: "Tree Node Expansion Test"
+      - static-tree
+
+app:
+  widget: app.test-window
+  data-tree: simple-data-tree
