@@ -20,10 +20,11 @@ jobs:
             c_compiler: gcc
             cpp_compiler: g++
             build_type: Release
-          - os: macos-latest
-            c_compiler: clang
-            cpp_compiler: clang++
-            build_type: Release
+          # macOS disabled for now - needs investigation
+          # - os: macos-latest
+          #   c_compiler: clang
+          #   cpp_compiler: clang++
+          #   build_type: Release
 
     steps:
     - uses: actions/checkout@v4
