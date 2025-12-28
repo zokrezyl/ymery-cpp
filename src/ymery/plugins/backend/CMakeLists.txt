@@ -11,12 +11,11 @@ set(BACKEND_PLUGINS
     simple-data-tree
     data-tree
     kernel
-    filesystem
 )
 
 foreach(plugin ${BACKEND_PLUGINS})
     add_library(${plugin} SHARED ${plugin}.cpp)
-    target_link_libraries(${plugin} PRIVATE ymery)
+    target_link_libraries(${plugin} PRIVATE ymery_lib)
     target_include_directories(${plugin} PRIVATE ${CMAKE_SOURCE_DIR}/src)
     set_target_properties(${plugin} PROPERTIES
         PREFIX ""
@@ -31,7 +30,7 @@ endforeach()
 
 # Waveform plugin (requires threading)
 add_library(waveform SHARED waveform.cpp)
-target_link_libraries(waveform PRIVATE ymery)
+target_link_libraries(waveform PRIVATE ymery_lib)
 target_include_directories(waveform PRIVATE ${CMAKE_SOURCE_DIR}/src)
 set_target_properties(waveform PROPERTIES
     PREFIX ""
@@ -48,7 +47,7 @@ if(UNIX AND NOT APPLE AND NOT YMERY_ANDROID)
     find_package(ALSA)
     if(ALSA_FOUND)
         add_library(alsa-plugin SHARED alsa.cpp)
-        target_link_libraries(alsa-plugin PRIVATE ymery ${ALSA_LIBRARIES})
+        target_link_libraries(alsa-plugin PRIVATE ymery_lib ${ALSA_LIBRARIES})
         target_include_directories(alsa-plugin PRIVATE ${CMAKE_SOURCE_DIR}/src ${ALSA_INCLUDE_DIRS})
         set_target_properties(alsa-plugin PROPERTIES
             PREFIX ""
@@ -71,7 +70,7 @@ if(UNIX AND NOT YMERY_ANDROID)
     find_path(JACK_INCLUDE_DIR jack/jack.h)
     if(JACK_LIBRARY AND JACK_INCLUDE_DIR)
         add_library(jack-plugin SHARED jack.cpp)
-        target_link_libraries(jack-plugin PRIVATE ymery ${JACK_LIBRARY})
+        target_link_libraries(jack-plugin PRIVATE ymery_lib ${JACK_LIBRARY})
         target_include_directories(jack-plugin PRIVATE ${CMAKE_SOURCE_DIR}/src ${JACK_INCLUDE_DIR})
         set_target_properties(jack-plugin PROPERTIES
             PREFIX ""
@@ -96,7 +95,7 @@ if(UNIX AND NOT APPLE AND NOT YMERY_ANDROID)
     endif()
     if(PIPEWIRE_FOUND)
         add_library(pipewire-plugin SHARED pipewire.cpp)
-        target_link_libraries(pipewire-plugin PRIVATE ymery ${PIPEWIRE_LIBRARIES})
+        target_link_libraries(pipewire-plugin PRIVATE ymery_lib ${PIPEWIRE_LIBRARIES})
         target_include_directories(pipewire-plugin PRIVATE ${CMAKE_SOURCE_DIR}/src ${PIPEWIRE_INCLUDE_DIRS})
         target_compile_options(pipewire-plugin PRIVATE ${PIPEWIRE_CFLAGS_OTHER})
         set_target_properties(pipewire-plugin PROPERTIES
@@ -122,7 +121,7 @@ if(APPLE)
     if(COREAUDIO_LIBRARY AND AUDIOTOOLBOX_LIBRARY)
         add_library(coreaudio-plugin SHARED coreaudio.cpp)
         target_link_libraries(coreaudio-plugin PRIVATE
-            ymery
+            ymery_lib
             ${COREAUDIO_LIBRARY}
             ${AUDIOTOOLBOX_LIBRARY}
             ${COREFOUNDATION_LIBRARY}
@@ -142,3 +141,6 @@ if(APPLE)
         message(STATUS "Core Audio frameworks not found - coreaudio plugin disabled")
     endif()
 endif()
+
+# Filesystem plugin (exposes both tree-like and device-manager)
+add_subdirectory(filesystem)

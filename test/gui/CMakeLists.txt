@@ -50,9 +50,9 @@ target_compile_definitions(imgui_test_engine PUBLIC
 # Add the define to imgui target
 target_compile_definitions(imgui PUBLIC IMGUI_ENABLE_TEST_ENGINE=1)
 
-# IMPORTANT: ymery links to imgui, which now has test engine hooks.
-# ymery must also link to imgui_test_engine to resolve those symbols.
-target_link_libraries(ymery PUBLIC imgui_test_engine)
+# IMPORTANT: ymery_lib links to imgui, which now has test engine hooks.
+# ymery_lib must also link to imgui_test_engine to resolve those symbols.
+target_link_libraries(ymery_lib PUBLIC imgui_test_engine)
 
 # Test layouts directory
 set(TEST_LAYOUTS_DIR ${CMAKE_SOURCE_DIR}/test/layouts)
@@ -62,11 +62,14 @@ add_executable(gui_test
     gui_test_main.cpp
     tree_node_tests.cpp
     basic_widget_tests.cpp
+    filesystem_tests.cpp
+    ${CMAKE_SOURCE_DIR}/src/ymery/plugins/backend/filesystem/common.cpp
 )
 
 target_link_libraries(gui_test PRIVATE
-    ymery
+    ymery_lib
     imgui_test_engine
+    spdlog::spdlog
 )
 
 target_include_directories(gui_test PRIVATE

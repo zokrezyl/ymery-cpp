@@ -23,13 +23,23 @@ target_include_directories(ymery_android PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../src
 )
 
-target_link_libraries(ymery_android
-    ymery
+# Base libraries
+set(YMERY_ANDROID_LIBS
+    ymery_lib
     -Wl,--whole-archive
     native_app_glue
     -Wl,--no-whole-archive
     android
     log
-    EGL
-    GLESv3
 )
+
+# Add backend-specific libraries
+if(YMERY_USE_WEBGPU)
+    # WebGPU backend - link wgpu library
+    list(APPEND YMERY_ANDROID_LIBS wgpu_native)
+else()
+    # OpenGL backend - link EGL and GLESv3
+    list(APPEND YMERY_ANDROID_LIBS EGL GLESv3)
+endif()
+
+target_link_libraries(ymery_android ${YMERY_ANDROID_LIBS})

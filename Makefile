@@ -53,13 +53,21 @@ debug-webgpu: ## Build with WebGPU backend (Debug)
 
 # === Android Build ===
 
-.PHONY: android
-android: ## Build Android APK (Debug)
-	cd $(ANDROID_DIR)/ymery && PATH="$(SYSTEM_PATH)" ./gradlew assembleDebug
+.PHONY: android-opengl
+android-opengl: ## Build Android OpenGL APK (Debug)
+	cd $(ANDROID_DIR)/ymery && PATH="$(SYSTEM_PATH)" ./gradlew assembleOpenglDebug
 
-.PHONY: android-release
-android-release: ## Build Android APK (Release)
-	cd $(ANDROID_DIR)/ymery && PATH="$(SYSTEM_PATH)" ./gradlew assembleRelease
+.PHONY: android-opengl-release
+android-opengl-release: ## Build Android OpenGL APK (Release)
+	cd $(ANDROID_DIR)/ymery && PATH="$(SYSTEM_PATH)" ./gradlew assembleOpenglRelease
+
+.PHONY: android-webgpu
+android-webgpu: ## Build Android WebGPU APK (Debug)
+	cd $(ANDROID_DIR)/ymery && PATH="$(SYSTEM_PATH)" ./gradlew assembleWebgpuDebug
+
+.PHONY: android-webgpu-release
+android-webgpu-release: ## Build Android WebGPU APK (Release)
+	cd $(ANDROID_DIR)/ymery && PATH="$(SYSTEM_PATH)" ./gradlew assembleWebgpuRelease
 
 .PHONY: android-editor
 android-editor: ## Build Android Editor APK (Debug)
@@ -69,7 +77,7 @@ android-editor: ## Build Android Editor APK (Debug)
 android-clean: ## Clean Android build
 	cd $(ANDROID_DIR)/ymery && PATH="$(SYSTEM_PATH)" ./gradlew clean
 	cd $(ANDROID_DIR)/ymery-editor && PATH="$(SYSTEM_PATH)" ./gradlew clean
-	rm -rf build-android build-android-editor
+	rm -rf build-android build-android-editor build-android-webgpu
 
 # === Web/Emscripten Build ===
 # Uses nix flake with custom toolchain (fixes em-config path issue)
@@ -81,8 +89,8 @@ web: ## Build for Web with Emscripten (uses nix flake)
 # === Individual Targets ===
 
 .PHONY: cli
-cli: opengl ## Build ymery-cli (OpenGL)
-	PATH="$(SYSTEM_PATH)" $(CMAKE) --build $(BUILD_DIR_OPENGL) --parallel --target ymery-cli
+cli: opengl ## Build ymery (OpenGL)
+	PATH="$(SYSTEM_PATH)" $(CMAKE) --build $(BUILD_DIR_OPENGL) --parallel --target ymery
 
 .PHONY: editor
 editor: opengl ## Build ymery-editor (OpenGL)
@@ -99,16 +107,16 @@ plugins: opengl ## Build plugins (OpenGL)
 # === Run Targets ===
 
 .PHONY: run
-run: cli ## Run ymery-cli
-	./$(BUILD_DIR_OPENGL)/ymery-cli
+run: cli ## Run ymery
+	./$(BUILD_DIR_OPENGL)/ymery
 
 .PHONY: run-editor
 run-editor: editor ## Run ymery-editor
 	./$(BUILD_DIR_OPENGL)/ymery-editor
 
 .PHONY: run-webgpu
-run-webgpu: webgpu ## Run ymery-cli with WebGPU
-	./$(BUILD_DIR_WEBGPU)/ymery-cli
+run-webgpu: webgpu ## Run ymery with WebGPU
+	./$(BUILD_DIR_WEBGPU)/ymery
 
 # === Clean Targets ===
 
@@ -158,4 +166,4 @@ help: ## Show this help
 	@echo "  $(BUILD_DIR_WEBGPU)    - WebGPU Release build"
 	@echo "  $(BUILD_DIR_DEBUG)     - OpenGL Debug build"
 	@echo "  $(BUILD_DIR_WEB)       - Emscripten/Web build"
-	@echo "  $(ANDROID_DIR)         - Android build"
+	@echo "  build-android/cxx      - Android native build"

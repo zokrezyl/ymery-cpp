@@ -27,6 +27,31 @@ android {
         }
     }
 
+    // Product flavors for OpenGL and WebGPU backends
+    flavorDimensions = ["backend"]
+    productFlavors {
+        opengl {
+            dimension "backend"
+            applicationIdSuffix ".opengl"
+            versionNameSuffix "-opengl"
+            externalNativeBuild {
+                cmake {
+                    arguments '-DYMERY_USE_WEBGPU=OFF'
+                }
+            }
+        }
+        webgpu {
+            dimension "backend"
+            applicationIdSuffix ".webgpu"
+            versionNameSuffix "-webgpu"
+            externalNativeBuild {
+                cmake {
+                    arguments '-DYMERY_USE_WEBGPU=ON'
+                }
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false

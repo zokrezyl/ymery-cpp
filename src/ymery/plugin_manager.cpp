@@ -253,11 +253,11 @@ Result<void> PluginManager::_load_plugin(const std::string& path) {
         meta.create_fn = WidgetCreateFn(create_fn);
         _plugins["widget"][plugin_name] = meta;
     }
-    else if (plugin_type == "tree") {
+    else if (plugin_type == "tree-like") {
         auto create_fn = reinterpret_cast<PluginTreeCreateFn>(ymery_dlsym(handle, "create"));
         if (!create_fn) {
             ymery_dlclose(handle);
-            return Err<void>("Tree plugin has no 'create' function: " + path);
+            return Err<void>("Tree-like plugin has no 'create' function: " + path);
         }
         meta.create_fn = TreeLikeCreateFn(create_fn);
         _plugins["tree-like"][plugin_name] = meta;

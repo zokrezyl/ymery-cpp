@@ -23,6 +23,7 @@
 // Test registration functions (defined in separate files)
 extern void RegisterTreeNodeTests(ImGuiTestEngine* engine);
 extern void RegisterBasicWidgetTests(ImGuiTestEngine* engine);
+extern void RegisterFilesystemTests(ImGuiTestEngine* engine);
 
 // Global app state for tests
 static ymery::EmbeddedConfig g_config;
@@ -134,6 +135,7 @@ int main(int argc, char** argv) {
     // Register all tests
     RegisterTreeNodeTests(engine);
     RegisterBasicWidgetTests(engine);
+    RegisterFilesystemTests(engine);
 
     // Get test list
     ImVector<ImGuiTest*> tests;

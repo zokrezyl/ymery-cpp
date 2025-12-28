@@ -533,7 +533,7 @@ Result<void> ProvidersProxy::open(const DataPath& path, const Dict& params) {
 } // namespace ymery::plugins
 
 extern "C" const char* name() { return "kernel"; }
-extern "C" const char* type() { return "tree"; }
+extern "C" const char* type() { return "tree-like"; }
 extern "C" ymery::Result<ymery::TreeLikePtr> create(
     std::shared_ptr<ymery::Dispatcher> dispatcher,
     std::shared_ptr<ymery::PluginManager> plugin_manager

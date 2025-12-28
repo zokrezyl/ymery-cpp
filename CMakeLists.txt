@@ -428,17 +428,17 @@ list(APPEND YMERY_CORE_SOURCES
 # Core library
 if(YMERY_WEB OR YMERY_ANDROID)
     # Static library for Emscripten and Android (no shared libs / dynamic loading)
-    add_library(ymery STATIC ${YMERY_CORE_SOURCES})
+    add_library(ymery_lib STATIC ${YMERY_CORE_SOURCES})
 else()
-    add_library(ymery SHARED ${YMERY_CORE_SOURCES})
+    add_library(ymery_lib SHARED ${YMERY_CORE_SOURCES})
 endif()
 
-target_include_directories(ymery PUBLIC
+target_include_directories(ymery_lib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
 if(YMERY_WEB)
-    target_link_libraries(ymery PUBLIC
+    target_link_libraries(ymery_lib PUBLIC
         yaml-cpp
         imgui
         implot
@@ -452,10 +452,10 @@ if(YMERY_WEB)
         spdlog::spdlog
     )
     # Add tl::expected include directory (header-only library)
-    target_include_directories(ymery PUBLIC ${tl_expected_SOURCE_DIR}/include)
-    target_compile_definitions(ymery PUBLIC YMERY_WEB=1 YMERY_USE_WEBGPU=1)
+    target_include_directories(ymery_lib PUBLIC ${tl_expected_SOURCE_DIR}/include)
+    target_compile_definitions(ymery_lib PUBLIC YMERY_WEB=1 YMERY_USE_WEBGPU=1)
 elseif(YMERY_ANDROID)
-    target_link_libraries(ymery PUBLIC
+    target_link_libraries(ymery_lib PUBLIC
         yaml-cpp
         imgui
         implot
@@ -473,12 +473,12 @@ elseif(YMERY_ANDROID)
         GLESv3
     )
     # Add tl::expected include directory (header-only library)
-    target_include_directories(ymery PUBLIC ${tl_expected_SOURCE_DIR}/include)
+    target_include_directories(ymery_lib PUBLIC ${tl_expected_SOURCE_DIR}/include)
     # Add NDK native_app_glue include directory
-    target_include_directories(ymery PUBLIC ${ANDROID_NDK}/sources/android/native_app_glue)
-    target_compile_definitions(ymery PUBLIC YMERY_ANDROID=1)
+    target_include_directories(ymery_lib PUBLIC ${ANDROID_NDK}/sources/android/native_app_glue)
+    target_compile_definitions(ymery_lib PUBLIC YMERY_ANDROID=1)
 else()
-    target_link_libraries(ymery PUBLIC
+    target_link_libraries(ymery_lib PUBLIC
         yaml-cpp
         imgui
         implot
@@ -495,24 +495,24 @@ else()
     )
     # dl library is only needed on Unix-like systems
     if(UNIX)
-        target_link_libraries(ymery PUBLIC dl)
+        target_link_libraries(ymery_lib PUBLIC dl)
     endif()
 endif()
 
 # Main executable (not for Android - needs native activity)
 if(NOT YMERY_ANDROID)
-    add_executable(ymery-cli src/main.cpp)
-    target_link_libraries(ymery-cli PRIVATE ymery)
+    add_executable(ymery src/main.cpp)
+    target_link_libraries(ymery PRIVATE ymery_lib)
 
     if(YMERY_WEB)
         # Emscripten linker flags (emscripten 4.x+ uses ports)
-        set_target_properties(ymery-cli PROPERTIES
+        set_target_properties(ymery PROPERTIES
             SUFFIX ".html"
             LINK_FLAGS "--use-port=contrib.glfw3 --use-port=emdawnwebgpu -sWASM=1 -sALLOW_MEMORY_GROWTH=1 -sNO_EXIT_RUNTIME=0 -sASSERTIONS=1"
         )
     else()
         # Native: enable symbol exports for plugins
-        set_target_properties(ymery-cli PROPERTIES ENABLE_EXPORTS ON)
+        set_target_properties(ymery PROPERTIES ENABLE_EXPORTS ON)
     endif()
 endif()
 
@@ -531,7 +531,7 @@ if(NOT YMERY_WEB AND NOT YMERY_ANDROID)
         ${CMAKE_SOURCE_DIR}/third_party/imgui/backends
     )
     target_link_libraries(ymery-editor PRIVATE
-        ymery
+        ymery_lib
         imgui
         glfw
         spdlog::spdlog
