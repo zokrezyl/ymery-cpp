@@ -50,6 +50,10 @@ target_compile_definitions(imgui_test_engine PUBLIC
 # Add the define to imgui target
 target_compile_definitions(imgui PUBLIC IMGUI_ENABLE_TEST_ENGINE=1)
 
+# IMPORTANT: ymery links to imgui, which now has test engine hooks.
+# ymery must also link to imgui_test_engine to resolve those symbols.
+target_link_libraries(ymery PUBLIC imgui_test_engine)
+
 # Test layouts directory
 set(TEST_LAYOUTS_DIR ${CMAKE_SOURCE_DIR}/test/layouts)
 
