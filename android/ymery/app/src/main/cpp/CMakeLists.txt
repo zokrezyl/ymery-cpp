@@ -35,7 +35,16 @@ set(YMERY_ANDROID_LIBS
 
 # Add backend-specific libraries
 if(YMERY_USE_WEBGPU)
-    # WebGPU backend - link wgpu library
+    # WebGPU backend - link pre-built wgpu-native library
+    set(WGPU_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../libs/${ANDROID_ABI})
+    add_library(wgpu_native SHARED IMPORTED)
+    set_target_properties(wgpu_native PROPERTIES
+        IMPORTED_LOCATION ${WGPU_LIB_DIR}/libwgpu_native.so
+    )
+    # Add wgpu-native include path
+    target_include_directories(ymery_android PRIVATE
+        ${CMAKE_CURRENT_BINARY_DIR}/ymery/_deps/webgpu-src/include
+    )
     list(APPEND YMERY_ANDROID_LIBS wgpu_native)
 else()
     # OpenGL backend - link EGL and GLESv3

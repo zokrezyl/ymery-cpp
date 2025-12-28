@@ -63,10 +63,12 @@ android-opengl-release: ## Build Android OpenGL APK (Release)
 
 .PHONY: android-webgpu
 android-webgpu: ## Build Android WebGPU APK (Debug)
+	cd $(ANDROID_DIR)/ymery && bash ./build-wgpu.sh
 	cd $(ANDROID_DIR)/ymery && PATH="$(SYSTEM_PATH)" ./gradlew assembleWebgpuDebug
 
 .PHONY: android-webgpu-release
 android-webgpu-release: ## Build Android WebGPU APK (Release)
+	cd $(ANDROID_DIR)/ymery && bash ./build-wgpu.sh
 	cd $(ANDROID_DIR)/ymery && PATH="$(SYSTEM_PATH)" ./gradlew assembleWebgpuRelease
 
 .PHONY: android-editor

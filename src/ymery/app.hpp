@@ -90,9 +90,13 @@ private:
 
 #ifdef YMERY_ANDROID
     struct android_app* _android_app = nullptr;
+#ifdef YMERY_USE_WEBGPU
+    void* _wgpu_current_texture_view = nullptr;
+#else
     void* _egl_display = nullptr;
     void* _egl_surface = nullptr;
     void* _egl_context = nullptr;
+#endif
     int32_t _display_width = 0;
     int32_t _display_height = 0;
     float _display_density = 1.0f;

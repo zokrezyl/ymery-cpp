@@ -138,14 +138,46 @@ else()
     )
 endif()
 
-# WebGPU native library (wgpu-native v0.19 - compatible with ImGui)
+# WebGPU native library
 # Not needed for Emscripten - browser provides WebGPU
 if(YMERY_USE_WEBGPU AND NOT YMERY_WEB)
-    CPMAddPackage(
-        NAME webgpu
-        GITHUB_REPOSITORY eliemichel/WebGPU-distribution
-        GIT_TAG wgpu-v0.19.4.1
-    )
+    if(YMERY_ANDROID)
+        # Android: Use pre-built wgpu-native from build-android/wgpu-libs
+        # Downloaded by android/ymery/build-wgpu.sh script
+        set(WGPU_ANDROID_LIB "${CMAKE_CURRENT_SOURCE_DIR}/build-android/wgpu-libs/arm64-v8a/libwgpu_native.so")
+
+        if(NOT EXISTS "${WGPU_ANDROID_LIB}")
+            message(FATAL_ERROR
+                "wgpu-native Android library not found at ${WGPU_ANDROID_LIB}\n"
+                "Run 'make android-webgpu' or 'android/ymery/build-wgpu.sh' first to download it.")
+        endif()
+
+        # Fetch headers from eliemichel's distribution (headers only)
+        CPMAddPackage(
+            NAME webgpu
+            GITHUB_REPOSITORY eliemichel/WebGPU-distribution
+            GIT_TAG wgpu-v0.19.4.1
+            DOWNLOAD_ONLY YES
+        )
+
+        # Create imported library target for Android
+        add_library(webgpu SHARED IMPORTED GLOBAL)
+        set_target_properties(webgpu PROPERTIES
+            IMPORTED_LOCATION "${WGPU_ANDROID_LIB}"
+            IMPORTED_NO_SONAME TRUE
+            INTERFACE_INCLUDE_DIRECTORIES "${webgpu_SOURCE_DIR}/include"
+        )
+        target_compile_definitions(webgpu INTERFACE WEBGPU_BACKEND_WGPU)
+
+        message(STATUS "Using wgpu-native for Android: ${WGPU_ANDROID_LIB}")
+    else()
+        # Desktop: Use eliemichel's WebGPU-distribution
+        CPMAddPackage(
+            NAME webgpu
+            GITHUB_REPOSITORY eliemichel/WebGPU-distribution
+            GIT_TAG wgpu-v0.19.4.1
+        )
+    endif()
 endif()
 
 if(imgui_ADDED)
@@ -186,6 +218,10 @@ if(imgui_ADDED)
         # Emscripten - use GLFW port and Dawn WebGPU port (emscripten 4.x+)
         target_compile_definitions(imgui PUBLIC YMERY_USE_WEBGPU=1 YMERY_WEB=1)
         target_compile_options(imgui PUBLIC --use-port=contrib.glfw3 --use-port=emdawnwebgpu)
+    elseif(YMERY_ANDROID AND YMERY_USE_WEBGPU)
+        # Android - WebGPU (wgpu-native)
+        target_compile_definitions(imgui PUBLIC YMERY_ANDROID=1 YMERY_USE_WEBGPU=1 IMGUI_IMPL_WEBGPU_BACKEND_WGPU=1)
+        target_link_libraries(imgui PUBLIC android log webgpu)
     elseif(YMERY_ANDROID)
         # Android - OpenGL ES
         target_compile_definitions(imgui PUBLIC YMERY_ANDROID=1)
@@ -454,6 +490,28 @@ if(YMERY_WEB)
     # Add tl::expected include directory (header-only library)
     target_include_directories(ymery_lib PUBLIC ${tl_expected_SOURCE_DIR}/include)
     target_compile_definitions(ymery_lib PUBLIC YMERY_WEB=1 YMERY_USE_WEBGPU=1)
+elseif(YMERY_ANDROID AND YMERY_USE_WEBGPU)
+    target_link_libraries(ymery_lib PUBLIC
+        yaml-cpp
+        imgui
+        implot
+        imgui_md
+        imgui_knobs
+        imspinner
+        imgui_toggle
+        imcoolbar
+        imguizmo
+        implot3d
+        spdlog::spdlog
+        android
+        log
+        webgpu
+    )
+    # Add tl::expected include directory (header-only library)
+    target_include_directories(ymery_lib PUBLIC ${tl_expected_SOURCE_DIR}/include)
+    # Add NDK native_app_glue include directory
+    target_include_directories(ymery_lib PUBLIC ${ANDROID_NDK}/sources/android/native_app_glue)
+    target_compile_definitions(ymery_lib PUBLIC YMERY_ANDROID=1 YMERY_USE_WEBGPU=1)
 elseif(YMERY_ANDROID)
     target_link_libraries(ymery_lib PUBLIC
         yaml-cpp

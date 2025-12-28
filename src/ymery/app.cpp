@@ -4,12 +4,17 @@
 #include <android/log.h>
 #include <android/configuration.h>
 #include <android_native_app_glue.h>
-#include <EGL/egl.h>
-#include <GLES3/gl3.h>
 #include <jni.h>
 #include <imgui.h>
 #include <imgui_impl_android.h>
+#ifdef YMERY_USE_WEBGPU
+#include <imgui_impl_wgpu.h>
+#include <webgpu/webgpu.h>
+#else
+#include <EGL/egl.h>
+#include <GLES3/gl3.h>
 #include <imgui_impl_opengl3.h>
+#endif
 #include <implot.h>
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, "ymery", __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, "ymery", __VA_ARGS__)
@@ -201,8 +206,8 @@ static void glfw_error_callback(int error, const char* description) {
 }
 #endif
 
-#ifdef YMERY_ANDROID
-// Android/EGL backend
+#if defined(YMERY_ANDROID) && !defined(YMERY_USE_WEBGPU)
+// Android/EGL backend (OpenGL ES)
 
 Result<void> App::_init_graphics() {
     LOGI("App::_init_graphics starting (Android/EGL)");
@@ -334,6 +339,257 @@ Result<void> App::_end_frame() {
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
     eglSwapBuffers(static_cast<EGLDisplay>(_egl_display), static_cast<EGLSurface>(_egl_surface));
+
+    return Ok();
+}
+
+#elif defined(YMERY_ANDROID) && defined(YMERY_USE_WEBGPU)
+// Android/WebGPU backend
+
+Result<void> App::_init_graphics() {
+    LOGI("App::_init_graphics starting (Android/WebGPU)");
+
+    if (!_android_app || !_android_app->window) {
+        return Err<void>("App::_init_graphics: no Android window");
+    }
+
+    // Get window dimensions
+    _display_width = ANativeWindow_getWidth(_android_app->window);
+    _display_height = ANativeWindow_getHeight(_android_app->window);
+
+    // Get density
+    _display_density = AConfiguration_getDensity(_android_app->config) / 160.0f;
+    if (_display_density < 1.0f) _display_density = 1.0f;
+
+    LOGI("Window: %dx%d, density=%.2f", _display_width, _display_height, _display_density);
+
+    // Create WebGPU instance
+    WGPUInstanceDescriptor instance_desc = {};
+    _wgpu_instance = wgpuCreateInstance(&instance_desc);
+    if (!_wgpu_instance) {
+        return Err<void>("App::_init_graphics: wgpuCreateInstance failed");
+    }
+    LOGI("WebGPU instance created");
+
+    // Create surface from Android native window
+    WGPUSurfaceDescriptorFromAndroidNativeWindow android_surface_desc = {};
+    android_surface_desc.chain.sType = WGPUSType_SurfaceDescriptorFromAndroidNativeWindow;
+    android_surface_desc.window = _android_app->window;
+
+    WGPUSurfaceDescriptor surface_desc = {};
+    surface_desc.nextInChain = &android_surface_desc.chain;
+    _wgpu_surface = wgpuInstanceCreateSurface(_wgpu_instance, &surface_desc);
+    if (!_wgpu_surface) {
+        return Err<void>("App::_init_graphics: wgpuInstanceCreateSurface failed");
+    }
+    LOGI("WebGPU surface created");
+
+    // Request adapter
+    WGPURequestAdapterOptions adapter_opts = {};
+    adapter_opts.compatibleSurface = _wgpu_surface;
+    adapter_opts.powerPreference = WGPUPowerPreference_HighPerformance;
+
+    wgpuInstanceRequestAdapter(
+        _wgpu_instance,
+        &adapter_opts,
+        [](WGPURequestAdapterStatus status, WGPUAdapter adapter, char const* message, void* userdata) {
+            if (status == WGPURequestAdapterStatus_Success) {
+                *static_cast<WGPUAdapter*>(userdata) = adapter;
+            } else {
+                __android_log_print(ANDROID_LOG_ERROR, "ymery", "Adapter request failed: %s", message ? message : "unknown");
+            }
+        },
+        &_wgpu_adapter
+    );
+
+    if (!_wgpu_adapter) {
+        return Err<void>("App::_init_graphics: wgpuInstanceRequestAdapter failed");
+    }
+    LOGI("WebGPU adapter obtained");
+
+    // Request device
+    WGPUDeviceDescriptor device_desc = {};
+    device_desc.label = "ymery device";
+    device_desc.requiredFeatureCount = 0;
+    device_desc.requiredLimits = nullptr;
+    device_desc.defaultQueue.label = "default queue";
+
+    wgpuAdapterRequestDevice(
+        _wgpu_adapter,
+        &device_desc,
+        [](WGPURequestDeviceStatus status, WGPUDevice device, char const* message, void* userdata) {
+            if (status == WGPURequestDeviceStatus_Success) {
+                *static_cast<WGPUDevice*>(userdata) = device;
+            } else {
+                __android_log_print(ANDROID_LOG_ERROR, "ymery", "Device request failed: %s", message ? message : "unknown");
+            }
+        },
+        &_wgpu_device
+    );
+
+    if (!_wgpu_device) {
+        return Err<void>("App::_init_graphics: wgpuAdapterRequestDevice failed");
+    }
+    LOGI("WebGPU device obtained");
+
+    // Get queue
+    _wgpu_queue = wgpuDeviceGetQueue(_wgpu_device);
+
+    // Get preferred surface format
+    WGPUSurfaceCapabilities caps = {};
+    wgpuSurfaceGetCapabilities(_wgpu_surface, _wgpu_adapter, &caps);
+    if (caps.formatCount > 0) {
+        _wgpu_preferred_format = caps.formats[0];
+    }
+    wgpuSurfaceCapabilitiesFreeMembers(caps);
+
+    // Configure surface
+    _wgpu_surface_width = _display_width;
+    _wgpu_surface_height = _display_height;
+
+    WGPUSurfaceConfiguration config = {};
+    config.device = _wgpu_device;
+    config.format = _wgpu_preferred_format;
+    config.usage = WGPUTextureUsage_RenderAttachment;
+    config.alphaMode = WGPUCompositeAlphaMode_Auto;
+    config.width = _wgpu_surface_width;
+    config.height = _wgpu_surface_height;
+    config.presentMode = WGPUPresentMode_Fifo;
+
+    wgpuSurfaceConfigure(_wgpu_surface, &config);
+    LOGI("WebGPU surface configured");
+
+    // Setup Dear ImGui context
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImPlot::CreateContext();
+
+    ImGuiIO& io = ImGui::GetIO();
+    io.IniFilename = nullptr;
+    io.FontGlobalScale = _display_density;
+
+    ImGui::StyleColorsDark();
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.ScaleAllSizes(_display_density);
+
+    // Initialize ImGui backends
+    ImGui_ImplAndroid_Init(_android_app->window);
+
+    ImGui_ImplWGPU_InitInfo wgpu_init_info = {};
+    wgpu_init_info.Device = _wgpu_device;
+    wgpu_init_info.RenderTargetFormat = _wgpu_preferred_format;
+    wgpu_init_info.DepthStencilFormat = WGPUTextureFormat_Undefined;
+    wgpu_init_info.NumFramesInFlight = 3;
+    ImGui_ImplWGPU_Init(&wgpu_init_info);
+
+    LOGI("ImGui initialized successfully (Android/WebGPU)");
+    return Ok();
+}
+
+Result<void> App::_shutdown_graphics() {
+    ImGui_ImplWGPU_Shutdown();
+    ImGui_ImplAndroid_Shutdown();
+    ImPlot::DestroyContext();
+    ImGui::DestroyContext();
+
+    if (_wgpu_surface) {
+        wgpuSurfaceUnconfigure(_wgpu_surface);
+        wgpuSurfaceRelease(_wgpu_surface);
+        _wgpu_surface = nullptr;
+    }
+    if (_wgpu_device) {
+        wgpuDeviceRelease(_wgpu_device);
+        _wgpu_device = nullptr;
+    }
+    if (_wgpu_adapter) {
+        wgpuAdapterRelease(_wgpu_adapter);
+        _wgpu_adapter = nullptr;
+    }
+    if (_wgpu_instance) {
+        wgpuInstanceRelease(_wgpu_instance);
+        _wgpu_instance = nullptr;
+    }
+
+    return Ok();
+}
+
+Result<void> App::_begin_frame() {
+    // Get current texture view
+    WGPUSurfaceTexture surface_texture;
+    wgpuSurfaceGetCurrentTexture(_wgpu_surface, &surface_texture);
+
+    if (surface_texture.status != WGPUSurfaceGetCurrentTextureStatus_Success) {
+        return Err<void>("Failed to get surface texture");
+    }
+
+    WGPUTextureViewDescriptor view_desc = {};
+    view_desc.format = _wgpu_preferred_format;
+    view_desc.dimension = WGPUTextureViewDimension_2D;
+    view_desc.baseMipLevel = 0;
+    view_desc.mipLevelCount = 1;
+    view_desc.baseArrayLayer = 0;
+    view_desc.arrayLayerCount = 1;
+    view_desc.aspect = WGPUTextureAspect_All;
+
+    WGPUTextureView texture_view = wgpuTextureCreateView(surface_texture.texture, &view_desc);
+    if (!texture_view) {
+        return Err<void>("Failed to create texture view");
+    }
+
+    // Begin ImGui frame
+    ImGui_ImplWGPU_NewFrame();
+    ImGui_ImplAndroid_NewFrame();
+    ImGui::NewFrame();
+
+    // Store texture view for _end_frame
+    _wgpu_current_texture_view = texture_view;
+
+    return Ok();
+}
+
+Result<void> App::_end_frame() {
+    ImGui::Render();
+
+    WGPUTextureView texture_view = static_cast<WGPUTextureView>(_wgpu_current_texture_view);
+
+    // Create render pass
+    WGPURenderPassColorAttachment color_attachment = {};
+    color_attachment.view = texture_view;
+    color_attachment.resolveTarget = nullptr;
+    color_attachment.loadOp = WGPULoadOp_Clear;
+    color_attachment.storeOp = WGPUStoreOp_Store;
+    color_attachment.clearValue = {0.1f, 0.1f, 0.1f, 1.0f};
+#ifndef WEBGPU_BACKEND_WGPU
+    color_attachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
+#endif
+
+    WGPURenderPassDescriptor render_pass_desc = {};
+    render_pass_desc.colorAttachmentCount = 1;
+    render_pass_desc.colorAttachments = &color_attachment;
+    render_pass_desc.depthStencilAttachment = nullptr;
+
+    WGPUCommandEncoderDescriptor encoder_desc = {};
+    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(_wgpu_device, &encoder_desc);
+    WGPURenderPassEncoder pass = wgpuCommandEncoderBeginRenderPass(encoder, &render_pass_desc);
+
+    // Render ImGui
+    ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), pass);
+
+    wgpuRenderPassEncoderEnd(pass);
+    wgpuRenderPassEncoderRelease(pass);
+
+    WGPUCommandBufferDescriptor cmd_buffer_desc = {};
+    WGPUCommandBuffer cmd_buffer = wgpuCommandEncoderFinish(encoder, &cmd_buffer_desc);
+    wgpuCommandEncoderRelease(encoder);
+
+    wgpuQueueSubmit(_wgpu_queue, 1, &cmd_buffer);
+    wgpuCommandBufferRelease(cmd_buffer);
+
+    // Release texture view and present
+    wgpuTextureViewRelease(texture_view);
+    _wgpu_current_texture_view = nullptr;
+
+    wgpuSurfacePresent(_wgpu_surface);
 
     return Ok();
 }
