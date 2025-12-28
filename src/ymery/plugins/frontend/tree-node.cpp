@@ -85,8 +85,6 @@ protected:
         }
 
         bool has_children = has_data_children || has_body_children;
-        spdlog::info("TreeNode: label={}, has_data_children={}, has_body_children={}, has_children={}",
-                     label, has_data_children, has_body_children, has_children);
 
         std::string imgui_id = label + "##" + _uid;
 

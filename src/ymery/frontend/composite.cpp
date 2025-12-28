@@ -189,16 +189,20 @@ Result<void> Composite::_ensure_children() {
     if (has_foreach_child && _children_initialized) {
         // Get current child names
         auto children_res = _data_bag->get_children_names();
-        if (children_res) {
-            auto current_names = *children_res;
-            // Compare with cached names
-            if (current_names == _foreach_child_names) {
-                // No change - keep existing widgets
-                return Ok();
-            }
-            spdlog::info("Composite: foreach-child data changed, rebuilding");
+        if (!children_res) {
+            // Error getting children - keep existing widgets to preserve state
+            spdlog::debug("Composite: get_children_names failed, keeping existing widgets");
+            return Ok();
         }
-        // Data changed or error - clear and rebuild
+        auto current_names = *children_res;
+        // Compare with cached names
+        if (current_names == _foreach_child_names) {
+            // No change - keep existing widgets
+            return Ok();
+        }
+        spdlog::info("Composite: foreach-child data changed, rebuilding ({} -> {} children)",
+                     _foreach_child_names.size(), current_names.size());
+        // Data changed - clear and rebuild
         for (auto& child : _children) {
             if (child) child->dispose();
         }
