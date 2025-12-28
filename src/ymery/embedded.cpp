@@ -85,15 +85,33 @@ Result<void> EmbeddedApp::_init_core() {
 }
 
 void EmbeddedApp::_dispose_core() {
+    spdlog::debug("EmbeddedApp::_dispose_core");
+
+    // Dispose in correct order:
+    // 1. Root widget first (it holds refs to factory, dispatcher, etc.)
     if (_root_widget) {
         _root_widget->dispose();
         _root_widget.reset();
     }
 
+    // 2. Widget factory (holds refs to plugin_manager, data_tree, etc.)
+    if (_widget_factory) {
+        _widget_factory->dispose();
+        _widget_factory.reset();
+    }
+
+    // 3. Data tree
+    _data_tree.reset();
+
+    // 4. Plugin manager last (plugins must be unloaded after all widgets gone)
     if (_plugin_manager) {
         _plugin_manager->dispose();
         _plugin_manager.reset();
     }
+
+    // 5. Other components
+    _dispatcher.reset();
+    _lang.reset();
 }
 
 void EmbeddedApp::dispose() {

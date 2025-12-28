@@ -73,15 +73,15 @@ protected:
         // Also check for body children in statics (widget structure)
         bool has_body_children = false;
         if (auto body_res = _data_bag->get_static("body"); body_res && body_res->has_value()) {
-            spdlog::info("TreeNode: body_res has value");
             if (auto body_list = get_as<List>(*body_res)) {
                 has_body_children = !body_list->empty();
-                spdlog::info("TreeNode: body is List with {} items", body_list->size());
-            } else {
-                spdlog::info("TreeNode: body is NOT a List");
+            } else if (auto body_str = get_as<std::string>(*body_res)) {
+                // Body is a string reference (e.g., "kernel-recursive") - counts as having children
+                has_body_children = !body_str->empty();
+            } else if (auto body_dict = get_as<Dict>(*body_res)) {
+                // Body is a dict (single widget spec) - counts as having children
+                has_body_children = !body_dict->empty();
             }
-        } else {
-            spdlog::info("TreeNode: no body in statics");
         }
 
         bool has_children = has_data_children || has_body_children;

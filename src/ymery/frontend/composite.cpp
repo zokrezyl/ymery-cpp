@@ -55,6 +55,7 @@ Result<void> Composite::dispose() {
     }
     _children.clear();
     _children_initialized = false;
+    _foreach_child_names.clear();
 
     return Widget::dispose();
 }
@@ -184,12 +185,25 @@ Result<void> Composite::_ensure_children() {
         return Ok();
     }
 
-    // For foreach-child, clear and rebuild children each frame
-    if (has_foreach_child) {
+    // For foreach-child, check if data has changed before rebuilding
+    if (has_foreach_child && _children_initialized) {
+        // Get current child names
+        auto children_res = _data_bag->get_children_names();
+        if (children_res) {
+            auto current_names = *children_res;
+            // Compare with cached names
+            if (current_names == _foreach_child_names) {
+                // No change - keep existing widgets
+                return Ok();
+            }
+            spdlog::info("Composite: foreach-child data changed, rebuilding");
+        }
+        // Data changed or error - clear and rebuild
         for (auto& child : _children) {
             if (child) child->dispose();
         }
         _children.clear();
+        _foreach_child_names.clear();
     }
 
     spdlog::info("Composite::_ensure_children: {} body specs, has_foreach_child={}", children_list->size(), has_foreach_child);
@@ -228,6 +242,9 @@ Result<void> Composite::_ensure_children() {
                 } else {
                     widget_spec = foreach_val;
                 }
+
+                // Cache child names for change detection
+                _foreach_child_names = child_names;
 
                 // Create a widget for each child - like Python, add data-path to widget spec
                 for (const auto& child_name : child_names) {

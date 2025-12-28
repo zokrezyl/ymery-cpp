@@ -29,6 +29,22 @@ Result<void> WidgetFactory::init() {
     return Ok();
 }
 
+void WidgetFactory::dispose() {
+    spdlog::debug("WidgetFactory::dispose");
+
+    // Clear widget cache first
+    _widget_cache.clear();
+
+    // Clear data trees
+    _data_trees.clear();
+
+    // Release references to avoid circular dependencies on destruction
+    _plugin_manager.reset();
+    _data_tree.reset();
+    _dispatcher.reset();
+    _lang.reset();
+}
+
 Result<WidgetPtr> WidgetFactory::create_widget(
     std::shared_ptr<DataBag> parent_data_bag,
     const Value& spec,

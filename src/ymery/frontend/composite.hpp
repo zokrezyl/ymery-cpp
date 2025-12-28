@@ -38,6 +38,9 @@ protected:
     std::vector<WidgetPtr> _children;
     bool _children_initialized = false;
     bool _container_open = true;
+
+    // Cache for foreach-child to detect when data changes
+    std::vector<std::string> _foreach_child_names;
 };
 
 } // namespace ymery

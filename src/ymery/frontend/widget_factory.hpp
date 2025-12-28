@@ -36,6 +36,7 @@ public:
 
     // Lifecycle
     Result<void> init();
+    void dispose();
 
     // Access
     std::shared_ptr<Lang> lang() const { return _lang; }
