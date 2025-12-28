@@ -1,0 +1,10 @@
+widgets:
+  console:
+    type: composite
+    body:
+      - text: "Example Console Window"
+      - separator:
+      - text: "Commands can be entered here"
+      - text: "> command 1"
+      - text: "> command 2"
+      - text: "> command 3"

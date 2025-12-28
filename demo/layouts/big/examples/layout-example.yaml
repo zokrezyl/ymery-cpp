@@ -1,0 +1,30 @@
+widgets:
+  layout-example:
+    type: composite
+    body:
+      - text: "Simple Layout Example"
+      - separator:
+      - child:
+          id: "left"
+          size: [150, 0]
+          border: true
+          body:
+            - text: "Left Panel"
+            - separator:
+            - button:
+                label: "Item 1"
+            - button:
+                label: "Item 2"
+            - button:
+                label: "Item 3"
+
+      - same-line:
+
+      - child:
+          id: "right"
+          size: [0, 0]
+          border: true
+          body:
+            - text: "Right Panel"
+            - separator:
+            - text: "Content goes here"

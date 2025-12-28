@@ -217,6 +217,12 @@ target_include_directories(preview PRIVATE ${CMAKE_SOURCE_DIR}/src)
 set_target_properties(preview PROPERTIES PREFIX "" OUTPUT_NAME "preview")
 set_plugin_output_dirs(preview)
 
+add_library(data-editor SHARED editor/data-editor.cpp)
+target_link_libraries(data-editor PRIVATE ymery imgui spdlog::spdlog)
+target_include_directories(data-editor PRIVATE ${CMAKE_SOURCE_DIR}/src)
+set_target_properties(data-editor PROPERTIES PREFIX "" OUTPUT_NAME "data-editor")
+set_plugin_output_dirs(data-editor)
+
 # Docking widgets
 add_library(docking-main-window SHARED docking-main-window.cpp)
 target_link_libraries(docking-main-window PRIVATE ymery imgui)

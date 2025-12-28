@@ -1,0 +1,61 @@
+widgets:
+  selectables-demo:
+    type: composite
+    data:
+      local:
+        type: data-tree
+        arg:
+          children:
+            selectable-1:
+              metadata:
+                label: "Item 1"
+            selectable-2:
+              metadata:
+                label: "Item 2"
+            selectable-3:
+              metadata:
+                label: "Item 3"
+            selectable-4:
+              metadata:
+                label: "Item 4"
+            selectable-5:
+              metadata:
+                label: "Item 5"
+            selectable-6:
+              metadata:
+                label: "Item 6"
+    main-data: local
+    body:
+      - separator-text: "Basic Selectables"
+
+      - data-path: selectable-1
+        selectable:
+          head:
+            tooltip: "Click to select item 1"
+
+      - data-path: selectable-2
+        selectable:
+          head:
+            tooltip: "Click to select item 2"
+
+      - data-path: selectable-3
+        selectable:
+          head:
+            tooltip: "Click to select item 3"
+
+      - data-path: selectable-4
+        selectable:
+          head:
+            tooltip: "Click to select item 4"
+
+      - separator-text: "Multiple Selection"
+
+      - data-path: selectable-5
+        selectable:
+          head:
+            tooltip: "Click to toggle selection"
+
+      - data-path: selectable-6
+        selectable:
+          head:
+            tooltip: "Click to toggle selection"

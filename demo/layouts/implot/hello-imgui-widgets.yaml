@@ -1,0 +1,114 @@
+import:
+  - widgets
+
+widgets:
+  # ============================================================================
+  # KERNEL TREE VIEW for dockable window
+  # ============================================================================
+  kernel-tree-view:
+    type: composite
+    body:
+      - text:
+          label: "Waveform Tree Browser"
+          style:
+            text: [0.7, 0.9, 0.7, 1.0]
+      - separator
+      - text: "Click nodes to select, hover to see metadata"
+      - separator
+      - text: "Selection: "
+      - same-line
+      - text:
+          label: "@node-selection"
+          style:
+            text: [0.2, 1.0, 0.2, 1.0]
+      - separator
+      - data-path: /
+        widgets.kernel-recursive:
+
+  # ============================================================================
+  # IMPLOT WRAPPER for dockable window
+  # ============================================================================
+  implot-wrapper:
+    type: composite
+    body:
+      - text:
+          label: "Waveform Plots"
+          style:
+            text: [0.7, 0.7, 0.9, 1.0]
+      - separator
+      - implot-group:
+          label: "Waveforms"
+          rows: 3
+          cols: 1
+          size: [-1, -1]
+          body:
+            - implot:
+                label: "Sine Wave"
+                body:
+                  - implot-layer:
+                      label: "Sine"
+                    data-path: /opened/sine/0
+            - implot:
+                label: "Square Wave"
+                body:
+                  - implot-layer:
+                      label: "Square"
+                    data-path: /opened/square/0
+            - implot:
+                label: "Triangle Wave"
+                body:
+                  - implot-layer:
+                      label: "Triangle"
+                    data-path: /opened/triangle/0
+
+  # ============================================================================
+  # LOGS VIEW for dockable window (spdlog messages)
+  # ============================================================================
+  logs-view:
+    type: logs-view
+    auto-scroll: true
+    show-timestamp: true
+    show-level: true
+
+  # ============================================================================
+  # ERRORS VIEW for dockable window (Result Errors)
+  # ============================================================================
+  errors-view:
+    type: errors-view
+    auto-scroll: true
+    show-timestamp: true
+    show-location: true
+
+  # ============================================================================
+  # CONTROLS VIEW for dockable window
+  # ============================================================================
+  controls-view:
+    type: composite
+    body:
+      - text:
+          label: "Controls"
+          style:
+            text: [0.9, 0.7, 0.7, 1.0]
+      - separator
+      - button:
+          label: "Start Recording"
+      - button:
+          label: "Stop Recording"
+      - separator
+      - text: "Volume:"
+      - data-path: volume
+        slider-float:
+          min: 0.0
+          max: 1.0
+      - separator
+      - text: "Sample Rate:"
+      - data-path: sample-rate
+        combo:
+          items:
+            - "44100 Hz"
+            - "48000 Hz"
+            - "96000 Hz"
+      - separator
+      - data-path: monitoring
+        checkbox:
+          label: "Enable Monitoring"

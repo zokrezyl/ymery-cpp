@@ -1,0 +1,55 @@
+widgets:
+  nanovg-demo:
+    type: composite
+    body:
+      - separator-text: "Vector Graphics Demo"
+
+      - nanovg-canvas:
+          label: "Mixed Demo (Shapes + Gradients + Text)"
+          type: "demo"
+          size: [700, 500]
+
+      - separator:
+
+      - separator-text: "Shapes"
+
+      - nanovg-canvas:
+          label: "Basic Shapes"
+          type: "shapes"
+          size: [500, 450]
+
+      - separator:
+
+      - separator-text: "Gradients"
+
+      - nanovg-canvas:
+          label: "Linear, Radial, and Box Gradients"
+          type: "gradients"
+          size: [750, 450]
+
+      - separator:
+
+      - separator-text: "Text Rendering"
+
+      - nanovg-canvas:
+          label: "Vector Text at Different Sizes"
+          type: "text"
+          size: [600, 400]
+
+      - separator:
+
+      - separator-text: "Animated Graphics"
+
+      - nanovg-canvas:
+          label: "Beating Heart Animation"
+          type: "heart"
+          size: [600, 600]
+
+      - text: |
+          NanoVG Features:
+          • Bezier curves and paths
+          • Linear, radial, and box gradients
+          • Transformations (translate, rotate, scale)
+          • Anti-aliased rendering
+          • Vector text rendering
+          • Stroke and fill operations

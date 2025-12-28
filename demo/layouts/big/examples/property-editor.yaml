@@ -1,0 +1,48 @@
+widgets:
+  property-editor:
+    type: composite
+    data:
+      local:
+        type: data-tree
+        arg:
+          children:
+            prop-name:
+              metadata:
+                label: "Object1"
+            prop-x:
+              metadata:
+                label: 10.0
+            prop-y:
+              metadata:
+                label: 20.0
+            prop-enabled:
+              metadata:
+                label: true
+    main-data: local
+    body:
+      - text:
+          label: "Property Editor Example"
+          tooltip: "Demonstrates a property editor pattern. Data: 'local' (type: data-tree) with prop-name, prop-x, prop-y, prop-enabled children."
+      - separator:
+
+      - tree-node:
+          label: "Object Properties"
+          flags: [default-open]
+          tooltip: "Tree-node grouping related properties. 'flags: [default-open]' expands node by default."
+          body:
+            - input-text:
+                tooltip: "Input-text bound to 'prop-name' child. Object name property."
+              data-path: prop-name
+            - drag-float:
+                min: 0.0
+                max: 100.0
+                tooltip: "Drag-float bound to 'prop-x' child. X coordinate with min/max bounds."
+              data-path: prop-x
+            - drag-float:
+                min: 0.0
+                max: 100.0
+                tooltip: "Drag-float bound to 'prop-y' child. Y coordinate with min/max bounds."
+              data-path: prop-y
+            - checkbox:
+                tooltip: "Checkbox bound to 'prop-enabled' child. Boolean enabled/disabled property."
+              data-path: prop-enabled

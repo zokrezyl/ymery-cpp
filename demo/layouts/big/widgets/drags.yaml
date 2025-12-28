@@ -1,0 +1,55 @@
+widgets:
+  drags-demo:
+    type: composite
+    data:
+      local:
+        type: data-tree
+        arg:
+          children:
+            drag-int:
+              metadata:
+                label: 50
+            drag-float:
+              metadata:
+                label: 0.5
+            drag-int-min:
+              metadata:
+                label: 20
+            drag-int-max:
+              metadata:
+                label: 80
+    main-data: local
+    body:
+      - separator-text: "Drag Int"
+
+      - data-path: drag-int
+        drag-int:
+          head:
+            tooltip: "Drag to adjust integer value (0-100)"
+          min: 0
+          max: 100
+
+      - separator-text: "Drag Float"
+
+      - data-path: drag-float
+        drag-float:
+          head:
+            tooltip: "Drag to adjust float value (0.0-1.0)"
+          min: 0.0
+          max: 1.0
+
+      - separator-text: "Drag Range"
+
+      - data-path: drag-int-min
+        drag-int:
+          head:
+            tooltip: "Drag to set minimum value"
+          min: 0
+          max: 100
+
+      - data-path: drag-int-max
+        drag-int:
+          head:
+            tooltip: "Drag to set maximum value"
+          min: 0
+          max: 100

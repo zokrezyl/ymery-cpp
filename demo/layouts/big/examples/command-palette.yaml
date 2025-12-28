@@ -1,0 +1,12 @@
+widgets:
+  command-palette:
+    type: composite
+    body:
+      - text: "Command Palette Demo"
+      - separator:
+      - text: "Press Ctrl+Shift+P to open command palette"
+      - separator:
+      - text: "Available commands:"
+      - bullet-text: "Select theme"
+      - bullet-text: "Log messages"
+      - bullet-text: "Custom actions"

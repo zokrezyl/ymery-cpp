@@ -1,0 +1,29 @@
+data:
+  demo-data:
+    type: data-tree
+    arg:
+      metadata:
+        label: "Ymery Docking Demo"
+        node-selection: None
+      children:
+        sine:
+          metadata:
+            label: "Sine Wave"
+            layer-type: "line"
+            buffer-path: "/demo/sine"
+        square:
+          metadata:
+            label: "Square Wave"
+            layer-type: "line"
+            buffer-path: "/demo/square"
+        triangle:
+          metadata:
+            label: "Triangle Wave"
+            layer-type: "line"
+            buffer-path: "/demo/triangle"
+
+  kernel:
+    type: kernel
+
+  log-tree:
+    type: log-tree

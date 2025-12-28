@@ -1,0 +1,11 @@
+widgets:
+  long-text:
+    type: composite
+    body:
+      - text: "Long Text Display Example"
+      - separator:
+      - text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+      - text: "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+      - text: "Ut enim ad minim veniam, quis nostrud exercitation ullamco."
+      - text: "Duis aute irure dolor in reprehenderit in voluptate velit."
+      - text: "Excepteur sint occaecat cupidatat non proident."

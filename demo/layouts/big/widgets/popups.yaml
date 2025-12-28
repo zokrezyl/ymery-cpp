@@ -1,0 +1,26 @@
+widgets:
+  popups-demo:
+    type: composite
+    body:
+      - separator-text: "Modal Popup"
+
+      - button:
+          head:
+            label: "Open Modal"
+            tooltip: "Click to open a modal dialog"
+          body:
+            - open-popup:
+                id: "modal-popup"
+
+      - popup-modal:
+          id: "modal-popup"
+          label: "Modal Dialog"
+          body:
+            - text: "This is a modal popup!"
+            - separator:
+            - button:
+                head:
+                  label: "Close"
+                  tooltip: "Close the modal dialog"
+                body:
+                  - close-current-popup:

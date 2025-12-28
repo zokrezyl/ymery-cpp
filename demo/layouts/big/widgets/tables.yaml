@@ -1,0 +1,38 @@
+widgets:
+  tables-demo:
+    type: composite
+    body:
+      - separator-text:
+          label: "Basic Table"
+          tooltip: "Demonstrates ImGui table widget. Tables use 'row' and 'column' widgets for structure."
+
+      - table:
+          label: "BasicTable"
+          columns: 3
+          tooltip: "Table widget with 3 columns. Body contains 'row' widgets, each with 'column' children."
+          body:
+            - row:
+                tooltip: "Table row - contains 'column' widgets. Each column has 'body' for content widgets."
+                body:
+                  - column:
+                      tooltip: "Table column - 'body' can contain any widget."
+                      body:
+                        - text: "A1"
+                  - column:
+                      body:
+                        - text: "A2"
+                  - column:
+                      body:
+                        - text: "A3"
+
+            - row:
+                body:
+                  - column:
+                      body:
+                        - text: "B1"
+                  - column:
+                      body:
+                        - text: "B2"
+                  - column:
+                      body:
+                        - text: "B3"

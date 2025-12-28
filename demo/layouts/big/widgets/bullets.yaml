@@ -1,0 +1,24 @@
+widgets:
+  bullets-demo:
+    type: composite
+    body:
+      - separator-text:
+          label: "Bullet Points"
+          tooltip: "Demonstrates bullet-text widget. Static content defined in YAML."
+
+      - bullet-text:
+          label: "Bullet point 1"
+          tooltip: "Bullet-text widget with static label. Renders with bullet prefix."
+      - bullet-text: "Bullet point 2"
+      - bullet-text: "Bullet point 3"
+
+      - separator-text:
+          label: "With Tree Nodes"
+          tooltip: "Bullet-text widgets can be nested inside tree-node for hierarchical lists."
+
+      - tree-node:
+          label: "Node with bullets"
+          tooltip: "Click to expand. Contains nested bullet-text widgets."
+          body:
+            - bullet-text: "Nested bullet"
+            - bullet-text: "Another nested bullet"

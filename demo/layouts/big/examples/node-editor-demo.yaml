@@ -1,0 +1,32 @@
+widgets:
+  node-editor-demo:
+    type: composite
+    body:
+      - separator-text: "Node Graph"
+
+      - node-editor:
+          size: [800, 600]
+          body:
+            - node:
+                label: "Input Node"
+                body:
+                  - node-pin:
+                      type: "output"
+                      label: "Output 1"
+
+            - node:
+                label: "Process Node"
+                body:
+                  - node-pin:
+                      type: "input"
+                      label: "Input 1"
+                  - node-pin:
+                      type: "output"
+                      label: "Output 1"
+
+            - node:
+                label: "Output Node"
+                body:
+                  - node-pin:
+                      type: "input"
+                      label: "Input 1"

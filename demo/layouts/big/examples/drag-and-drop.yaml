@@ -1,0 +1,24 @@
+widgets:
+  drag-and-drop:
+    type: composite
+    body:
+      - text: "Drag and Drop Demo"
+      - separator:
+      - text: "Drag and drop buttons:"
+      - separator:
+      - button:
+          label: "Item 1"
+      - same-line:
+      - button:
+          label: "Item 2"
+      - same-line:
+      - button:
+          label: "Item 3"
+      - button:
+          label: "Item 4"
+      - same-line:
+      - button:
+          label: "Item 5"
+      - same-line:
+      - button:
+          label: "Item 6"

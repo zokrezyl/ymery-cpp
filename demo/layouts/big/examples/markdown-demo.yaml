@@ -1,0 +1,291 @@
+widgets:
+  markdown-demo:
+    type: composite
+    data:
+      local:
+        type: data-tree
+        arg:
+          children:
+            markdown-basic:
+              metadata:
+                label: |
+                  # Markdown Demo (H1)
+
+                  Welcome to **imgui_md** - a markdown renderer for ImGui!
+
+                  ## Text Formatting (H2)
+
+                  You can use *italic* text with single asterisks.
+                  You can use **bold** text with double asterisks.
+                  You can use ***bold italic*** with triple asterisks.
+                  You can use ~~strikethrough~~ text.
+                  You can use <u>underline</u> with HTML tags.
+
+                  ### Lists (H3)
+
+                  Unordered list:
+                  * Item 1
+                  * Item 2
+                    * Sub-item 2.1
+                    * Sub-item 2.2
+                  * Item 3
+
+                  Ordered list:
+                  1. First item
+                  2. Second item
+                  3. Third item
+
+                  #### Code (H4)
+
+                  Inline `code` can be wrapped in backticks.
+
+                  Block code:
+                  ```
+                  def hello_world():
+                      print("Hello from Markdown!")
+                      return True
+                  ```
+
+                  ```cpp
+                  int main() {
+                      std::cout << "C++ code block" << std::endl;
+                      return 0;
+                  }
+                  ```
+            markdown-tables:
+              metadata:
+                label: |
+                  ## Tables Example
+
+                  Here's a table with different column alignments:
+
+                  | Language&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Type&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Year Created |
+                  |----------|------|--------------|
+                  | Python   | Interpreted | 1991 |
+                  | C++      | Compiled | 1985 |
+                  | Rust     | Compiled | 2010 |
+                  | JavaScript | Interpreted | 1995 |
+                  | Go       | Compiled | 2009 |
+
+                  **Note:** Use `&nbsp;` to control column widths in the header row.
+            markdown-links:
+              metadata:
+                label: |
+                  ## Links and Images
+
+                  ### External Links
+
+                  Check out these resources:
+                  * [ImGui Bundle](https://github.com/pthom/imgui_bundle)
+                  * [imgui_md](https://github.com/mekhontsev/imgui_md)
+                  * [Dear ImGui](https://github.com/ocornut/imgui)
+
+                  ### Horizontal Rules
+
+                  You can separate sections with horizontal rules:
+
+                  ---
+
+                  Above and below this text are horizontal rules.
+
+                  ---
+            markdown-advanced:
+              metadata:
+                label: |
+                  ## Advanced Markdown Features
+
+                  ### HTML Elements
+
+                  Markdown supports some HTML:
+                  * Line breaks: text before<br>text after
+                  * Horizontal rule: <hr>
+                  * Non-breaking spaces: word&nbsp;&nbsp;&nbsp;word
+
+                  ### Backslash Escapes
+
+                  Use backslash to escape special characters:
+                  * \*Not italic\*
+                  * \*\*Not bold\*\*
+                  * \`Not code\`
+                  * \[Not a link\](url)
+
+                  ### Mixed Content
+
+                  You can **mix _formatting_ styles** together:
+                  1. **Bold** and *italic* in the same line
+                  2. `Code` with **bold** text
+                  3. ~~Strikethrough~~ with <u>underline</u>
+
+                  ```python
+                  # Code block with syntax highlighting
+                  class Demo:
+                      def __init__(self, name):
+                          self.name = name
+
+                      def greet(self):
+                          return f"Hello, {self.name}!"
+
+                  demo = Demo("ImGui")
+                  print(demo.greet())
+                  ```
+            markdown-comprehensive:
+              metadata:
+                label: |
+                  # ImGui Markdown Complete Reference
+
+                  ## Headers
+
+                  # H1 - Largest Header
+                  ## H2 - Second Level
+                  ### H3 - Third Level
+                  #### H4 - Fourth Level
+                  ##### H5 - Fifth Level
+                  ###### H6 - Smallest Header
+
+                  ---
+
+                  ## Text Styles
+
+                  * *Italic* - `*Italic*`
+                  * **Bold** - `**Bold**`
+                  * ***Bold Italic*** - `***Bold Italic***`
+                  * ~~Strikethrough~~ - `~~Strikethrough~~`
+                  * <u>Underline</u> - `<u>Underline</u>`
+                  * `Inline Code` - `` `Inline Code` ``
+
+                  ---
+
+                  ## Lists
+
+                  ### Unordered Lists
+
+                  * Level 1
+                    * Level 2
+                      * Level 3
+                  * Back to Level 1
+
+                  ### Ordered Lists
+
+                  1. First
+                  2. Second
+                  3. Third
+                     1. Nested 1
+                     2. Nested 2
+
+                  ---
+
+                  ## Code Blocks
+
+                  ### Python
+                  ```python
+                  def factorial(n):
+                      if n <= 1:
+                          return 1
+                      return n * factorial(n - 1)
+
+                  print(factorial(5))  # Output: 120
+                  ```
+
+                  ### C++
+                  ```cpp
+                  #include <iostream>
+
+                  template<typename T>
+                  T max(T a, T b) {
+                      return (a > b) ? a : b;
+                  }
+
+                  int main() {
+                      std::cout << max(10, 20) << std::endl;
+                      return 0;
+                  }
+                  ```
+
+                  ### JavaScript
+                  ```javascript
+                  const fibonacci = (n) => {
+                      if (n <= 1) return n;
+                      return fibonacci(n - 1) + fibonacci(n - 2);
+                  };
+
+                  console.log(fibonacci(10));  // Output: 55
+                  ```
+
+                  ---
+
+                  ## Tables
+
+                  | Feature&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Supported&nbsp;&nbsp; | Notes&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+                  |---------|-----------|-------|
+                  | Headers | ✓ | H1-H6 |
+                  | **Bold** | ✓ | Use `**` |
+                  | *Italic* | ✓ | Use `*` |
+                  | `Code` | ✓ | Inline & block |
+                  | Tables | ✓ | With alignment |
+                  | Links | ✓ | External URLs |
+                  | Images | ✓ | Local & remote |
+
+                  ---
+
+                  ## Special Features
+
+                  ### Line Breaks
+                  Line 1<br>Line 2<br>Line 3
+
+                  ### Non-Breaking Spaces
+                  Word&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Word
+
+                  ### Escaped Characters
+                  \*Not italic\* \*\*Not bold\*\* \`Not code\`
+
+                  ---
+
+                  ## Acknowledgments
+
+                  This markdown renderer is based on [imgui_md](https://github.com/mekhontsev/imgui_md) by Dmitry Mekhontsev,
+                  integrated into [ImGui Bundle](https://github.com/pthom/imgui_bundle) by Pascal Thomet.
+    main-data: local
+    body:
+      - separator-text:
+          label: "Basic Markdown"
+          tooltip: "Demonstrates markdown widget. Data: 'local' (type: data-tree) with markdown content stored in 'label' metadata."
+
+      - markdown:
+          tooltip: "Markdown widget bound to 'markdown-basic' child. Renders markdown from metadata/label."
+        data-path: markdown-basic
+
+      - separator:
+
+      - separator-text:
+          label: "Tables"
+          tooltip: "Markdown table demonstration. Tables use | for columns and --- for header separation."
+
+      - markdown:
+        data-path: markdown-tables
+
+      - separator:
+
+      - separator-text:
+          label: "Links and Horizontal Rules"
+          tooltip: "Markdown links [text](url) and horizontal rules (---)."
+
+      - markdown:
+        data-path: markdown-links
+
+      - separator:
+
+      - separator-text:
+          label: "Advanced Features"
+          tooltip: "HTML elements, backslash escapes, and mixed formatting in markdown."
+
+      - markdown:
+        data-path: markdown-advanced
+
+      - separator:
+
+      - separator-text:
+          label: "Complete Reference"
+          tooltip: "Comprehensive markdown reference - all supported features in one section."
+
+      - markdown:
+        data-path: markdown-comprehensive

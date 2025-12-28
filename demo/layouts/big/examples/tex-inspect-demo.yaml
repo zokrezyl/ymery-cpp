@@ -1,0 +1,13 @@
+widgets:
+  tex-inspect-demo:
+    type: composite
+    body:
+      - text: "Texture Inspector Demo"
+      - separator:
+      - text: "Texture inspection and debugging"
+      - bullet-text: "Texture viewer"
+      - bullet-text: "Zoom and pan"
+      - bullet-text: "Pixel inspection"
+      - bullet-text: "Texture info display"
+      - separator:
+      - text: "See demos_tex_inspect/ directory"

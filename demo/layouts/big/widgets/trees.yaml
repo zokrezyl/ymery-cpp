@@ -1,0 +1,42 @@
+widgets:
+  trees-demo:
+    type: composite
+    body:
+      - separator-text: "Tree Nodes"
+
+      - tree-node:
+          head:
+            label: "Node 1"
+            tooltip: "Click to expand/collapse node 1"
+          body:
+            - text: "Content of node 1"
+            - tree-node:
+                head:
+                  label: "Child 1.1"
+                  tooltip: "Click to expand/collapse child 1.1"
+                body:
+                  - text: "Content of child 1.1"
+
+      - tree-node:
+          head:
+            label: "Node 2"
+            tooltip: "Click to expand/collapse node 2"
+          body:
+            - text: "Content of node 2"
+
+      - separator-text: "Collapsing Headers"
+
+      - collapsing-header:
+          head:
+            label: "Header 1"
+            tooltip: "Click to expand/collapse header 1"
+          body:
+            - text: "Content under header 1"
+
+      - collapsing-header:
+          head:
+            label: "Header 2"
+            tooltip: "Click to expand/collapse header 2"
+          flags: [default-open]
+          body:
+            - text: "This header is open by default"

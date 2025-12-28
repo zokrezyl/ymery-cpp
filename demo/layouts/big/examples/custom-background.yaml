@@ -1,0 +1,9 @@
+widgets:
+  custom-background:
+    type: composite
+    body:
+      - text: "Custom Background Demo"
+      - separator:
+      - text: "This demo shows custom OpenGL background rendering"
+      - text: "Shader-based animated backgrounds"
+      - text: "See demo_custom_background.py for implementation"

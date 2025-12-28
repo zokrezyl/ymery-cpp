@@ -1,0 +1,19 @@
+widgets:
+  implot3d-demo:
+    type: composite
+    body:
+      - separator-text: "3D Plot Example"
+
+      - implot3d:
+          label: "3D Scatter Plot"
+          size: [400, 400]
+          body:
+            - text: "3D plot content goes here"
+
+      - separator-text: "Features"
+
+      - bullet-text: "3D scatter plots"
+      - bullet-text: "3D line plots"
+      - bullet-text: "3D surface plots"
+      - bullet-text: "3D meshes"
+      - bullet-text: "Interactive 3D rotation"

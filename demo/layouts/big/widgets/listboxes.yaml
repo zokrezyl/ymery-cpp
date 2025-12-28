@@ -1,0 +1,21 @@
+widgets:
+  listboxes-demo:
+    type: composite
+    data:
+      local:
+        type: data-tree
+        arg:
+          children:
+            listbox-selection:
+              metadata:
+                label: "Apple"
+    main-data: local
+    body:
+      - separator-text: "List Box"
+
+      - data-path: listbox-selection
+        listbox:
+          head:
+            tooltip: "Select an item from the list"
+          items: ["Apple", "Banana", "Cherry", "Date", "Fig", "Grape"]
+          height: 4

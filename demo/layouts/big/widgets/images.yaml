@@ -1,0 +1,13 @@
+widgets:
+  images-demo:
+    type: composite
+    body:
+      - separator-text:
+          label: "Images"
+          tooltip: "Image widget demonstration. Images require texture IDs from the rendering backend."
+
+      - text:
+          label: "Image widgets require texture IDs"
+          tooltip: "ImGui images are rendered using texture IDs provided by the graphics backend."
+      - text: "See imgui_demo.py for examples"
+      - text: "ImGui::Image(), ImGui::ImageButton()"

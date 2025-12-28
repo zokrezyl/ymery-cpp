@@ -1,9 +1,9 @@
 widgets:
   main-widget:
     type: docking-main-window
-    title: Ymery Widget Editor
+    title: Ymery Layout Editor
     body:
-      # Menu bar - matching ymery-editor
+      # Menu bar
       - main-menu-bar:
           body:
             - menu:
@@ -28,54 +28,87 @@ widgets:
                   - menu-item:
                       label: "Widget Browser"
                   - menu-item:
-                      label: "Layout Editor"
+                      label: "Editor"
+                  - menu-item:
+                      label: "Code"
                   - menu-item:
                       label: "Preview"
+                  - menu-item:
+                      label: "Errors"
+                  - menu-item:
+                      label: "Logs"
 
-      # Docking splits - create 3 panel layout (left | center | right)
+      # Vertical splits: Upper | Middle (Preview) | Lower
+      # First split off the bottom for Errors/Logs
       - docking-split:
           initial-dock: "MainDockSpace"
-          new-dock: "LeftPanel"
-          direction: "left"
-          ratio: 0.20
-      - docking-split:
-          initial-dock: "MainDockSpace"
-          new-dock: "RightPanel"
-          direction: "right"
-          ratio: 0.25
-      - docking-split:
-          initial-dock: "RightPanel"
-          new-dock: "BottomRightPanel"
+          new-dock: "BottomPanel"
           direction: "down"
-          ratio: 0.50
+          ratio: 0.20
 
-      # Dockable windows
+      # Split off the top for Widget Browser/Editor/Code
+      - docking-split:
+          initial-dock: "MainDockSpace"
+          new-dock: "TopPanel"
+          direction: "up"
+          ratio: 0.35
+
+      # Horizontal splits in TopPanel: Widget Browser | Editor | Code
+      - docking-split:
+          initial-dock: "TopPanel"
+          new-dock: "TopLeft"
+          direction: "left"
+          ratio: 0.25
+
+      - docking-split:
+          initial-dock: "TopPanel"
+          new-dock: "TopRight"
+          direction: "right"
+          ratio: 0.40
+
+      # Dockable windows - Upper row
       - dockable-window:
           label: "Widget Browser"
-          dock-space-name: "LeftPanel"
+          dock-space-name: "TopLeft"
           body:
             - editor-widget-tree:
                 title: ""
 
       - dockable-window:
-          label: "Layout Editor"
-          dock-space-name: "MainDockSpace"
+          label: "Editor"
+          dock-space-name: "TopPanel"
           body:
             - editor:
                 title: ""
 
       - dockable-window:
+          label: "Code"
+          dock-space-name: "TopRight"
+          body:
+            - code-preview:
+                title: ""
+
+      # Middle - Preview
+      - dockable-window:
           label: "Preview"
-          dock-space-name: "RightPanel"
+          dock-space-name: "MainDockSpace"
           body:
             - preview:
                 title: ""
 
+      # Bottom - Errors and Logs (tabbed)
       - dockable-window:
-          label: "Code Preview"
-          dock-space-name: "BottomRightPanel"
+          label: "Errors"
+          dock-space-name: "BottomPanel"
           body:
-            - code-preview:
+            - errors-view:
+                title: ""
+
+      - dockable-window:
+          label: "Logs"
+          dock-space-name: "BottomPanel"
+          body:
+            - logs-view:
                 title: ""
 
   # Widget type definitions
@@ -101,6 +134,10 @@ widgets:
     type: preview
   code-preview:
     type: code-preview
+  errors-view:
+    type: errors-view
+  logs-view:
+    type: logs-view
 
 app:
   widget: app.main-widget

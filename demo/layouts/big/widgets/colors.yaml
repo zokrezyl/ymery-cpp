@@ -1,0 +1,41 @@
+widgets:
+  colors-demo:
+    type: composite
+    data:
+      local:
+        type: data-tree
+        arg:
+          children:
+            color-rgb:
+              metadata:
+                label: [1.0, 0.0, 0.0]
+            color-rgba:
+              metadata:
+                label: [1.0, 0.5, 0.0, 1.0]
+            color-button:
+              metadata:
+                label: [0.0, 0.5, 1.0, 1.0]
+    main-data: local
+    body:
+      - separator-text: "Color Edit"
+
+      - data-path: color-rgb
+        color-edit:
+          head:
+            tooltip: "Click to edit RGB color"
+          format: rgb
+
+      - separator-text: "Color Edit with Alpha"
+
+      - data-path: color-rgba
+        color-edit:
+          head:
+            tooltip: "Click to edit RGBA color with alpha"
+          format: rgba
+
+      - separator-text: "Color Button"
+
+      - data-path: color-button
+        color-button:
+          head:
+            tooltip: "Click to pick a color"
