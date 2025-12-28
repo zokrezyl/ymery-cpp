@@ -45,7 +45,8 @@ protected:
             }
         }
 
-        if (ImGui::InputText(label.c_str(), _buffer.data(), _buffer.size())) {
+        std::string imgui_id = label + "###" + _uid;
+        if (ImGui::InputText(imgui_id.c_str(), _buffer.data(), _buffer.size())) {
             _data_bag->set("value", Value(std::string(_buffer.c_str())));
         }
         return Ok();

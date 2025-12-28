@@ -58,6 +58,10 @@ protected:
     virtual Result<void> _execute_event_commands(const std::string& event_name);
     virtual Result<void> _execute_event_command(const Dict& command);
 
+    // Error handling - accumulate errors and render at end
+    void _handle_error(const Result<void>& result);
+    virtual Result<void> _render_errors();
+
     // Protected members - underscore prefix
     std::shared_ptr<WidgetFactory> _widget_factory;
     std::shared_ptr<Dispatcher> _dispatcher;
@@ -70,6 +74,9 @@ protected:
     std::map<std::string, std::vector<Dict>> _event_handlers;
     std::vector<std::pair<int, float>> _pushed_colors;
     std::vector<std::pair<int, float>> _pushed_vars;
+
+    // Error accumulator - error messages collected during render cycle
+    std::vector<std::string> _error_messages;
 
     // Unique ID for ImGui
     std::string _uid = std::to_string(++_uid_counter);

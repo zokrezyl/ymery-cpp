@@ -1,0 +1,28 @@
+widgets:
+  implot-demo:
+    type: composite
+    body:
+      - text:
+          label: "ImPlot Demo"
+          tooltip: "ImPlot is an advanced plotting library for ImGui. Static content - no data binding in this overview."
+      - separator:
+      - text:
+          label: "Advanced plotting library for ImGui"
+          tooltip: "ImPlot provides high-performance plotting widgets for scientific/data visualization."
+      - bullet-text:
+          label: "Line plots"
+          tooltip: "Continuous line graphs for time series and function plotting."
+      - bullet-text:
+          label: "Bar charts"
+          tooltip: "Vertical and horizontal bar charts for categorical data."
+      - bullet-text:
+          label: "Scatter plots"
+          tooltip: "Point-based plots for correlation and distribution visualization."
+      - bullet-text:
+          label: "Heatmaps"
+          tooltip: "Color-coded 2D data visualization for matrix data."
+      - bullet-text:
+          label: "Real-time data"
+          tooltip: "Live updating plots with streaming data support."
+      - separator:
+      - text: "See implot_demo.py for full demos"

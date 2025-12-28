@@ -1,0 +1,55 @@
+# Test layout for basic widget testing
+# Used by imgui_test_engine GUI tests
+
+widgets:
+  window:
+    type: window
+  text:
+    type: text
+  button:
+    type: button
+  checkbox:
+    type: checkbox
+  slider-int:
+    type: slider-int
+  slider-float:
+    type: slider-float
+  input-text:
+    type: input-text
+  combo:
+    type: combo
+
+  # Main test window with various widgets
+  test-window:
+    type: window
+    label: Basic Widgets Test
+    body:
+      - text:
+          content: "Basic Widget Tests"
+      - button:
+          label: "Test Button"
+      - checkbox:
+          label: "Test Checkbox"
+      - slider-int:
+          label: "Test Slider Int"
+          min: 0
+          max: 100
+          value: 50
+      - slider-float:
+          label: "Test Slider Float"
+          min: 0.0
+          max: 1.0
+          value: 0.5
+      - input-text:
+          label: "Test Input"
+          value: "initial text"
+      - combo:
+          label: "Test Combo"
+          items:
+            - Option A
+            - Option B
+            - Option C
+
+app:
+  widget: app.test-window
+  data-tree: simple-data-tree

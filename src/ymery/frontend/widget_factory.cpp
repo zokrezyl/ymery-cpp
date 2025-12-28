@@ -29,6 +29,22 @@ Result<void> WidgetFactory::init() {
     return Ok();
 }
 
+void WidgetFactory::dispose() {
+    spdlog::debug("WidgetFactory::dispose");
+
+    // Clear widget cache first
+    _widget_cache.clear();
+
+    // Clear data trees
+    _data_trees.clear();
+
+    // Release references to avoid circular dependencies on destruction
+    _plugin_manager.reset();
+    _data_tree.reset();
+    _dispatcher.reset();
+    _lang.reset();
+}
+
 Result<WidgetPtr> WidgetFactory::create_widget(
     std::shared_ptr<DataBag> parent_data_bag,
     const Value& spec,
@@ -70,7 +86,6 @@ Result<WidgetPtr> WidgetFactory::create_widget(
     // Parse the spec to get widget name and inline props
     auto parse_res = _parse_widget_spec(spec, namespace_);
     if (!parse_res) {
-        spdlog::error("WidgetFactory::create_widget: failed to parse spec");
         return Err<WidgetPtr>(
             "WidgetFactory::create_widget: failed to parse spec", parse_res);
     }
@@ -127,10 +142,8 @@ Result<WidgetPtr> WidgetFactory::create_widget(
             namespace_,
             data_bag
         );
-        if (res) {
-            spdlog::debug("Widget '{}' created successfully", widget_type);
-        } else {
-            spdlog::error("Failed to create widget '{}': {}", widget_type, error_msg(res));
+        if (!res) {
+            return Err<WidgetPtr>("WidgetFactory::create_widget: failed to create '" + widget_type + "'", res);
         }
         return res;
     }
@@ -193,7 +206,6 @@ Result<WidgetPtr> WidgetFactory::create_root_widget() {
     }
 
     if (widget_name.empty()) {
-        spdlog::error("No 'widget' or 'body' in app config");
         return Err<WidgetPtr>(
             "WidgetFactory::create_root_widget: no 'widget' or 'body' in app config");
     }
@@ -231,23 +243,39 @@ Result<std::pair<std::string, Dict>> WidgetFactory::_parse_widget_spec(
         return Ok(std::make_pair(name, inline_props));
     }
 
-    // Dict spec: {button: {label: "Click"}}
+    // Dict spec: {button: {label: "Click"}} or {button: {label: "Click"}, data-path: "/foo"}
     if (auto spec_dict = get_as<Dict>(spec)) {
         if (spec_dict->empty()) {
             return Err<std::pair<std::string, Dict>>(
                 "WidgetFactory::_parse_widget_spec: empty dict spec");
         }
 
-        // First key is the widget name
-        auto it = spec_dict->begin();
-        std::string name = it->first;
-        if (name.find('.') == std::string::npos) {
-            name = namespace_ + "." + name;
+        // Find the widget key (first key that is not "data-path")
+        std::string name;
+        for (const auto& [key, value] : *spec_dict) {
+            if (key != "data-path") {
+                name = key;
+                if (name.find('.') == std::string::npos) {
+                    name = namespace_ + "." + name;
+                }
+                // Value is the inline props
+                if (auto props = get_as<Dict>(value)) {
+                    inline_props = *props;
+                }
+                break;
+            }
         }
 
-        // Value is the inline props
-        if (auto props = get_as<Dict>(it->second)) {
-            inline_props = *props;
+        if (name.empty()) {
+            return Err<std::pair<std::string, Dict>>(
+                "WidgetFactory::_parse_widget_spec: no widget key found in dict spec");
+        }
+
+        // Check for data-path sibling key and add to inline_props
+        auto dp_it = spec_dict->find("data-path");
+        if (dp_it != spec_dict->end()) {
+            inline_props["data-path"] = dp_it->second;
+            spdlog::info("_parse_widget_spec: found sibling data-path for '{}'", name);
         }
 
         return Ok(std::make_pair(name, inline_props));
@@ -276,13 +304,12 @@ Result<Dict> WidgetFactory::_resolve_widget_definition(const std::string& full_n
         // Create minimal definition for plugin widget
         Dict def;
         def["type"] = widget_name;
-        spdlog::debug("Using plugin widget '{}' directly", widget_name);
+        spdlog::debug("WidgetFactory::_resolve_widget_definition: using plugin widget '{}' directly", widget_name);
         return Ok(def);
     }
 
-    spdlog::error("Widget '{}' not found in YAML definitions or plugins", full_name);
     return Err<Dict>(
-        "WidgetFactory::_resolve_widget_definition: widget '" + full_name + "' not found");
+        "WidgetFactory::_resolve_widget_definition: widget '" + full_name + "' not found in YAML definitions or plugins");
 }
 
 Result<std::shared_ptr<DataBag>> WidgetFactory::_create_data_bag(

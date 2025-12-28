@@ -1,0 +1,860 @@
+widgets:
+  # ============================================================================
+  # DRAGGABLE BUTTON DEMO POPUP
+  # ============================================================================
+  draggable-demo-popup:
+    type: popup
+    body:
+      - text: "Draggable Button Menu"
+      - separator
+      - menu-item:
+          label: "Action 1"
+      - menu-item:
+          label: "Action 2"
+      - menu-item:
+          label: "Action 3"
+      - separator
+      - text: "Drag the button to reposition it!"
+
+  # ============================================================================
+  # TEXT WIDGET DEMOS
+  # ============================================================================
+  text-demo:
+    type: composite
+    body:
+      - separator-text: "TEXT WIDGET DEMOS"
+      - builtin.collapsing-header:
+          label: "Text - Static"
+          flags: [default-open]
+          body:
+            - text: "This is static text"
+      - builtin.collapsing-header:
+          label: "Text - With Red Color Style"
+          body:
+            - data-path: text-single
+              text:
+                style:
+                  text: [1.0, 0.0, 0.0, 1.0]
+      - collapsing-header:
+          label: "Text - With Blue Color Style"
+          body:
+            - data-path: text-single
+              text:
+                style:
+                  text: [0.0, 0.5, 1.0, 1.0]
+      - collapsing-header:
+          label: "Text - With Yellow Color Style"
+          body:
+            - data-path: text-single
+              text:
+                style:
+                  text: [1.0, 1.0, 0.0, 1.0]
+      - collapsing-header:
+          label: "Text - Dynamic Single Value"
+          body:
+            - data-path: text-single
+              text:
+      - data-path: text-dict
+        collapsing-header:
+          label: "Text - Dynamic Dict (renders keys)"
+          body:
+            foreach-child:
+              - text
+
+  # ============================================================================
+  # BULLET TEXT WIDGET DEMOS
+  # ============================================================================
+  bullet-demo:
+    type: composite
+    body:
+      - separator-text: "BULLET TEXT WIDGET DEMOS"
+      - collapsing-header:
+          label: "BulletText - Static"
+          flags: [default-open]
+          body:
+            - bullet-text: "Static bullet point"
+      - collapsing-header:
+          label: "BulletText - Dynamic Single Value"
+          body:
+            - data-path: bullet-single
+              bullet-text:
+      - data-path: bullet-dict
+        collapsing-header:
+          label: "BulletText - Dynamic Dict (renders keys)"
+          body:
+            foreach-child:
+              - bullet-text
+
+  # ============================================================================
+  # SEPARATOR TEXT WIDGET DEMOS
+  # ============================================================================
+  separator-demo:
+    type: composite
+    body:
+      - separator-text: "SEPARATOR TEXT WIDGET DEMOS"
+      - collapsing-header:
+          label: "SeparatorText - Static"
+          flags: [default-open]
+          body:
+            - separator-text: "Static Section Header"
+      - collapsing-header:
+          label: "SeparatorText - Dynamic Single Value"
+          body:
+            - data-path: separator-single
+              separator-text:
+      - data-path: separator-dict
+        collapsing-header:
+          label: "SeparatorText - Dynamic Dict (renders keys)"
+          body:
+            foreach-child:
+              - separator-text
+
+  # ============================================================================
+  # BUTTON WIDGET DEMOS
+  # ============================================================================
+  button-demo:
+    type: composite
+    body:
+      - separator-text: "BUTTON WIDGET DEMOS"
+      - collapsing-header:
+          label: "Button - Static"
+          flags: [default-open]
+          body:
+            - button:
+                label: "Static Button"
+      - collapsing-header:
+          label: "Button - With Red Style"
+          body:
+            - button:
+                label: "Red Button"
+                style:
+                  button: [0.8, 0.1, 0.1, 1.0]
+                  button-hovered: [1.0, 0.2, 0.2, 1.0]
+                  button-active: [0.6, 0.05, 0.05, 1.0]
+      - collapsing-header:
+          label: "Button - With Green Style"
+          body:
+            - button:
+                label: "Green Button"
+                style:
+                  button: [0.1, 0.7, 0.1, 1.0]
+                  button-hovered: [0.2, 0.9, 0.2, 1.0]
+                  button-active: [0.05, 0.5, 0.05, 1.0]
+      - collapsing-header:
+          label: "Button - Dynamic Single Value"
+          body:
+            - button:
+              data-path: button-single
+      - collapsing-header:
+          label: "Button - Dynamic Dict (renders keys)"
+          body:
+            foreach-child:
+              - button
+        data-path: button-dict
+
+  # ============================================================================
+  # POPUP WIDGET DEMOS
+  # ============================================================================
+  regular-popup-demo-content:
+    type: popup
+    body:
+      - text: "This is a regular popup"
+      - separator
+      - text: "You can interact with other widgets"
+
+  popup-modal-demo-content:
+    type: popup-modal
+    body:
+      - text: "This is a Modal Popup!"
+      - separator
+      - text: "Modal popups block interaction with other windows."
+      - separator
+      - text: "Click outside or press ESC to close"
+      - button:
+          label: Ok
+          on-click:
+            dispatch-event:
+              event: click
+      - same-line
+      - button:
+          label: Cancel
+          on-click:
+            dispatch-event:
+              event: click
+        
+
+  popup-demo:
+    type: composite
+    body:
+      - separator-text: "POPUP WIDGET DEMOS"
+      - collapsing-header:
+          label: "PopupModal - Blocks other windows"
+          flags: [default-open]
+          body:
+            - button:
+                label: "Open Modal Popup"
+                body: popup-modal-demo-content
+      - collapsing-header:
+          label: "Popup - Regular (non-modal)"
+          body:
+            - button:
+                label: "Open Regular Popup"
+                body: regular-popup-demo-content
+
+  # ============================================================================
+  # TREE NODE WIDGET DEMOS
+  # ============================================================================
+  tree-recursive:
+    type: composite
+    body:
+      - foreach-child:
+          - tree-node:
+              body: tree-recursive
+
+  tree-demo:
+    type: composite
+    body:
+      - separator-text: "TREE NODE WIDGET DEMOS"
+      - collapsing-header:
+          label: "TreeNode - Static"
+          flags: [default-open]
+          body:
+            - tree-node:
+                label: "Static Tree Node"
+                body:
+                  - text: "Content inside static tree node"
+      - collapsing-header:
+          label: "TreeNode - Dynamic Single Value"
+          body:
+            - tree-node:
+                body: tree-recursive
+              data-path: tree-single
+      - collapsing-header:
+          label: "TreeNode - Dynamic Dict (renders keys)"
+          body:
+            - tree-node:
+                body: tree-recursive
+              data-path: tree-dict
+
+  # ============================================================================
+  # COLLAPSING HEADER WIDGET DEMOS
+  # ============================================================================
+  collapsing-header-recursive:
+    type: composite
+    body:
+      - foreach-child:
+          - collapsing-header:
+              body: collapsing-header-recursive
+
+  collapsing-header-demo:
+    type: composite
+    body:
+      - separator-text: "COLLAPSING HEADER WIDGET DEMOS"
+      - collapsing-header:
+          label: "CollapsingHeader - Static"
+          flags: [default-open]
+          body:
+            - text: "Content in static collapsing header"
+      - collapsing-header:
+          label: "CollapsingHeader - Dynamic Single Value"
+          body:
+            - collapsing-header:
+                body: collapsing-header-recursive
+              data-path: collapse-single
+      - collapsing-header:
+          label: "CollapsingHeader - Dynamic Dict (renders keys)"
+          body:
+            - collapsing-header:
+                body: collapsing-header-recursive
+              data-path: collapse-dict
+
+  # ============================================================================
+  # MENU WIDGET DEMOS
+  # ============================================================================
+  menu-recursive:
+    type: composite
+    body:
+      - foreach-child:
+          - menu:
+              body: menu-recursive
+
+  menu-demo:
+    type: composite
+    body:
+      - separator-text: "MENU WIDGET DEMOS"
+      - collapsing-header:
+          label: "Menu - Static"
+          flags: [default-open]
+          body:
+            - menu:
+                label: "Static Menu"
+                body:
+                  - menu-item: "Menu item 1"
+                  - menu-item: "Menu item 2"
+      - collapsing-header:
+          label: "Menu - Dynamic Single Value"
+          body:
+            - menu:
+                body: menu-recursive
+              data-path: menu-single
+      - collapsing-header:
+          label: "Menu - Dynamic Dict (renders keys)"
+          body:
+            - menu:
+                body: menu-recursive
+              data-path: menu-dict
+
+  # ============================================================================
+  # MENU ITEM WIDGET DEMOS
+  # ============================================================================
+  menuitem-demo:
+    type: composite
+    body:
+      - separator-text: "MENU ITEM WIDGET DEMOS"
+      - collapsing-header:
+          label: "MenuItem - Static"
+          flags: [default-open]
+          body:
+            - menu:
+                label: "Container Menu"
+                body:
+                  - menu-item: "Static Menu Item"
+      - collapsing-header:
+          label: "MenuItem - Dynamic Single Value"
+          body:
+            - menu:
+                label: "Container Menu"
+                body:
+                  - menu-item:
+                    data-path: menuitem-single
+      - collapsing-header:
+          label: "MenuItem - Dynamic Dict (renders keys)"
+          body:
+            - menu:
+                label: "Container Menu"
+                body:
+                  foreach-child:
+                    - menu-item
+              data-path: menuitem-dict
+
+  # ============================================================================
+  # INPUT WIDGETS DEMOS
+  # ============================================================================
+  input-demo:
+    type: composite
+    body:
+      - separator-text: "INPUT WIDGETS DEMOS"
+      - collapsing-header:
+          label: "Input Widgets (single values only)"
+          flags: [default-open]
+          body:
+            - text: "Text Input:"
+            - data-path: input-text
+              input-text:
+            - separator
+            - text: "Integer Input:"
+            - data-path: input-int
+              input-int:
+            - separator
+            - text: "Integer Slider:"
+            - data-path: slider-int
+              slider-int:
+                min: 0
+                max: 100
+            - separator
+            - text: "Float Slider:"
+            - data-path: slider-float
+              slider-float:
+                min: 0.0
+                max: 1.0
+            - separator
+            - text: "Combo:"
+            - data-path: combo
+              combo:
+                items:
+                  - Option A
+                  - Option B
+                  - Option C
+            - separator
+            - text: "Checkbox:"
+            - data-path: checkbox
+              checkbox:
+      - collapsing-header:
+          label: "Input Widgets - With Custom Styles"
+          body:
+            - text:
+                style:
+                  text: [0.0, 1.0, 1.0, 1.0]
+            - text: "Styled Text Input (cyan frame):"
+            - data-path: input-text
+              input-text:
+                style:
+                  frame-bg: [0.0, 0.3, 0.3, 0.5]
+                  frame-bg-hovered: [0.0, 0.4, 0.4, 0.7]
+                  frame-bg-active: [0.0, 0.5, 0.5, 0.9]
+            - separator
+            - text: "Styled Slider (orange):"
+            - data-path: slider-float
+              slider-float:
+                min: 0.0
+                max: 1.0
+                style:
+                  frame-bg: [0.5, 0.3, 0.0, 0.5]
+                  slider-grab: [1.0, 0.6, 0.0, 1.0]
+                  slider-grab-active: [1.0, 0.8, 0.2, 1.0]
+
+  # ============================================================================
+  # INDENT WIDGET DEMO
+  # ============================================================================
+  indent-demo:
+    type: composite
+    body:
+      - separator-text: "INDENT WIDGET DEMO"
+      - collapsing-header:
+          label: "Indent - Basic"
+          flags: [default-open]
+          body:
+            - text: "Normal text"
+            - indent:
+                body:
+                  - text: "Indented text level 1"
+                  - indent:
+                      body:
+                        - text: "Indented text level 2"
+            - text: "Back to normal"
+
+  # ============================================================================
+  # MAIN DEMO ROOT
+  # ============================================================================
+  widgets-demo:
+    type: composite
+    body:
+      - text: "WIDGET SYSTEM COMPREHENSIVE DEMO"
+      - separator
+      - text: "Each section shows: Static, Dynamic Single, Dynamic Dict"
+      - separator
+      - collapsing-header:
+          label: "Text Widgets"
+          body: text-demo
+      - collapsing-header:
+          label: "Bullet Text Widgets"
+          body: bullet-demo
+      - collapsing-header:
+          label: "Separator Text Widgets"
+          body: separator-demo
+      - collapsing-header:
+          label: "Button Widgets"
+          body: button-demo
+      - collapsing-header:
+          label: "Popup Widgets"
+          body: popup-demo
+      - collapsing-header:
+          label: "Tree Node Widgets"
+          body: tree-demo
+      - collapsing-header:
+          label: "Collapsing Header Widgets"
+          body: collapsing-header-demo
+      - collapsing-header:
+          label: "Menu Widgets"
+          body: menu-demo
+      - collapsing-header:
+          label: "Menu Item Widgets"
+          body: menuitem-demo
+      - collapsing-header:
+          label: "Input Widgets"
+          body: input-demo
+      - collapsing-header:
+          label: "Indent Widget"
+          body: indent-demo
+
+  widgets-demo-popup:
+    type: popup
+    data:
+      local:
+        type: data-tree
+        arg:
+          children:
+            text-single:
+              metadata:
+                label: "Single dynamic text value"
+            text-dict:
+              metadata:
+                label: "Text Dict"
+              children:
+                first:
+                  metadata:
+                    label: "First text"
+                second:
+                  metadata:
+                    label: "Second text"
+                third:
+                  metadata:
+                    label: "Third text"
+            bullet-single:
+              metadata:
+                label: "Single bullet point"
+            bullet-dict:
+              metadata:
+                label: "Bullet Dict"
+              children:
+                feature1:
+                  metadata:
+                    label: "Feature One"
+                feature2:
+                  metadata:
+                    label: "Feature Two"
+                feature3:
+                  metadata:
+                    label: "Feature Three"
+            separator-single:
+              metadata:
+                label: "Single Section Title"
+            separator-dict:
+              metadata:
+                label: "Separator Dict"
+              children:
+                intro:
+                  metadata:
+                    label: "Introduction"
+                main:
+                  metadata:
+                    label: "Main Content"
+                conclusion:
+                  metadata:
+                    label: "Conclusion"
+            button-single:
+              metadata:
+                label: "Click Me"
+            button-dict:
+              metadata:
+                label: "Button Dict"
+              children:
+                save:
+                  metadata:
+                    label: "Save"
+                load:
+                  metadata:
+                    label: "Load"
+                delete:
+                  metadata:
+                    label: "Delete"
+            tree-single:
+              metadata:
+                label: "Single Tree Node"
+            tree-dict:
+              metadata:
+                label: "Tree Dict"
+              children:
+                node1:
+                  metadata:
+                    label: "First Node"
+                node2:
+                  metadata:
+                    label: "Second Node"
+                node3:
+                  metadata:
+                    label: "Third Node"
+            collapse-single:
+              metadata:
+                label: "Single Collapsing Section"
+            collapse-dict:
+              metadata:
+                label: "Collapse Dict"
+              children:
+                settings:
+                  metadata:
+                    label: "Settings"
+                advanced:
+                  metadata:
+                    label: "Advanced"
+                debug:
+                  metadata:
+                    label: "Debug"
+            menu-single:
+              metadata:
+                label: "Main Menu"
+            menu-dict:
+              metadata:
+                label: "Menu Dict"
+              children:
+                file:
+                  metadata:
+                    label: "File"
+                edit:
+                  metadata:
+                    label: "Edit"
+                view:
+                  metadata:
+                    label: "View"
+            menuitem-single:
+              metadata:
+                label: "Menu Action"
+            menuitem-dict:
+              metadata:
+                label: "MenuItem Dict"
+              children:
+                new:
+                  metadata:
+                    label: "New"
+                open:
+                  metadata:
+                    label: "Open"
+                close:
+                  metadata:
+                    label: "Close"
+            input-text:
+              metadata:
+                label: "Editable text"
+            input-int:
+              metadata:
+                label: "42"
+            slider-int:
+              metadata:
+                label: "50"
+            slider-float:
+              metadata:
+                label: "0.5"
+            combo:
+              metadata:
+                label: "Option A"
+            checkbox:
+              metadata:
+                label: "True"
+            color-edit:
+              metadata:
+                label: [1.0, 0.5, 0.2, 1.0]
+            color-button:
+              metadata:
+                label: [0.2, 0.7, 1.0, 1.0]
+    main-data: local
+    body: widgets-demo
+
+  # ============================================================================
+  # FOREACH-KEY DEMO
+  # ============================================================================
+  foreach-key-demo-popup:
+    type: popup
+    data:
+      local:
+        type: data-tree
+        arg:
+          metadata:
+            name: "Sample Node"
+            type: "demo"
+            status: "active"
+            count: 42
+    main-data: local
+    body:
+      - text: "foreach-key Demo - Displays metadata keys and values"
+      - separator
+      - text: "Simple form (shows values only):"
+      - foreach-key: text
+      - separator
+      - text: "Complex form (shows keys and values):"
+      - foreach-key:
+          - text: "$key"
+          - text: "$value"
+          - separator
+
+  metadata-tooltip:
+    type: tooltip
+    body:
+      - text: "Metadata:"
+      - separator
+      - foreach-key:
+          - text: "$key: $value"
+
+  kernel-recursive:
+    type: composite
+    body:
+      - foreach-child:
+          - tree-node:
+              body: kernel-recursive
+              on-click: default
+              on-hover:
+                show: metadata-tooltip
+              selection: "$selection@/selection"
+              style-mapping:
+                openable:
+                  text: [0.2, 0.8, 0.2, 1.0]
+                opened:
+                  text: [0.8, 0.8, 0.2, 1.0]
+
+  kernel-demo-popup:
+    type: popup
+    data:
+      kernel:
+        type: kernel
+      selection:
+        type: data-tree
+        arg:
+          metadata:
+            selection: ""
+    main-data: kernel
+    body:
+      - text: "Kernel TreeLike Demo - Click nodes to select, hover to see metadata"
+      - separator
+      - text: "Selection: "
+      - same-line
+      - text:
+          label: "$selection@/selection"
+          style:
+            text: [0.2, 1.0, 0.2, 1.0]
+      - separator
+      - data-path: $kernel
+        kernel-recursive:
+
+  implot-demo-popup:
+    type: popup
+    data:
+      kernel:
+        type: kernel
+    main-data: kernel
+    body:
+      - text: "Implot Waveform Demo"
+      - separator
+      - implot:
+          label: "Waveforms"
+          body:
+            - implot-layer:
+                label: "Sine"
+              data-path: /providers/waveform-st/available/sine/0
+            - implot-layer:
+                label: "Square"
+              data-path: /providers/waveform-st/available/square/0
+            - implot-layer:
+                label: "Triangle"
+              data-path: /providers/waveform-st/available/triangle/0
+
+  table-demo-popup:
+    type: popup
+    body:
+      - text: "Table Widget Demo"
+      - separator
+      - table:
+          label: "Demo Table"
+          columns: 3
+          flags: [borders, row-bg, sizing-stretch-prop]
+          body:
+            - row:
+                flags: [headers]
+                body:
+                  - column:
+                      body:
+                        - text: "Column 1"
+                  - column:
+                      body:
+                        - text: "Column 2"
+                  - column:
+                      body:
+                        - text: "Column 3"
+            - row:
+                body:
+                  - column:
+                      body:
+                        - text: "Row 1, Col 1"
+                  - column:
+                      body:
+                        - text: "Row 1, Col 2"
+                  - column:
+                      body:
+                        - text: "Row 1, Col 3"
+            - row:
+                body:
+                  - column:
+                      body:
+                        - text: "Row 2, Col 1"
+                  - column:
+                      body:
+                        - text: "Row 2, Col 2"
+                  - column:
+                      body:
+                        - text: "Row 2, Col 3"
+            - row:
+                body:
+                  - column:
+                      body:
+                        - text: "Row 3, Col 1"
+                  - column:
+                      body:
+                        - text: "Row 3, Col 2"
+                  - column:
+                      body:
+                        - text: "Row 3, Col 3"
+
+  tab-demo-popup:
+    type: popup
+    data:
+      local:
+        type: data-tree
+        arg:
+          children:
+            input-text:
+              metadata:
+                label: "Editable text"
+            slider-int:
+              metadata:
+                label: "50"
+            color-edit:
+              metadata:
+                label: [1.0, 0.5, 0.2, 1.0]
+            color-button:
+              metadata:
+                label: [0.2, 0.7, 1.0, 1.0]
+    main-data: local
+    body:
+      - text: "Tab Widget Demo"
+      - separator
+      - tab-bar:
+          label: "Demo Tabs"
+          body:
+            - tab-item:
+                label: "Tab 1"
+                body:
+                  - text: "Content of Tab 1"
+                  - separator
+                  - text: "This is the first tab"
+                  - bullet-text: "Feature A"
+                  - bullet-text: "Feature B"
+                  - bullet-text: "Feature C"
+            - tab-item:
+                label: "Tab 2"
+                body:
+                  - text: "Content of Tab 2"
+                  - separator
+                  - data-path: input-text
+                    text: "Text Input:"
+                  - data-path: input-text
+                    input-text:
+                  - separator
+                  - text: "Slider:"
+                  - data-path: slider-int
+                    slider-int:
+                      min: 0
+                      max: 100
+            - tab-item:
+                label: "Tab 3"
+                body:
+                  - text: "Content of Tab 3"
+                  - separator
+                  - button:
+                      label: "Button 1"
+                  - button:
+                      label: "Button 2"
+                  - button:
+                      label: "Button 3"
+            - tab-item:
+                label: "Colors"
+                body:
+                  - text: "Color Widgets Demo"
+                  - separator
+                  - text: "Color Edit (RGBA):"
+                  - data-path: color-edit
+                    color-edit:
+                  - separator
+                  - text: "Color Button:"
+                  - data-path: color-button
+                    color-button:
+                  - same-line
+                  - text: "Click to see color"
+

@@ -1158,7 +1158,8 @@ protected:
         }
 
         // Render hex editor
-        if (ImGui::BeginHexEditor(label.c_str(), &_state, size, ImGuiChildFlags_Border)) {
+        std::string imgui_id = label + "###" + _uid;
+        if (ImGui::BeginHexEditor(imgui_id.c_str(), &_state, size, ImGuiChildFlags_Border)) {
             ImGui::EndHexEditor();
         }
 

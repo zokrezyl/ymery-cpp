@@ -1,0 +1,99 @@
+widgets:
+  basic-demo:
+    type: composite
+    data:
+      local:
+        type: data-tree
+        arg:
+          children:
+            input-text:
+              metadata:
+                label: "Hello, world!"
+            input-int:
+              metadata:
+                label: 123
+            input-float:
+              metadata:
+                label: 0.001
+            slider-int:
+              metadata:
+                label: 50
+            slider-float:
+              metadata:
+                label: 0.5
+            checkbox:
+              metadata:
+                label: true
+            radio:
+              metadata:
+                label: 0
+    main-data: local
+    body:
+      - separator-text: "General"
+
+      - button:
+          head:
+            label: "Button"
+            tooltip: "Click to trigger an action"
+      - text: "Click the button!"
+
+      - separator-text: "Inputs"
+
+      - data-path: input-text
+        input-text:
+          head:
+            tooltip: "Enter text value"
+
+      - data-path: input-int
+        input-int:
+          head:
+            tooltip: "Enter integer value"
+
+      - data-path: input-float
+        input-float:
+          head:
+            tooltip: "Enter floating point value"
+
+      - separator-text: "Sliders"
+
+      - data-path: slider-int
+        slider-int:
+          head:
+            tooltip: "Drag to adjust integer value (0-100)"
+          min: 0
+          max: 100
+
+      - data-path: slider-float
+        slider-float:
+          head:
+            tooltip: "Drag to adjust float value (0.0-1.0)"
+          min: 0.0
+          max: 1.0
+
+      - separator-text: "Checkbox & Radio"
+
+      - data-path: checkbox
+        checkbox:
+          head:
+            tooltip: "Toggle this option on or off"
+
+      - data-path: radio
+        radio-button:
+          head:
+            tooltip: "Select option A"
+          value: 0
+          label: "Radio A"
+
+      - data-path: radio
+        radio-button:
+          head:
+            tooltip: "Select option B"
+          value: 1
+          label: "Radio B"
+
+      - data-path: radio
+        radio-button:
+          head:
+            tooltip: "Select option C"
+          value: 2
+          label: "Radio C"

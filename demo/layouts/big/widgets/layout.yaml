@@ -1,0 +1,45 @@
+widgets:
+  layout-demo:
+    type: composite
+    body:
+      - separator-text:
+          label: "Child Windows"
+          tooltip: "Demonstrates layout widgets for organizing content. All static content defined in YAML."
+
+      - child:
+          id: "child1"
+          size: [0, 100]
+          border: true
+          tooltip: "Child widget creates a scrollable region. 'size' [width, height] where 0=auto. 'border: true' adds visual boundary."
+          body:
+            - text: "This is a child window"
+            - button:
+                label: "Click me"
+
+      - separator-text:
+          label: "Columns"
+          tooltip: "Columns widget divides content into multiple vertical sections."
+
+      - columns:
+          count: 3
+          id: "cols"
+          tooltip: "Columns widget with 'count: 3' columns. Use 'next-column' to move to next column."
+          body:
+            - text: "Column 1"
+            - next-column:
+            - text: "Column 2"
+            - next-column:
+            - text: "Column 3"
+
+      - separator-text:
+          label: "Groups"
+          tooltip: "Groups organize widgets that should be treated as a unit for layout purposes."
+
+      - group:
+          tooltip: "Group widget - widgets inside are grouped together. Combine with 'same-line' for horizontal layout."
+          body:
+            - button:
+                label: "Button 1"
+            - same-line:
+            - button:
+                label: "Button 2"

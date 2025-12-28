@@ -13,6 +13,14 @@ namespace ymery::plugins {
 // Selection path - tracks which node is selected in the tree
 using SelectionPath = std::vector<size_t>;  // indices into body lists
 
+// Data entry in the data: section
+struct DataEntry {
+    std::string name;       // Entry name (e.g., "demo-data", "kernel")
+    std::string type;       // Tree type (e.g., "data-tree", "kernel", "waveform")
+    Dict metadata;          // Metadata for the entry
+    std::vector<DataEntry> children;  // Children (for data-tree types)
+};
+
 // Fast PRNG for UID generation (xorshift32)
 inline uint32_t g_uid_state = 0x12345678;
 
@@ -328,6 +336,55 @@ public:
         return std::find(containers.begin(), containers.end(), type) != containers.end();
     }
 
+    // ========== Data Entries Management ==========
+
+    std::vector<DataEntry>& data_entries() { return _data_entries; }
+    const std::vector<DataEntry>& data_entries() const { return _data_entries; }
+
+    void add_data_entry(const std::string& type, const std::string& name) {
+        DataEntry entry;
+        entry.name = name;
+        entry.type = type;
+        _data_entries.push_back(entry);
+        _bump_version();
+    }
+
+    void remove_data_entry(size_t idx) {
+        if (idx < _data_entries.size()) {
+            _data_entries.erase(_data_entries.begin() + idx);
+            _bump_version();
+        }
+    }
+
+    void add_child_to_data_entry(size_t entry_idx, const std::string& type, const std::string& name) {
+        if (entry_idx < _data_entries.size()) {
+            DataEntry child;
+            child.name = name;
+            child.type = type;
+            _data_entries[entry_idx].children.push_back(child);
+            _bump_version();
+        }
+    }
+
+    // Recursively add child to nested entry
+    static void add_child_to_data_entry_recursive(DataEntry& parent, const std::string& type, const std::string& name) {
+        DataEntry child;
+        child.name = name;
+        child.type = type;
+        parent.children.push_back(child);
+    }
+
+    static void remove_child_from_data_entry(DataEntry& parent, size_t idx) {
+        if (idx < parent.children.size()) {
+            parent.children.erase(parent.children.begin() + idx);
+        }
+    }
+
+    // Check if data entry type supports children
+    static bool data_type_supports_children(const std::string& type) {
+        return type == "data-tree" || type == "simple-data-tree" || type == "map";
+    }
+
 private:
     SharedLayoutModel() = default;
 
@@ -335,6 +392,7 @@ private:
 
     Value _root;
     SelectionPath _selection;
+    std::vector<DataEntry> _data_entries;
     uint64_t _version = 0;
 
     // Navigate to a node by path

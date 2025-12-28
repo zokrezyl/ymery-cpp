@@ -1,0 +1,27 @@
+widgets:
+  text-demo:
+    type: composite
+    body:
+      - separator-text:
+          label: "Text Display"
+          tooltip: "Demonstrates basic text display widgets. All content here is static (defined in YAML)."
+
+      - text:
+          label: "This is regular text"
+          tooltip: "Basic 'text' widget with static label. No data binding - value comes from YAML."
+
+      - bullet-text:
+          label: "This is bullet text"
+          tooltip: "Bullet-text widget - renders with a bullet point prefix. Useful for lists."
+
+      - bullet-text: "Another bullet point"
+
+      - separator-text:
+          label: "Text with formatting"
+          tooltip: "Separator-text creates a horizontal line with centered label text."
+
+      - text:
+          label: "You can display various types of text"
+          tooltip: "Text widgets can also be bound to data using 'data-path' for dynamic content."
+
+      - text: "Including multiline content"

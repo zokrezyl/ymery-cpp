@@ -1,0 +1,232 @@
+widgets:
+  widgets-demo:
+    type: composite
+    data:
+      local:
+        type: data-tree
+        arg:
+          children:
+            toggle-flag:
+              metadata:
+                label: true
+    main-data: local
+    body:
+      - separator-text:
+          label: "ImCoolBar"
+          tooltip: "ImCoolBar demo - dock-like animated toolbar. Static configuration, no data binding."
+
+      - markdown-unindented: |
+          # ImCoolBar
+          ImCoolBar provides a dock-like Cool bar for Dear ImGui
+
+      - cool-bar:
+          anchor_x: 0.5
+          anchor_y: 0.07
+          horizontal: true
+          body:
+            - cool-bar-item:
+                label: "A"
+
+            - cool-bar-item:
+                label: "B"
+
+            - cool-bar-item:
+                label: "C"
+
+            - cool-bar-item:
+                label: "D"
+
+            - cool-bar-item:
+                label: "E"
+
+            - cool-bar-item:
+                label: "F"
+
+      - separator:
+
+      - separator-text:
+          label: "Toggle Switch"
+          tooltip: "Toggle widget demo. Data: 'local' (type: data-tree) with 'toggle-flag' child bound to toggle state."
+
+      - markdown-unindented: |
+          # Toggle Switch
+          [imgui_toggle](https://github.com/cmdwtf/imgui_toggle) provides toggle switches for ImGui.
+
+      - toggle:
+          label: "Default Toggle"
+          tooltip: "Default toggle style. Bound to 'toggle-flag' in local data tree via data-path."
+        data-path: toggle-flag
+
+      - same-line:
+
+      - data-path: toggle-flag
+        toggle:
+          label: "Animated Toggle"
+          animated: true
+
+      - same-line:
+
+      - data-path: toggle-flag
+        toggle:
+          label: "Material Style (with slowed anim)"
+          style: "material"
+          animation_duration: 0.4
+
+      - same-line:
+
+      - data-path: toggle-flag
+        toggle:
+          label: "iOS style"
+          style: "ios"
+          size_scale: 0.2
+
+      - same-line:
+
+      - data-path: toggle-flag
+        toggle:
+          label: "iOS style (light)"
+          style: "ios"
+          size_scale: 0.2
+          light_mode: true
+
+      - separator:
+
+      - separator-text:
+          label: "Spinners"
+          tooltip: "Spinner widgets demo. Static configuration - no data binding needed for animations."
+
+      - markdown-unindented: |
+          # Spinners
+          [imspinner](https://github.com/dalerank/imspinner) provides spinners for ImGui.
+
+      - text: "spinner_moving_dots"
+      - same-line:
+      - spinner-moving-dots:
+          label: "spinner_moving_dots"
+          radius: 20.0
+          thickness: 4.0
+          num_balls: 20
+
+      - same-line:
+
+      - text: "spinner_arc_rotation"
+      - same-line:
+      - spinner-arc-rotation:
+          label: "spinner_arc_rotation"
+
+      - same-line:
+
+      - text: "spinner_ang_triple"
+      - same-line:
+      - spinner-ang-triple:
+          label: "spinner_ang_triple"
+
+      - separator:
+
+      - separator-text:
+          label: "Knobs"
+          tooltip: "Knob widgets demo. Static values shown - can be bound to data for interactive control."
+
+      - markdown-unindented: |
+          # Knobs
+          [imgui-knobs](https://github.com/altschuler/imgui-knobs) provides knobs for ImGui.
+
+      - text:
+          label: "Some small knobs"
+          tooltip: "Small float knobs with different visual variants: tick, dot, space, stepped, wiper, wiper_dot, wiper_only."
+      - group:
+          body:
+            - knob:
+                label: "tick"
+                variant: "tick"
+            - same-line:
+            - knob:
+                label: "dot"
+                variant: "dot"
+            - same-line:
+            - knob:
+                label: "space"
+                variant: "space"
+            - same-line:
+            - knob:
+                label: "stepped"
+                variant: "stepped"
+            - same-line:
+            - knob:
+                label: "wiper"
+                variant: "wiper"
+            - same-line:
+            - knob:
+                label: "wiper_dot"
+                variant: "wiper_dot"
+            - same-line:
+            - knob:
+                label: "wiper_only"
+                variant: "wiper_only"
+
+      - same-line:
+
+      - text:
+          label: "Some big knobs (int values)"
+          tooltip: "Large knob-int widgets with 'size: 80'. Integer value variant for discrete controls."
+      - group:
+          body:
+            - knob-int:
+                label: "tick"
+                variant: "tick"
+                size: 80
+            - same-line:
+            - knob-int:
+                label: "dot"
+                variant: "dot"
+                size: 80
+            - same-line:
+            - knob-int:
+                label: "space"
+                variant: "space"
+                size: 80
+            - same-line:
+            - knob-int:
+                label: "stepped"
+                variant: "stepped"
+                size: 80
+            - same-line:
+            - knob-int:
+                label: "wiper"
+                variant: "wiper"
+                size: 80
+            - same-line:
+            - knob-int:
+                label: "wiper_dot"
+                variant: "wiper_dot"
+                size: 80
+            - same-line:
+            - knob-int:
+                label: "wiper_only"
+                variant: "wiper_only"
+                size: 80
+
+      - separator:
+
+      - separator-text:
+          label: "Portable File Dialogs"
+          tooltip: "Native file dialog integration. Requires async handlers for file selection callbacks."
+
+      - markdown-unindented: |
+          # Portable File Dialogs
+          [portable-file-dialogs](https://github.com/samhocevar/portable-file-dialogs) provides file dialogs
+          as well as notifications and messages. They will use the native dialogs and notifications on each platform.
+
+      - text: "File dialogs require async implementation with button handlers"
+
+      - separator:
+
+      - separator-text:
+          label: "ImFileDialog"
+          tooltip: "ImGui-native file dialog. Pure ImGui implementation without native OS dialogs."
+
+      - markdown-unindented: |
+          # ImFileDialog
+          [ImFileDialog](https://github.com/pthom/ImFileDialog.git) provides file dialogs for ImGui.
+
+      - text: "ImFileDialog requires singleton instance management"

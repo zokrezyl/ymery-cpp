@@ -1,0 +1,13 @@
+widgets:
+  docking-demo:
+    type: composite
+    body:
+      - text: "Advanced Docking Demo"
+      - separator:
+      - text: "Complex docking layouts"
+      - bullet-text: "Multiple layout configurations"
+      - bullet-text: "Saveable layouts"
+      - bullet-text: "Status bar integration"
+      - bullet-text: "Custom menus"
+      - separator:
+      - text: "See demo_docking.py for full implementation"

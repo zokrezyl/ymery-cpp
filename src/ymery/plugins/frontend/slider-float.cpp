@@ -51,7 +51,8 @@ protected:
             }
         }
 
-        if (ImGui::SliderFloat(label.c_str(), &_value, _min, _max)) {
+        std::string imgui_id = label + "###" + _uid;
+        if (ImGui::SliderFloat(imgui_id.c_str(), &_value, _min, _max)) {
             _data_bag->set("value", Value(static_cast<double>(_value)));
         }
         return Ok();

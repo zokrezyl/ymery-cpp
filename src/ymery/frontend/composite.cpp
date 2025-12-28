@@ -55,57 +55,71 @@ Result<void> Composite::dispose() {
     }
     _children.clear();
     _children_initialized = false;
+    _foreach_child_names.clear();
 
     return Widget::dispose();
 }
 
 Result<void> Composite::render() {
-    // Push styles
-    if (auto style_res = _push_styles(); !style_res) {
-        spdlog::warn("Composite::render: _push_styles failed");
+    // Clear errors from previous render cycle
+    _error_messages.clear();
+
+    // Push styles - continue even on error
+    if (auto res = _push_styles(); !res) {
+        _handle_error(Err<void>("Composite::render: _push_styles failed", res));
     }
 
-    // Pre-render
-    if (auto pre_res = _pre_render_head(); !pre_res) {
-        _pop_styles();
-        return Err<void>("Composite::render: _pre_render_head failed", pre_res);
+    // Pre-render - continue even on error
+    if (_error_messages.empty()) {
+        if (auto res = _pre_render_head(); !res) {
+            _handle_error(Err<void>("Composite::render: _pre_render_head failed", res));
+        }
     }
 
-    // Detect and execute events
-    _detect_and_execute_events();
+    // Detect and execute events - continue even on error
+    if (_error_messages.empty()) {
+        if (auto res = _detect_and_execute_events(); !res) {
+            _handle_error(Err<void>("Composite::render: _detect_and_execute_events failed", res));
+        }
+    }
 
-    // Begin container
-    if (auto begin_res = _begin_container(); !begin_res) {
-        _pop_styles();
-        return Err<void>("Composite::render: _begin_container failed", begin_res);
+    // Begin container - continue even on error
+    if (_error_messages.empty()) {
+        if (auto res = _begin_container(); !res) {
+            _handle_error(Err<void>("Composite::render: _begin_container failed", res));
+        }
     }
 
     // Only render children if container is open
     if (_container_open) {
-        // Ensure and render children
-        if (auto children_res = _ensure_children(); !children_res) {
-            spdlog::warn("Composite::render: _ensure_children failed: {}", error_msg(children_res));
+        // Ensure children - continue even on error
+        if (auto res = _ensure_children(); !res) {
+            _handle_error(Err<void>("Composite::render: _ensure_children failed", res));
         }
 
-        if (auto render_children_res = _render_children(); !render_children_res) {
-            spdlog::warn("Composite::render: _render_children failed");
+        // Render children - continue even on error
+        if (auto res = _render_children(); !res) {
+            _handle_error(Err<void>("Composite::render: _render_children failed", res));
         }
     }
 
-    // End container
-    if (auto end_res = _end_container(); !end_res) {
-        spdlog::warn("Composite::render: _end_container failed");
+    // End container - continue even on error
+    if (auto res = _end_container(); !res) {
+        _handle_error(Err<void>("Composite::render: _end_container failed", res));
     }
 
-    // Post-render
-    if (auto post_res = _post_render_head(); !post_res) {
-        spdlog::warn("Composite::render: _post_render_head failed");
+    // Post-render - continue even on error
+    if (auto res = _post_render_head(); !res) {
+        _handle_error(Err<void>("Composite::render: _post_render_head failed", res));
     }
 
-    // Pop styles
-    _pop_styles();
+    // Pop styles - always try to cleanup
+    if (auto res = _pop_styles(); !res) {
+        _handle_error(Err<void>("Composite::render: _pop_styles failed", res));
+    }
 
-    return Ok();
+    // Render accumulated errors in-widget
+    return _render_errors();
 }
 
 Result<void> Composite::_begin_container() {
@@ -171,12 +185,29 @@ Result<void> Composite::_ensure_children() {
         return Ok();
     }
 
-    // For foreach-child, clear and rebuild children each frame
-    if (has_foreach_child) {
+    // For foreach-child, check if data has changed before rebuilding
+    if (has_foreach_child && _children_initialized) {
+        // Get current child names
+        auto children_res = _data_bag->get_children_names();
+        if (!children_res) {
+            // Error getting children - keep existing widgets to preserve state
+            spdlog::debug("Composite: get_children_names failed, keeping existing widgets");
+            return Ok();
+        }
+        auto current_names = *children_res;
+        // Compare with cached names
+        if (current_names == _foreach_child_names) {
+            // No change - keep existing widgets
+            return Ok();
+        }
+        spdlog::info("Composite: foreach-child data changed, rebuilding ({} -> {} children)",
+                     _foreach_child_names.size(), current_names.size());
+        // Data changed - clear and rebuild
         for (auto& child : _children) {
             if (child) child->dispose();
         }
         _children.clear();
+        _foreach_child_names.clear();
     }
 
     spdlog::info("Composite::_ensure_children: {} body specs, has_foreach_child={}", children_list->size(), has_foreach_child);
@@ -216,6 +247,9 @@ Result<void> Composite::_ensure_children() {
                     widget_spec = foreach_val;
                 }
 
+                // Cache child names for change detection
+                _foreach_child_names = child_names;
+
                 // Create a widget for each child - like Python, add data-path to widget spec
                 for (const auto& child_name : child_names) {
                     spdlog::info("foreach-child: creating widget for '{}'", child_name);
@@ -252,7 +286,7 @@ Result<void> Composite::_ensure_children() {
                     // Create the widget with PARENT data bag - factory handles navigation
                     auto widget_res = _widget_factory->create_widget(_data_bag, child_spec, _namespace);
                     if (!widget_res) {
-                        spdlog::error("foreach-child: failed to create widget for '{}': {}", child_name, error_msg(widget_res));
+                        _handle_error(Err<void>("Composite::_ensure_children: foreach-child failed to create widget for '" + child_name + "'", widget_res));
                         continue;
                     }
                     _children.push_back(*widget_res);
@@ -264,11 +298,11 @@ Result<void> Composite::_ensure_children() {
         // Regular widget creation
         auto widget_res = _widget_factory->create_widget(_data_bag, child_spec, _namespace);
         if (!widget_res) {
-            spdlog::error("Failed to create child widget: {}", error_msg(widget_res));
+            _handle_error(Err<void>("Composite::_ensure_children: failed to create child widget", widget_res));
             continue;
         }
         _children.push_back(*widget_res);
-        spdlog::debug("Created child widget");
+        spdlog::debug("Composite::_ensure_children: created child widget");
     }
 
     spdlog::debug("Created {} children", _children.size());
@@ -280,7 +314,8 @@ Result<void> Composite::_render_children() {
     for (auto& child : _children) {
         if (child) {
             if (auto res = child->render(); !res) {
-                // Log but continue
+                // Accumulate error but continue rendering other children
+                _handle_error(Err<void>("Composite::_render_children: child render failed", res));
             }
         }
     }

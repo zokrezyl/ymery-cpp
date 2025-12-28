@@ -33,7 +33,8 @@ protected:
                 label = *l;
             }
         }
-        _container_open = ImGui::CollapsingHeader(label.c_str());
+        std::string imgui_id = label + "###" + _uid;
+        _container_open = ImGui::CollapsingHeader(imgui_id.c_str());
         return Ok();
     }
 

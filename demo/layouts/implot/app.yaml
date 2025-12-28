@@ -1,0 +1,103 @@
+import:
+  - hello-imgui-widgets
+  - data
+
+widgets:
+  # ============================================================================
+  # MAIN WINDOW with Docking
+  # ============================================================================
+  main-window:
+    type: hello-imgui-main-window
+    runner-params:
+      app-window-params:
+        window-geometry:
+          size: [1600, 1000]
+      imgui-window-params:
+        default-imgui-window-type: provide-full-screen-dock-space
+    fps-idle: 0
+    body:
+    # Menu
+    - hello-imgui-menu:
+        body:
+          - menu:
+              label: "My Menu"
+              body:
+                - menu-item:
+                    label: "Test me"
+
+    - hello-imgui-app-menu-items:
+        body:
+          - menu-item:
+              label: "A Custom app menu item"
+
+    # Docking layout - main splits
+    - docking-split:
+        initial-dock: "MainDockSpace"
+        new-dock: "BottomPanel"
+        direction: "down"
+        ratio: 0.25
+
+    - docking-split:
+        initial-dock: "MainDockSpace"
+        new-dock: "LeftPanel"
+        direction: "left"
+        ratio: 0.25
+
+    # Sub-splits for data views
+    - docking-split:
+        initial-dock: "LeftPanel"
+        new-dock: "LeftPanelData"
+        direction: "down"
+        ratio: 0.3
+
+    - docking-split:
+        initial-dock: "MainDockSpace"
+        new-dock: "MainData"
+        direction: "down"
+        ratio: 0.3
+
+    # Left Panel - Kernel Browser + Data
+    - dockable-window:
+        label: "Kernel Browser"
+        dock-space-name: "LeftPanel"
+        body:
+          - hello-imgui-widgets.kernel-tree-view:
+
+    - dockable-window:
+        label: "Waveform Data"
+        dock-space-name: "LeftPanelData"
+        body:
+          - data-path: /
+            builtin.tree-view:
+
+    # Main Panel - Plots + Data
+    - dockable-window:
+        label: "Plots"
+        dock-space-name: "MainDockSpace"
+        body:
+          - hello-imgui-widgets.implot-wrapper:
+
+    - dockable-window:
+        label: "Plots Data"
+        dock-space-name: "MainData"
+        body:
+          - data-path: /
+            builtin.tree-view:
+
+    # Bottom Panel - Logs and Errors
+    - dockable-window:
+        label: "Logs"
+        dock-space-name: "BottomPanel"
+        body:
+          - hello-imgui-widgets.logs-view:
+
+    - dockable-window:
+        label: "Errors"
+        dock-space-name: "BottomPanel"
+        body:
+          - hello-imgui-widgets.errors-view:
+
+
+app:
+  widget: app.main-window
+  data-tree: waveform

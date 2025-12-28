@@ -1,0 +1,30 @@
+widgets:
+  tooltips-demo:
+    type: composite
+    body:
+      - separator-text:
+          label: "Basic Tooltip"
+          tooltip: "Demonstrates explicit tooltip widget. Tooltip content appears on hover."
+
+      - button:
+          label: "Hover me"
+          tooltip: "This button uses 'body' with 'tooltip' widget. Hover to see tooltip content."
+          body:
+            - tooltip:
+                body:
+                  - text: "I am a tooltip!"
+
+      - separator-text:
+          label: "Advanced Tooltip"
+          tooltip: "Tooltips can contain multiple widgets - text, bullets, separators, etc."
+
+      - button:
+          label: "Hover for details"
+          tooltip: "Tooltip with rich content - multiple text widgets and bullet points."
+          body:
+            - tooltip:
+                body:
+                  - text: "This is a more detailed tooltip"
+                  - bullet-text: "Point 1"
+                  - bullet-text: "Point 2"
+                  - bullet-text: "Point 3"

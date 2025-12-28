@@ -1,0 +1,52 @@
+widgets:
+  text-editor-demo:
+    type: composite
+    data:
+      local:
+        type: data-tree
+        arg:
+          children:
+            python-code:
+              metadata:
+                label: |
+                  def hello_world():
+                      print("Hello from ImGui!")
+                      return True
+
+                  # Edit this code
+                  hello_world()
+            cpp-code:
+              metadata:
+                label: |
+                  #include <iostream>
+
+                  void hello_world() {
+                      std::cout << "Hello from ImGui!" << std::endl;
+                  }
+
+                  // Edit this code
+                  int main() {
+                      hello_world();
+                      return 0;
+                  }
+    main-data: local
+    body:
+      - separator-text:
+          label: "Python Editor"
+          tooltip: "Text-editor widget with syntax highlighting. Data: 'local' (type: data-tree) with 'python-code' child."
+
+      - text-editor:
+          language: "python"
+          size: [700, 400]
+          tooltip: "Text-editor bound to 'python-code' child. 'language: python' enables Python syntax highlighting."
+        data-path: python-code
+
+      - separator-text:
+          label: "C++ Editor"
+          tooltip: "Text-editor for C++ code with appropriate syntax highlighting."
+
+      - text-editor:
+          language: "cpp"
+          size: [700, 300]
+          tooltip: "Text-editor bound to 'cpp-code' child. 'language: cpp' enables C++ syntax highlighting."
+        data-path: cpp-code

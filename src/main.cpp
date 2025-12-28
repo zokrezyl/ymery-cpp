@@ -1,10 +1,12 @@
 #include "ymery/app.hpp"
+#include "ymery/log_buffer.hpp"
 #include <iostream>
 #include <filesystem>
 #include <spdlog/spdlog.h>
 
 int main(int argc, char* argv[]) {
     spdlog::set_level(spdlog::level::info);
+    ymery::setup_log_buffer_sink();  // Capture spdlog messages for logs-view widget
     spdlog::info("ymery-cli starting");
 
     // Parse command line arguments

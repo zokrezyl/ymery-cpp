@@ -1,5 +1,4 @@
-// editor widget plugin - layout editor with drag-drop and context menus
-// Builds YAML structure directly
+// editor widget plugin - unified layout editor with widgets, data, and properties
 #include "../../../frontend/widget.hpp"
 #include "../../../frontend/widget_factory.hpp"
 #include "../../../types.hpp"
@@ -9,6 +8,19 @@
 #include <functional>
 
 namespace ymery::plugins {
+
+// Tree type info for data entries
+struct TreeTypeInfo {
+    std::string name;
+    std::string description;
+    bool supports_children;
+};
+
+// Value types for data-tree children
+struct ValueTypeInfo {
+    std::string name;
+    bool is_container;
+};
 
 class Editor : public Widget {
 public:
@@ -23,6 +35,7 @@ public:
         widget->_dispatcher = dispatcher;
         widget->_namespace = ns;
         widget->_data_bag = data_bag;
+        widget->_init_types();
 
         if (auto res = widget->init(); !res) {
             return Err<WidgetPtr>("Editor::create failed", res);
@@ -34,59 +47,252 @@ protected:
     Result<void> _pre_render_head() override {
         auto& model = SharedLayoutModel::instance();
 
-        if (model.empty()) {
-            _render_empty_state();
-        } else {
-            _render_layout();
+        // ========== Data Section ==========
+        if (ImGui::CollapsingHeader("Data", ImGuiTreeNodeFlags_DefaultOpen)) {
+            _render_data_section();
+        }
+
+        ImGui::Spacing();
+
+        // ========== Layout Section ==========
+        if (ImGui::CollapsingHeader("Layout", ImGuiTreeNodeFlags_DefaultOpen)) {
+            if (model.empty()) {
+                _render_empty_layout();
+            } else {
+                _render_layout();
+            }
         }
 
         return Ok();
     }
 
 private:
-    SelectionPath _current_path;  // Path being rendered
+    std::vector<TreeTypeInfo> _tree_types;
+    std::vector<ValueTypeInfo> _value_types;
+    int _name_counter = 0;
+    SelectionPath _current_path;
 
-    // Insert mode tracking for '+' buttons
+    // Insert mode tracking
     enum class InsertMode {
-        None,
-        InsertBeforeNewLine,
-        InsertBeforeSameLine,
-        InsertAfterNewLine,
-        InsertAfterSameLine,
-        AddChild,
-        AddChildSameLine
+        None, InsertBeforeNewLine, InsertBeforeSameLine,
+        InsertAfterNewLine, InsertAfterSameLine, AddChild, AddChildSameLine
     };
     InsertMode _pending_insert_mode = InsertMode::None;
-    SelectionPath _pending_insert_path;  // Path where insert will happen
+    SelectionPath _pending_insert_path;
 
-    void _render_empty_state() {
+    void _init_types() {
+        _tree_types = {
+            {"data-tree", "Hierarchical data storage with metadata", true},
+            {"simple-data-tree", "Basic hierarchical data storage", true},
+            {"kernel", "System kernel for providers", false},
+            {"waveform", "Waveform generator (sine, square, triangle)", false},
+            {"filesystem", "File system browser", false},
+            {"log-tree", "Log message tree", false},
+        };
+
+        _value_types = {
+            {"string", false},
+            {"int", false},
+            {"float", false},
+            {"bool", false},
+            {"map", true},
+        };
+    }
+
+    std::string _generate_default_name(const std::string& type) {
+        ++_name_counter;
+        std::string prefix = "item";
+        if (type == "kernel") prefix = "kernel";
+        else if (type == "waveform") prefix = "waveform";
+        else if (type == "filesystem") prefix = "fs";
+        else if (type == "log-tree") prefix = "log";
+        else if (type == "data-tree") prefix = "data";
+        else if (type == "simple-data-tree") prefix = "tree";
+        else if (type == "string") prefix = "str";
+        else if (type == "int") prefix = "num";
+        else if (type == "float") prefix = "val";
+        else if (type == "bool") prefix = "flag";
+        else if (type == "map") prefix = "obj";
+        return prefix + "-" + std::to_string(_name_counter);
+    }
+
+    // ========== Data Section ==========
+    void _render_data_section() {
+        auto& model = SharedLayoutModel::instance();
+        auto& entries = model.data_entries();
+
+        // Render existing entries
+        for (size_t i = 0; i < entries.size(); ++i) {
+            ImGui::PushID(static_cast<int>(i));
+            _render_data_entry(entries[i], i);
+            ImGui::PopID();
+        }
+
+        // Add button
+        std::string add_id = "+ Add Data Entry###add_data_" + _uid;
+        if (ImGui::SmallButton(add_id.c_str())) {
+            ImGui::OpenPopup("add_data_popup");
+        }
+
+        if (ImGui::BeginPopup("add_data_popup")) {
+            for (const auto& tt : _tree_types) {
+                if (ImGui::MenuItem(tt.name.c_str())) {
+                    std::string name = _generate_default_name(tt.name);
+                    model.add_data_entry(tt.name, name);
+                }
+                if (ImGui::IsItemHovered()) {
+                    ImGui::BeginTooltip();
+                    ImGui::Text("%s", tt.description.c_str());
+                    ImGui::EndTooltip();
+                }
+            }
+            ImGui::EndPopup();
+        }
+    }
+
+    void _render_data_entry(DataEntry& entry, size_t idx) {
+        auto& model = SharedLayoutModel::instance();
+        bool can_have_children = SharedLayoutModel::data_type_supports_children(entry.type);
+
+        ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow;
+        if (!can_have_children && entry.children.empty()) {
+            flags |= ImGuiTreeNodeFlags_Leaf;
+        }
+
+        std::string label = entry.name + " (" + entry.type + ")###data_" + std::to_string(idx);
+        bool is_open = ImGui::TreeNodeEx(label.c_str(), flags);
+
+        // Context menu
+        if (ImGui::BeginPopupContextItem()) {
+            if (can_have_children) {
+                if (ImGui::BeginMenu("Add child")) {
+                    for (const auto& vt : _value_types) {
+                        if (ImGui::MenuItem(vt.name.c_str())) {
+                            std::string name = _generate_default_name(vt.name);
+                            model.add_child_to_data_entry(idx, vt.name, name);
+                        }
+                    }
+                    ImGui::EndMenu();
+                }
+            }
+            if (ImGui::MenuItem("Remove")) {
+                model.remove_data_entry(idx);
+                ImGui::EndPopup();
+                if (is_open) ImGui::TreePop();
+                return;
+            }
+            ImGui::EndPopup();
+        }
+
+        if (is_open) {
+            // Render children
+            for (size_t i = 0; i < entry.children.size(); ++i) {
+                ImGui::PushID(static_cast<int>(i));
+                _render_data_child(entry, entry.children[i], i);
+                ImGui::PopID();
+            }
+
+            // Add child button
+            if (can_have_children) {
+                std::string add_id = "+ add###add_data_child_" + std::to_string(idx);
+                if (ImGui::SmallButton(add_id.c_str())) {
+                    ImGui::OpenPopup("add_data_child_popup");
+                }
+                if (ImGui::BeginPopup("add_data_child_popup")) {
+                    for (const auto& vt : _value_types) {
+                        if (ImGui::MenuItem(vt.name.c_str())) {
+                            std::string name = _generate_default_name(vt.name);
+                            model.add_child_to_data_entry(idx, vt.name, name);
+                        }
+                    }
+                    ImGui::EndPopup();
+                }
+            }
+
+            ImGui::TreePop();
+        }
+    }
+
+    void _render_data_child(DataEntry& parent, DataEntry& child, size_t idx) {
+        bool can_have_children = (child.type == "map");
+
+        ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow;
+        if (!can_have_children && child.children.empty()) {
+            flags |= ImGuiTreeNodeFlags_Leaf;
+        }
+
+        std::string label = child.name + " (" + child.type + ")###data_child_" + std::to_string(idx);
+        bool is_open = ImGui::TreeNodeEx(label.c_str(), flags);
+
+        // Context menu
+        if (ImGui::BeginPopupContextItem()) {
+            if (can_have_children) {
+                if (ImGui::BeginMenu("Add child")) {
+                    for (const auto& vt : _value_types) {
+                        if (ImGui::MenuItem(vt.name.c_str())) {
+                            std::string name = _generate_default_name(vt.name);
+                            SharedLayoutModel::add_child_to_data_entry_recursive(child, vt.name, name);
+                        }
+                    }
+                    ImGui::EndMenu();
+                }
+            }
+            if (ImGui::MenuItem("Remove")) {
+                SharedLayoutModel::remove_child_from_data_entry(parent, idx);
+                ImGui::EndPopup();
+                if (is_open) ImGui::TreePop();
+                return;
+            }
+            ImGui::EndPopup();
+        }
+
+        if (is_open) {
+            for (size_t i = 0; i < child.children.size(); ++i) {
+                ImGui::PushID(static_cast<int>(i));
+                _render_data_child(child, child.children[i], i);
+                ImGui::PopID();
+            }
+
+            if (can_have_children) {
+                std::string add_id = "+ add###add_nested_data_" + std::to_string(idx);
+                if (ImGui::SmallButton(add_id.c_str())) {
+                    ImGui::OpenPopup("add_nested_data_popup");
+                }
+                if (ImGui::BeginPopup("add_nested_data_popup")) {
+                    for (const auto& vt : _value_types) {
+                        if (ImGui::MenuItem(vt.name.c_str())) {
+                            std::string name = _generate_default_name(vt.name);
+                            SharedLayoutModel::add_child_to_data_entry_recursive(child, vt.name, name);
+                        }
+                    }
+                    ImGui::EndPopup();
+                }
+            }
+
+            ImGui::TreePop();
+        }
+    }
+
+    // ========== Layout Section ==========
+    void _render_empty_layout() {
         auto& model = SharedLayoutModel::instance();
 
-        ImGui::Text("Layout:");
-        ImGui::Separator();
-
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0.5f, 0.5f, 0.5f));
-        if (ImGui::Button("[undefined]")) {
-            // Nothing
-        }
+        if (ImGui::Button("[undefined]")) {}
         ImGui::PopStyleColor();
 
-        // Right-click to set root
         if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
             ImGui::OpenPopup("set_root_widget");
         }
 
-        // Drop to set root
         if (ImGui::BeginDragDropTarget()) {
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("WIDGET_TYPE")) {
                 std::string type(static_cast<const char*>(payload->Data));
                 model.set_root(type);
-                spdlog::info("Added root widget: {}", type);
             }
             ImGui::EndDragDropTarget();
         }
 
-        // Popup for root selection
         if (ImGui::BeginPopup("set_root_widget")) {
             ImGui::Text("Select widget type:");
             ImGui::Separator();
@@ -100,10 +306,6 @@ private:
 
     void _render_layout() {
         auto& model = SharedLayoutModel::instance();
-
-        ImGui::Text("Layout:");
-        ImGui::Separator();
-
         _current_path.clear();
         _render_widget(model.root(), 0);
     }
@@ -122,51 +324,10 @@ private:
 
         ImGui::PushID(uid.c_str());
 
-        if (depth > 0) {
-            ImGui::Indent(20.0f);
-        }
+        if (depth > 0) ImGui::Indent(20.0f);
 
-        // Display format
-        std::string display;
-        if (is_container) {
-            display = "[" + type + "] " + label;
-        } else {
-            display = type + ": " + label;
-        }
-
+        std::string display = is_container ? "[" + type + "] " + label : type + ": " + label;
         std::string insert_popup_id = "insert_" + uid;
-
-        // Calculate main button width for centering
-        ImVec2 main_btn_size = ImGui::CalcTextSize(display.c_str());
-        main_btn_size.x += ImGui::GetStyle().FramePadding.x * 2;
-        float small_btn_width = ImGui::CalcTextSize("+").x + 8;  // SmallButton padding
-        float center_offset = (small_btn_width + main_btn_size.x) / 2.0f;
-
-        // Small button style
-        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 0));
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(2, 2));
-
-        // Row 1: [+] insert before (new line) - centered above widget
-        ImGui::Indent(center_offset);
-        if (ImGui::SmallButton(("+##before_nl_" + uid).c_str())) {
-            _pending_insert_mode = InsertMode::InsertBeforeNewLine;
-            _pending_insert_path = _current_path;
-            ImGui::OpenPopup(insert_popup_id.c_str());
-        }
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Insert before (new line)");
-        ImGui::Unindent(center_offset);
-
-        // Row 2: [+] widget_button [+]
-        if (ImGui::SmallButton(("+##before_sl_" + uid).c_str())) {
-            _pending_insert_mode = InsertMode::InsertBeforeSameLine;
-            _pending_insert_path = _current_path;
-            ImGui::OpenPopup(insert_popup_id.c_str());
-        }
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Insert before (same line)");
-
-        ImGui::SameLine();
-
-        ImGui::PopStyleVar(2);  // Restore normal style for main button
 
         // Selection highlight
         bool is_selected = (_current_path == model.selection());
@@ -174,15 +335,12 @@ private:
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
         }
 
-        // Main widget button
         std::string button_label = display + "##" + uid;
         if (ImGui::Button(button_label.c_str())) {
             model.select(_current_path);
         }
 
-        if (is_selected) {
-            ImGui::PopStyleColor();
-        }
+        if (is_selected) ImGui::PopStyleColor();
 
         // Right-click context menu
         std::string popup_id = "ctx_" + uid;
@@ -190,60 +348,16 @@ private:
             ImGui::OpenPopup(popup_id.c_str());
         }
 
-        // Drop target for adding children
+        // Drop target
         if (is_container && ImGui::BeginDragDropTarget()) {
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("WIDGET_TYPE")) {
                 std::string new_type(static_cast<const char*>(payload->Data));
                 model.add_child(_current_path, new_type);
-                spdlog::info("Added {} as child of {}", new_type, type);
             }
             ImGui::EndDragDropTarget();
         }
 
-        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 0));
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(2, 2));
-
-        ImGui::SameLine();
-        if (ImGui::SmallButton(("+##after_sl_" + uid).c_str())) {
-            _pending_insert_mode = InsertMode::InsertAfterSameLine;
-            _pending_insert_path = _current_path;
-            ImGui::OpenPopup(insert_popup_id.c_str());
-        }
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Insert after (same line)");
-
-        // Row 3: [+] insert after (new line) + [C] add child - centered below widget
-        float bottom_row_offset = is_container ? (center_offset - small_btn_width / 2) : center_offset;
-        ImGui::Indent(bottom_row_offset);
-        if (ImGui::SmallButton(("+##after_nl_" + uid).c_str())) {
-            _pending_insert_mode = InsertMode::InsertAfterNewLine;
-            _pending_insert_path = _current_path;
-            ImGui::OpenPopup(insert_popup_id.c_str());
-        }
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Insert after (new line)");
-
-        // [C] add child - next to lower '+' (for containers only)
-        if (is_container) {
-            ImGui::SameLine();
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.6f, 0.2f, 1.0f));
-            if (ImGui::SmallButton(("C##addchild_" + uid).c_str())) {
-                _pending_insert_mode = InsertMode::AddChild;
-                _pending_insert_path = _current_path;
-                ImGui::OpenPopup(insert_popup_id.c_str());
-            }
-            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Add child");
-            ImGui::PopStyleColor();
-        }
-        ImGui::Unindent(bottom_row_offset);
-
-        ImGui::PopStyleVar(2);
-
-        // Insert popup (shared for all '+' buttons of this widget)
-        if (ImGui::BeginPopup(insert_popup_id.c_str())) {
-            _render_insert_popup();
-            ImGui::EndPopup();
-        }
-
-        // Context menu popup
+        // Context menu
         if (ImGui::BeginPopup(popup_id.c_str())) {
             _render_context_menu(widget, type, is_container);
             ImGui::EndPopup();
@@ -256,56 +370,9 @@ private:
             _current_path.pop_back();
         }
 
-        if (depth > 0) {
-            ImGui::Unindent(20.0f);
-        }
+        if (depth > 0) ImGui::Unindent(20.0f);
 
         ImGui::PopID();
-    }
-
-    void _render_insert_popup() {
-        auto& model = SharedLayoutModel::instance();
-
-        const char* title = "Select widget";
-        switch (_pending_insert_mode) {
-            case InsertMode::InsertBeforeNewLine: title = "Insert Before (new line)"; break;
-            case InsertMode::InsertBeforeSameLine: title = "Insert Before (same line)"; break;
-            case InsertMode::InsertAfterNewLine: title = "Insert After (new line)"; break;
-            case InsertMode::InsertAfterSameLine: title = "Insert After (same line)"; break;
-            case InsertMode::AddChild: title = "Add Child"; break;
-            case InsertMode::AddChildSameLine: title = "Add Child (same line)"; break;
-            default: break;
-        }
-
-        ImGui::Text("%s", title);
-        ImGui::Separator();
-
-        _render_widget_menu([this, &model](const std::string& new_type) {
-            switch (_pending_insert_mode) {
-                case InsertMode::InsertBeforeNewLine:
-                    model.insert_before(_pending_insert_path, new_type, false);
-                    break;
-                case InsertMode::InsertBeforeSameLine:
-                    model.insert_before(_pending_insert_path, new_type, true);
-                    break;
-                case InsertMode::InsertAfterNewLine:
-                    model.insert_after(_pending_insert_path, new_type, false);
-                    break;
-                case InsertMode::InsertAfterSameLine:
-                    model.insert_after(_pending_insert_path, new_type, true);
-                    break;
-                case InsertMode::AddChild:
-                    model.add_child(_pending_insert_path, new_type, false);
-                    break;
-                case InsertMode::AddChildSameLine:
-                    model.add_child(_pending_insert_path, new_type, true);
-                    break;
-                default:
-                    break;
-            }
-            _pending_insert_mode = InsertMode::None;
-            ImGui::CloseCurrentPopup();
-        });
     }
 
     void _render_context_menu(const Value& widget, const std::string& type, bool is_container) {
@@ -317,6 +384,11 @@ private:
         // Edit Properties
         if (ImGui::CollapsingHeader("Edit Properties")) {
             _render_properties_editor(widget);
+        }
+
+        // Set Data Path
+        if (ImGui::CollapsingHeader("Data Binding")) {
+            _render_data_binding_editor();
         }
 
         ImGui::Separator();
@@ -332,25 +404,7 @@ private:
 
         ImGui::Separator();
 
-        // Insert options - same line variants first
-        if (ImGui::BeginMenu("Insert Before (same line)")) {
-            _render_widget_menu([this, &model](const std::string& new_type) {
-                model.insert_before(_current_path, new_type, true);
-                ImGui::CloseCurrentPopup();
-            });
-            ImGui::EndMenu();
-        }
-        if (ImGui::BeginMenu("Insert After (same line)")) {
-            _render_widget_menu([this, &model](const std::string& new_type) {
-                model.insert_after(_current_path, new_type, true);
-                ImGui::CloseCurrentPopup();
-            });
-            ImGui::EndMenu();
-        }
-
-        ImGui::Separator();
-
-        // Insert options - new line variants
+        // Insert options
         if (ImGui::BeginMenu("Insert Before")) {
             _render_widget_menu([this, &model](const std::string& new_type) {
                 model.insert_before(_current_path, new_type, false);
@@ -366,16 +420,9 @@ private:
             ImGui::EndMenu();
         }
 
-        // Add Child (containers only)
+        // Add Child
         if (is_container) {
             ImGui::Separator();
-            if (ImGui::BeginMenu("Add Child (same line)")) {
-                _render_widget_menu([this, &model](const std::string& new_type) {
-                    model.add_child(_current_path, new_type, true);
-                    ImGui::CloseCurrentPopup();
-                });
-                ImGui::EndMenu();
-            }
             if (ImGui::BeginMenu("Add Child")) {
                 _render_widget_menu([this, &model](const std::string& new_type) {
                     model.add_child(_current_path, new_type, false);
@@ -385,10 +432,9 @@ private:
             }
         }
 
-        // Movement options (non-root only)
+        // Movement
         if (!_current_path.empty()) {
             ImGui::Separator();
-
             if (ImGui::MenuItem("Move Up", nullptr, false, model.can_move_up(_current_path))) {
                 model.move_up(_current_path);
             }
@@ -398,8 +444,6 @@ private:
         }
 
         ImGui::Separator();
-
-        // Delete
         if (ImGui::MenuItem("Delete")) {
             model.remove(_current_path);
         }
@@ -427,6 +471,30 @@ private:
         if (ImGui::InputText("##label", buf, sizeof(buf))) {
             buffers[key] = buf;
             model.set_label_at(_current_path, buf);
+        }
+    }
+
+    void _render_data_binding_editor() {
+        auto& model = SharedLayoutModel::instance();
+        auto& entries = model.data_entries();
+
+        ImGui::Text("data-path:");
+        ImGui::SameLine();
+
+        // Show available data entries
+        if (entries.empty()) {
+            ImGui::TextDisabled("(no data entries)");
+        } else {
+            if (ImGui::BeginCombo("##datapath", "(select)")) {
+                for (const auto& entry : entries) {
+                    std::string path = "$" + entry.name + "@/";
+                    if (ImGui::Selectable(path.c_str())) {
+                        // TODO: Set data-path on selected widget
+                        spdlog::info("Selected data-path: {}", path);
+                    }
+                }
+                ImGui::EndCombo();
+            }
         }
     }
 

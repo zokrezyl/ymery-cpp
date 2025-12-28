@@ -1,0 +1,11 @@
+widgets:
+  log:
+    type: composite
+    body:
+      - text: "Example Log Window"
+      - separator:
+      - text: "[INFO] Application started"
+      - text: "[INFO] Loading resources"
+      - text: "[WARN] Resource not found"
+      - text: "[ERROR] Failed to connect"
+      - text: "[INFO] Retrying connection"

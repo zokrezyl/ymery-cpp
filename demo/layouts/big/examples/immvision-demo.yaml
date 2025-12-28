@@ -1,0 +1,51 @@
+widgets:
+  immvision-demo:
+    type: composite
+    body:
+      - columns:
+          count: 2
+
+      # Left column: image_display_resizable()
+      - next-column:
+
+      - markdown-unindented: |
+          # immvision.image_display_resizable()
+          Displays an image (possibly resizable)
+
+      - immvision-image-display-resizable:
+          label: "Tennis"
+          image_path: "demo/hello-imgui-full/assets/immvision/tennis.jpg"
+          size: [0, 400]
+
+      # Right column: image() with full inspector
+      - next-column:
+
+      - markdown-unindented: |
+          # immvision.image()
+          Displays an image, while providing lots of visualization options.
+
+      - immvision-image:
+          label: "Bear"
+          image_path: "demo/hello-imgui-full/assets/immvision/bear_transparent.png"
+          load_alpha: true
+          size: [15]
+
+      - markdown-unindented: |
+          * Zoom in/out using the mouse wheel.
+          * Pixel values are displayed at high zoom levels.
+          * Pan the image by dragging it with the left mouse button
+          * Open settings via button (bottom right corner of the image)
+
+      # End columns
+      - columns:
+          count: 1
+
+      - separator:
+
+      - separator-text: "More Examples"
+
+      - immvision-image-display:
+          label: "House"
+          image_path: "demo/hello-imgui-full/assets/immvision/house.jpg"
+          size: [500, 400]
+          show_options: true

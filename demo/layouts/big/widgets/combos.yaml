@@ -1,0 +1,25 @@
+widgets:
+  combos-demo:
+    type: composite
+    data:
+      local:
+        type: data-tree
+        arg:
+          children:
+            combo-selection:
+              metadata:
+                label: "Option 1"
+    main-data: local
+    body:
+      - separator-text: "Combo Box"
+
+      - data-path: combo-selection
+        combo:
+          head:
+            tooltip: "Click to select from available options"
+          items: ["Option 1", "Option 2", "Option 3", "Option 4"]
+
+      - separator-text: "Current Selection"
+
+      - data-path: combo-selection
+        text:

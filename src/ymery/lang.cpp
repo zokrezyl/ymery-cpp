@@ -21,9 +21,10 @@ Result<std::shared_ptr<Lang>> Lang::create(
 }
 
 Result<void> Lang::init() {
-    // Breadth-first loading starting from main module
+    // Breadth-first loading starting from main module and builtin
     std::queue<std::pair<std::string, std::string>> to_load; // (module_name, namespace)
-    to_load.push({_main_module, "app"});
+    to_load.push({_main_module, _main_module});
+    to_load.push({"builtin", "builtin"});  // Load builtin layouts like Python
 
     while (!to_load.empty()) {
         auto [module_name, ns] = to_load.front();
@@ -33,7 +34,12 @@ Result<void> Lang::init() {
             continue;
         }
 
-        if (auto res = _load_module(module_name, ns); !res) {
+        auto res = _load_module(module_name, ns, to_load);
+        if (!res) {
+            // builtin module is optional - don't fail if not found
+            if (module_name == "builtin") {
+                continue;
+            }
             return Err<void>("Lang::init: failed to load module '" + module_name + "'", res);
         }
 
@@ -43,7 +49,11 @@ Result<void> Lang::init() {
     return Ok();
 }
 
-Result<void> Lang::_load_module(const std::string& module_name, const std::string& namespace_) {
+Result<void> Lang::_load_module(
+    const std::string& module_name,
+    const std::string& namespace_,
+    std::queue<std::pair<std::string, std::string>>& to_load
+) {
     auto path_res = _resolve_module_path(module_name);
     if (!path_res) {
         return Err<void>("Lang::_load_module: could not resolve path", path_res);
@@ -59,11 +69,12 @@ Result<void> Lang::_load_module(const std::string& module_name, const std::strin
         return Err<void>("Lang::_load_module: YAML parse error: " + std::string(e.what()));
     }
 
-    // Process 'import' section
+    // Process 'import' section - queue imported modules for loading
     if (root["import"]) {
         for (const auto& import_node : root["import"]) {
             std::string import_name = import_node.as<std::string>();
-            // TODO: queue imported modules for loading
+            // Queue with import name as both module name and namespace
+            to_load.push({import_name, import_name});
         }
     }
 

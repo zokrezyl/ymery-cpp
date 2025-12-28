@@ -41,7 +41,8 @@ protected:
             }
         }
 
-        _is_body_activated = ImGui::BeginMenu(label.c_str(), enabled);
+        std::string imgui_id = label + "###" + _uid;
+        _is_body_activated = ImGui::BeginMenu(imgui_id.c_str(), enabled);
         return Ok();
     }
 
