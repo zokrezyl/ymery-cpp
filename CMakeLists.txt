@@ -142,9 +142,9 @@ endif()
 # Not needed for Emscripten - browser provides WebGPU
 if(YMERY_USE_WEBGPU AND NOT YMERY_WEB)
     if(YMERY_ANDROID)
-        # Android: Use pre-built wgpu-native from build-android/wgpu-libs
+        # Android: Use pre-built wgpu-native from android/ymery/app/libs
         # Downloaded by android/ymery/build-wgpu.sh script
-        set(WGPU_ANDROID_LIB "${CMAKE_CURRENT_SOURCE_DIR}/build-android/wgpu-libs/arm64-v8a/libwgpu_native.so")
+        set(WGPU_ANDROID_LIB "${CMAKE_CURRENT_SOURCE_DIR}/android/ymery/app/libs/arm64-v8a/libwgpu_native.so")
 
         if(NOT EXISTS "${WGPU_ANDROID_LIB}")
             message(FATAL_ERROR

@@ -9,8 +9,8 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 
-# Output directory
-OUTPUT_DIR="$PROJECT_ROOT/build-android/wgpu-libs"
+# Output directory - must match path in android/ymery/app/src/main/cpp/CMakeLists.txt
+OUTPUT_DIR="$SCRIPT_DIR/app/libs"
 
 # wgpu-native version with Android pre-builts
 WGPU_VERSION="v24.0.0.2"
