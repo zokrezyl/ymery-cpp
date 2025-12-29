@@ -1,0 +1,26 @@
+widgets:
+  window:
+    type: window
+  text:
+    type: text
+  spacing:
+    type: spacing
+  shader-toy:
+    type: shader-toy
+
+  main-window:
+    type: window
+    label: Shader Toy Demo
+    body:
+      - text:
+          content: "WebGPU Custom Shader Widget POC"
+      - spacing
+      - shader-toy:
+          width: 400
+          height: 300
+      - spacing
+      - text:
+          content: "Animated shader via ImDrawList::AddCallback"
+
+app:
+  widget: app.main-window
