@@ -75,12 +75,14 @@ static int s_wgpu_surface_width = 0;
 static int s_wgpu_surface_height = 0;
 static WGPUTextureFormat s_wgpu_preferred_format = WGPUTextureFormat_BGRA8Unorm;
 
-static void wgpu_error_callback(WGPUErrorType type, const char* message, void* userdata) {
-    spdlog::error("WebGPU Error ({}): {}", static_cast<int>(type), message);
+static void wgpu_error_callback(WGPUDevice const* device, WGPUErrorType type, WGPUStringView message, void* userdata1, void* userdata2) {
+    std::string msg(message.data, message.length);
+    spdlog::error("WebGPU Error ({}): {}", static_cast<int>(type), msg);
 }
 
-static void wgpu_device_lost_callback(WGPUDeviceLostReason reason, const char* message, void* userdata) {
-    spdlog::error("WebGPU Device Lost ({}): {}", static_cast<int>(reason), message);
+static void wgpu_device_lost_callback(WGPUDevice const* device, WGPUDeviceLostReason reason, WGPUStringView message, void* userdata1, void* userdata2) {
+    std::string msg(message.data, message.length);
+    spdlog::error("WebGPU Device Lost ({}): {}", static_cast<int>(reason), msg);
 }
 
 static void configure_wgpu_surface(int width, int height) {
@@ -269,10 +271,10 @@ bool EditorApp::init(const EditorConfig& config) {
     Display* x11_display = glfwGetX11Display();
     Window x11_window = glfwGetX11Window(_window);
 
-    WGPUSurfaceDescriptorFromXlibWindow x11_surface_desc = {};
-    x11_surface_desc.chain.sType = WGPUSType_SurfaceDescriptorFromXlibWindow;
+    WGPUSurfaceSourceXlibWindow x11_surface_desc = {};
+    x11_surface_desc.chain.sType = WGPUSType_SurfaceSourceXlibWindow;
     x11_surface_desc.display = x11_display;
-    x11_surface_desc.window = x11_window;
+    x11_surface_desc.window = static_cast<uint64_t>(x11_window);
 
     WGPUSurfaceDescriptor surface_desc = {};
     surface_desc.nextInChain = reinterpret_cast<const WGPUChainedStruct*>(&x11_surface_desc);
@@ -293,16 +295,20 @@ bool EditorApp::init(const EditorConfig& config) {
         bool done = false;
     } adapter_data;
 
-    wgpuInstanceRequestAdapter(s_wgpu_instance, &adapter_opts,
-        [](WGPURequestAdapterStatus status, WGPUAdapter adapter, const char* message, void* userdata) {
-            auto* data = static_cast<AdapterUserData*>(userdata);
-            if (status == WGPURequestAdapterStatus_Success) {
-                data->adapter = adapter;
-            } else {
-                spdlog::error("Failed to get WebGPU adapter: {}", message ? message : "unknown");
-            }
-            data->done = true;
-        }, &adapter_data);
+    WGPURequestAdapterCallbackInfo adapter_callback_info = {};
+    adapter_callback_info.mode = WGPUCallbackMode_AllowSpontaneous;
+    adapter_callback_info.callback = [](WGPURequestAdapterStatus status, WGPUAdapter adapter, WGPUStringView message, void* userdata1, void* userdata2) {
+        auto* data = static_cast<AdapterUserData*>(userdata1);
+        if (status == WGPURequestAdapterStatus_Success) {
+            data->adapter = adapter;
+        } else {
+            std::string msg(message.data, message.length);
+            spdlog::error("Failed to get WebGPU adapter: {}", msg);
+        }
+        data->done = true;
+    };
+    adapter_callback_info.userdata1 = &adapter_data;
+    wgpuInstanceRequestAdapter(s_wgpu_instance, &adapter_opts, adapter_callback_info);
 
     while (!adapter_data.done) {}
 
@@ -314,23 +320,28 @@ bool EditorApp::init(const EditorConfig& config) {
 
     // Request device
     WGPUDeviceDescriptor device_desc = {};
-    device_desc.deviceLostCallback = wgpu_device_lost_callback;
+    device_desc.deviceLostCallbackInfo.callback = wgpu_device_lost_callback;
+    device_desc.uncapturedErrorCallbackInfo.callback = wgpu_error_callback;
 
     struct DeviceUserData {
         WGPUDevice device = nullptr;
         bool done = false;
     } device_data;
 
-    wgpuAdapterRequestDevice(s_wgpu_adapter, &device_desc,
-        [](WGPURequestDeviceStatus status, WGPUDevice device, const char* message, void* userdata) {
-            auto* data = static_cast<DeviceUserData*>(userdata);
-            if (status == WGPURequestDeviceStatus_Success) {
-                data->device = device;
-            } else {
-                spdlog::error("Failed to get WebGPU device: {}", message ? message : "unknown");
-            }
-            data->done = true;
-        }, &device_data);
+    WGPURequestDeviceCallbackInfo device_callback_info = {};
+    device_callback_info.mode = WGPUCallbackMode_AllowSpontaneous;
+    device_callback_info.callback = [](WGPURequestDeviceStatus status, WGPUDevice device, WGPUStringView message, void* userdata1, void* userdata2) {
+        auto* data = static_cast<DeviceUserData*>(userdata1);
+        if (status == WGPURequestDeviceStatus_Success) {
+            data->device = device;
+        } else {
+            std::string msg(message.data, message.length);
+            spdlog::error("Failed to get WebGPU device: {}", msg);
+        }
+        data->done = true;
+    };
+    device_callback_info.userdata1 = &device_data;
+    wgpuAdapterRequestDevice(s_wgpu_adapter, &device_desc, device_callback_info);
 
     while (!device_data.done) {}
 
@@ -341,7 +352,12 @@ bool EditorApp::init(const EditorConfig& config) {
     }
 
     s_wgpu_queue = wgpuDeviceGetQueue(s_wgpu_device);
-    s_wgpu_preferred_format = wgpuSurfaceGetPreferredFormat(s_wgpu_surface, s_wgpu_adapter);
+
+    // Get preferred surface format (v22+ API)
+    WGPUSurfaceCapabilities caps = {};
+    wgpuSurfaceGetCapabilities(s_wgpu_surface, s_wgpu_adapter, &caps);
+    s_wgpu_preferred_format = (caps.formatCount > 0) ? caps.formats[0] : WGPUTextureFormat_BGRA8Unorm;
+    wgpuSurfaceCapabilitiesFreeMembers(caps);
 
     int width, height;
     glfwGetFramebufferSize(_window, &width, &height);
@@ -535,7 +551,8 @@ void EditorApp::end_frame() {
 #elif defined(YMERY_USE_WEBGPU)
     WGPUSurfaceTexture surface_texture;
     wgpuSurfaceGetCurrentTexture(s_wgpu_surface, &surface_texture);
-    if (surface_texture.status != WGPUSurfaceGetCurrentTextureStatus_Success) {
+    if (surface_texture.status != WGPUSurfaceGetCurrentTextureStatus_SuccessOptimal &&
+        surface_texture.status != WGPUSurfaceGetCurrentTextureStatus_SuccessSuboptimal) {
         spdlog::error("Failed to get surface texture");
         return;
     }
@@ -552,6 +569,7 @@ void EditorApp::end_frame() {
     color_attachment.loadOp = WGPULoadOp_Clear;
     color_attachment.storeOp = WGPUStoreOp_Store;
     color_attachment.clearValue = {0.1f, 0.1f, 0.1f, 1.0f};
+    color_attachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
 
     WGPURenderPassDescriptor render_pass_desc = {};
     render_pass_desc.colorAttachmentCount = 1;

@@ -518,7 +518,8 @@ Result<void> App::_begin_frame() {
     WGPUSurfaceTexture surface_texture;
     wgpuSurfaceGetCurrentTexture(_wgpu_surface, &surface_texture);
 
-    if (surface_texture.status != WGPUSurfaceGetCurrentTextureStatus_Success) {
+    if (surface_texture.status != WGPUSurfaceGetCurrentTextureStatus_SuccessOptimal &&
+        surface_texture.status != WGPUSurfaceGetCurrentTextureStatus_SuccessSuboptimal) {
         return Err<void>("Failed to get surface texture");
     }
 
@@ -559,9 +560,7 @@ Result<void> App::_end_frame() {
     color_attachment.loadOp = WGPULoadOp_Clear;
     color_attachment.storeOp = WGPUStoreOp_Store;
     color_attachment.clearValue = {0.1f, 0.1f, 0.1f, 1.0f};
-#ifndef WEBGPU_BACKEND_WGPU
     color_attachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
-#endif
 
     WGPURenderPassDescriptor render_pass_desc = {};
     render_pass_desc.colorAttachmentCount = 1;
@@ -596,13 +595,15 @@ Result<void> App::_end_frame() {
 
 #elif defined(YMERY_USE_WEBGPU)
 
-// WebGPU callbacks
-static void wgpu_error_callback(WGPUErrorType type, const char* message, void* userdata) {
-    spdlog::error("WebGPU Error ({}): {}", static_cast<int>(type), message);
+// WebGPU callbacks (v22+ API with WGPUStringView)
+static void wgpu_error_callback(WGPUDevice const* device, WGPUErrorType type, WGPUStringView message, void* userdata1, void* userdata2) {
+    std::string msg(message.data, message.length);
+    spdlog::error("WebGPU Error ({}): {}", static_cast<int>(type), msg);
 }
 
-static void wgpu_device_lost_callback(WGPUDeviceLostReason reason, const char* message, void* userdata) {
-    spdlog::error("WebGPU Device Lost ({}): {}", static_cast<int>(reason), message);
+static void wgpu_device_lost_callback(WGPUDevice const* device, WGPUDeviceLostReason reason, WGPUStringView message, void* userdata1, void* userdata2) {
+    std::string msg(message.data, message.length);
+    spdlog::error("WebGPU Device Lost ({}): {}", static_cast<int>(reason), msg);
 }
 
 static void configure_wgpu_surface(int width, int height) {
@@ -681,10 +682,10 @@ Result<void> App::_init_graphics() {
     Display* x11_display = glfwGetX11Display();
     Window x11_window = glfwGetX11Window(static_cast<GLFWwindow*>(_window));
 
-    WGPUSurfaceDescriptorFromXlibWindow x11_surface_desc = {};
-    x11_surface_desc.chain.sType = WGPUSType_SurfaceDescriptorFromXlibWindow;
+    WGPUSurfaceSourceXlibWindow x11_surface_desc = {};
+    x11_surface_desc.chain.sType = WGPUSType_SurfaceSourceXlibWindow;
     x11_surface_desc.display = x11_display;
-    x11_surface_desc.window = x11_window;
+    x11_surface_desc.window = static_cast<uint64_t>(x11_window);
 
     WGPUSurfaceDescriptor surface_desc = {};
     surface_desc.nextInChain = reinterpret_cast<const WGPUChainedStruct*>(&x11_surface_desc);
@@ -705,7 +706,7 @@ Result<void> App::_init_graphics() {
         bool done = false;
     } adapter_data;
 
-#ifdef YMERY_WEB_DAWN
+    // v22+ API: use WGPURequestAdapterCallbackInfo
     WGPURequestAdapterCallbackInfo adapter_callback_info = {};
     adapter_callback_info.mode = WGPUCallbackMode_AllowSpontaneous;
     adapter_callback_info.callback = [](WGPURequestAdapterStatus status, WGPUAdapter adapter, WGPUStringView message, void* userdata1, void* userdata2) {
@@ -713,24 +714,13 @@ Result<void> App::_init_graphics() {
         if (status == WGPURequestAdapterStatus_Success) {
             data->adapter = adapter;
         } else {
-            spdlog::error("Failed to get WebGPU adapter");
+            std::string msg(message.data, message.length);
+            spdlog::error("Failed to get WebGPU adapter: {}", msg);
         }
         data->done = true;
     };
     adapter_callback_info.userdata1 = &adapter_data;
     wgpuInstanceRequestAdapter(_wgpu_instance, &adapter_opts, adapter_callback_info);
-#else
-    wgpuInstanceRequestAdapter(_wgpu_instance, &adapter_opts,
-        [](WGPURequestAdapterStatus status, WGPUAdapter adapter, const char* message, void* userdata) {
-            auto* data = static_cast<AdapterUserData*>(userdata);
-            if (status == WGPURequestAdapterStatus_Success) {
-                data->adapter = adapter;
-            } else {
-                spdlog::error("Failed to get WebGPU adapter: {}", message ? message : "unknown");
-            }
-            data->done = true;
-        }, &adapter_data);
-#endif
 
     while (!adapter_data.done) {
         // Busy wait for adapter (could use proper async)
@@ -746,16 +736,16 @@ Result<void> App::_init_graphics() {
 
     // Request device
     WGPUDeviceDescriptor device_desc = {};
-#ifndef YMERY_WEB_DAWN
-    device_desc.deviceLostCallback = wgpu_device_lost_callback;
-#endif
+    // v22+ API: set callbacks via callback info structs
+    device_desc.deviceLostCallbackInfo.callback = wgpu_device_lost_callback;
+    device_desc.uncapturedErrorCallbackInfo.callback = wgpu_error_callback;
 
     struct DeviceUserData {
         WGPUDevice device = nullptr;
         bool done = false;
     } device_data;
 
-#ifdef YMERY_WEB_DAWN
+    // v22+ API: use WGPURequestDeviceCallbackInfo
     WGPURequestDeviceCallbackInfo device_callback_info = {};
     device_callback_info.mode = WGPUCallbackMode_AllowSpontaneous;
     device_callback_info.callback = [](WGPURequestDeviceStatus status, WGPUDevice device, WGPUStringView message, void* userdata1, void* userdata2) {
@@ -763,24 +753,13 @@ Result<void> App::_init_graphics() {
         if (status == WGPURequestDeviceStatus_Success) {
             data->device = device;
         } else {
-            spdlog::error("Failed to get WebGPU device");
+            std::string msg(message.data, message.length);
+            spdlog::error("Failed to get WebGPU device: {}", msg);
         }
         data->done = true;
     };
     device_callback_info.userdata1 = &device_data;
     wgpuAdapterRequestDevice(_wgpu_adapter, &device_desc, device_callback_info);
-#else
-    wgpuAdapterRequestDevice(_wgpu_adapter, &device_desc,
-        [](WGPURequestDeviceStatus status, WGPUDevice device, const char* message, void* userdata) {
-            auto* data = static_cast<DeviceUserData*>(userdata);
-            if (status == WGPURequestDeviceStatus_Success) {
-                data->device = device;
-            } else {
-                spdlog::error("Failed to get WebGPU device: {}", message ? message : "unknown");
-            }
-            data->done = true;
-        }, &device_data);
-#endif
 
     while (!device_data.done) {
         // Busy wait for device
@@ -796,15 +775,11 @@ Result<void> App::_init_graphics() {
 
     _wgpu_queue = wgpuDeviceGetQueue(_wgpu_device);
 
-    // Get preferred surface format
-#ifdef YMERY_WEB_DAWN
+    // Get preferred surface format (v22+ API: wgpuSurfaceGetCapabilities)
     WGPUSurfaceCapabilities caps = {};
     wgpuSurfaceGetCapabilities(_wgpu_surface, _wgpu_adapter, &caps);
     _wgpu_preferred_format = (caps.formatCount > 0) ? caps.formats[0] : WGPUTextureFormat_BGRA8Unorm;
     wgpuSurfaceCapabilitiesFreeMembers(caps);
-#else
-    _wgpu_preferred_format = wgpuSurfaceGetPreferredFormat(_wgpu_surface, _wgpu_adapter);
-#endif
 
     // Configure surface
     int width, height;
@@ -885,16 +860,10 @@ Result<void> App::_end_frame() {
     // Get current surface texture
     WGPUSurfaceTexture surface_texture;
     wgpuSurfaceGetCurrentTexture(_wgpu_surface, &surface_texture);
-#ifdef YMERY_WEB_DAWN
     if (surface_texture.status != WGPUSurfaceGetCurrentTextureStatus_SuccessOptimal &&
         surface_texture.status != WGPUSurfaceGetCurrentTextureStatus_SuccessSuboptimal) {
         return Err<void>("Failed to get surface texture");
     }
-#else
-    if (surface_texture.status != WGPUSurfaceGetCurrentTextureStatus_Success) {
-        return Err<void>("Failed to get surface texture");
-    }
-#endif
 
     // Create texture view
     WGPUTextureViewDescriptor view_desc = {};
@@ -912,6 +881,7 @@ Result<void> App::_end_frame() {
     color_attachment.loadOp = WGPULoadOp_Clear;
     color_attachment.storeOp = WGPUStoreOp_Store;
     color_attachment.clearValue = {0.1f, 0.1f, 0.1f, 1.0f};
+    color_attachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
 
     WGPURenderPassDescriptor render_pass_desc = {};
     render_pass_desc.colorAttachmentCount = 1;

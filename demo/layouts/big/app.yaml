@@ -379,5 +379,5 @@ widgets:
 
 
 app:
-  widget: app.main-window
+  root-widget: app.main-window
   main-data: log-tree

@@ -1,6 +1,7 @@
 // editor widget plugin - unified layout editor with widgets, data, and properties
 #include "../../../frontend/widget.hpp"
 #include "../../../frontend/widget_factory.hpp"
+#include "../../../plugin_manager.hpp"
 #include "../../../types.hpp"
 #include "shared_model.hpp"
 #include <imgui.h>
@@ -139,6 +140,15 @@ private:
                 if (ImGui::MenuItem(tt.name.c_str())) {
                     std::string name = _generate_default_name(tt.name);
                     model.add_data_entry(tt.name, name);
+
+                    // Instantiate the live tree
+                    auto tree_res = _widget_factory->plugin_manager()->create_tree(tt.name, _dispatcher);
+                    if (tree_res) {
+                        model.set_live_tree(name, *tree_res);
+                        spdlog::info("Editor: created live tree '{}' of type '{}'", name, tt.name);
+                    } else {
+                        spdlog::warn("Editor: failed to create tree '{}': {}", name, error_msg(tree_res));
+                    }
                 }
                 if (ImGui::IsItemHovered()) {
                     ImGui::BeginTooltip();
@@ -386,11 +396,6 @@ private:
             _render_properties_editor(widget);
         }
 
-        // Set Data Path
-        if (ImGui::CollapsingHeader("Data Binding")) {
-            _render_data_binding_editor();
-        }
-
         ImGui::Separator();
 
         // Change Type
@@ -451,51 +456,143 @@ private:
 
     void _render_properties_editor(const Value& widget) {
         auto& model = SharedLayoutModel::instance();
+
+        static std::map<std::string, std::string> label_buffers;
+        static std::map<std::string, std::string> datapath_buffers;
+
+        std::string path_key;
+        for (size_t i : _current_path) path_key += "_" + std::to_string(i);
+
+        // Label field
         std::string label = SharedLayoutModel::get_label(widget);
-
-        static std::map<std::string, std::string> buffers;
-        std::string key = "label_" + std::to_string(_current_path.size());
-        for (size_t i : _current_path) key += "_" + std::to_string(i);
-
-        if (buffers.find(key) == buffers.end()) {
-            buffers[key] = label;
+        std::string label_key = "label" + path_key;
+        if (label_buffers.find(label_key) == label_buffers.end()) {
+            label_buffers[label_key] = label;
         }
 
-        char buf[256];
-        strncpy(buf, buffers[key].c_str(), sizeof(buf) - 1);
-        buf[sizeof(buf) - 1] = '\0';
+        char label_buf[256];
+        strncpy(label_buf, label_buffers[label_key].c_str(), sizeof(label_buf) - 1);
+        label_buf[sizeof(label_buf) - 1] = '\0';
 
         ImGui::Text("label:");
         ImGui::SameLine();
         ImGui::SetNextItemWidth(150);
-        if (ImGui::InputText("##label", buf, sizeof(buf))) {
-            buffers[key] = buf;
-            model.set_label_at(_current_path, buf);
+        if (ImGui::InputText("##label", label_buf, sizeof(label_buf))) {
+            label_buffers[label_key] = label_buf;
+            model.set_label_at(_current_path, label_buf);
         }
-    }
 
-    void _render_data_binding_editor() {
-        auto& model = SharedLayoutModel::instance();
-        auto& entries = model.data_entries();
+        // Data-path field
+        std::string data_path = SharedLayoutModel::get_data_path(widget);
+        std::string dp_key = "datapath" + path_key;
+        if (datapath_buffers.find(dp_key) == datapath_buffers.end()) {
+            datapath_buffers[dp_key] = data_path;
+        }
+
+        char dp_buf[256];
+        strncpy(dp_buf, datapath_buffers[dp_key].c_str(), sizeof(dp_buf) - 1);
+        dp_buf[sizeof(dp_buf) - 1] = '\0';
 
         ImGui::Text("data-path:");
         ImGui::SameLine();
+        ImGui::SetNextItemWidth(120);
+        if (ImGui::InputText("##datapath", dp_buf, sizeof(dp_buf))) {
+            datapath_buffers[dp_key] = dp_buf;
+            model.set_data_path_at(_current_path, dp_buf);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button(">##browse_datapath")) {
+            ImGui::OpenPopup("datapath_browser");
+        }
+        if (ImGui::IsItemHovered()) {
+            ImGui::BeginTooltip();
+            ImGui::Text("Browse data trees");
+            ImGui::EndTooltip();
+        }
 
-        // Show available data entries
-        if (entries.empty()) {
-            ImGui::TextDisabled("(no data entries)");
-        } else {
-            if (ImGui::BeginCombo("##datapath", "(select)")) {
-                for (const auto& entry : entries) {
-                    std::string path = "$" + entry.name + "@/";
-                    if (ImGui::Selectable(path.c_str())) {
-                        // TODO: Set data-path on selected widget
-                        spdlog::info("Selected data-path: {}", path);
+        // Data path browser popup
+        if (ImGui::BeginPopup("datapath_browser")) {
+            ImGui::Text("Select data path:");
+            ImGui::Separator();
+
+            // Get available trees from SharedLayoutModel (live trees)
+            auto tree_names = model.live_tree_names();
+            if (tree_names.empty()) {
+                ImGui::TextDisabled("No data trees available");
+                ImGui::TextDisabled("Add a data entry in Data section");
+            } else {
+                for (const auto& tree_name : tree_names) {
+                    std::string base_path = "$" + tree_name + "@";
+                    if (_render_tree_browser(tree_name, DataPath::root(), base_path, dp_key, datapath_buffers)) {
+                        ImGui::CloseCurrentPopup();
                     }
                 }
-                ImGui::EndCombo();
             }
+            ImGui::EndPopup();
         }
+
+        ImGui::SameLine();
+        ImGui::TextDisabled("(?)");
+        if (ImGui::IsItemHovered()) {
+            ImGui::BeginTooltip();
+            ImGui::Text("Format: $tree-name@/path/to/data");
+            ImGui::Text("Example: $kernel@/providers/waveform");
+            ImGui::EndTooltip();
+        }
+    }
+
+    // Render tree browser node, returns true if a path was selected
+    bool _render_tree_browser(const std::string& tree_name, const DataPath& path,
+                               const std::string& current_path_str,
+                               const std::string& dp_key, std::map<std::string, std::string>& buffers) {
+        auto& model = SharedLayoutModel::instance();
+        bool selected = false;
+
+        // Get children at this path from SharedLayoutModel's live trees
+        auto children_res = model.get_tree_children(tree_name, path);
+        std::vector<std::string> children;
+        if (children_res) {
+            children = *children_res;
+        }
+
+        bool has_children = !children.empty();
+        std::string node_label = path.is_root() ? tree_name : path.filename();
+
+        ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow;
+        if (!has_children) {
+            flags |= ImGuiTreeNodeFlags_Leaf;
+        }
+
+        std::string display_path = current_path_str + "/";
+        bool is_open = ImGui::TreeNodeEx((node_label + "##" + display_path).c_str(), flags);
+
+        // Click on label (not arrow) selects this path
+        if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
+            buffers[dp_key] = display_path;
+            model.set_data_path_at(_current_path, display_path);
+            selected = true;
+        }
+
+        // Show tooltip with full path
+        if (ImGui::IsItemHovered()) {
+            ImGui::BeginTooltip();
+            ImGui::Text("%s", display_path.c_str());
+            ImGui::EndTooltip();
+        }
+
+        if (is_open) {
+            // Render children
+            for (const auto& child_name : children) {
+                DataPath child_path = path / child_name;
+                std::string child_path_str = current_path_str + "/" + child_name;
+                if (_render_tree_browser(tree_name, child_path, child_path_str, dp_key, buffers)) {
+                    selected = true;
+                }
+            }
+            ImGui::TreePop();
+        }
+
+        return selected;
     }
 
     void _render_widget_menu(const std::function<void(const std::string&)>& on_select) {

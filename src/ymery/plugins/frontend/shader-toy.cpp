@@ -187,20 +187,20 @@ private:
         _queue = wgpuDeviceGetQueue(device);
 
         // Create shader module
-        WGPUShaderModuleWGSLDescriptor wgslDesc = {};
-        wgslDesc.chain.sType = WGPUSType_ShaderModuleWGSLDescriptor;
-        wgslDesc.code = SHADER_SOURCE;
+        WGPUShaderSourceWGSL wgslDesc = {};
+        wgslDesc.chain.sType = WGPUSType_ShaderSourceWGSL;
+        wgslDesc.code = {SHADER_SOURCE, WGPU_STRLEN};
 
         WGPUShaderModuleDescriptor moduleDesc = {};
         moduleDesc.nextInChain = &wgslDesc.chain;
-        moduleDesc.label = "shader-toy";
+        moduleDesc.label = {"shader-toy", WGPU_STRLEN};
 
         _shaderModule = wgpuDeviceCreateShaderModule(device, &moduleDesc);
         if (!_shaderModule) return false;
 
         // Create uniform buffer
         WGPUBufferDescriptor bufDesc = {};
-        bufDesc.label = "shader-toy uniforms";
+        bufDesc.label = {"shader-toy uniforms", WGPU_STRLEN};
         bufDesc.size = sizeof(ShaderToyUniforms);
         bufDesc.usage = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;
         _uniformBuffer = wgpuDeviceCreateBuffer(device, &bufDesc);
@@ -256,15 +256,15 @@ private:
 
         WGPUFragmentState fragState = {};
         fragState.module = _shaderModule;
-        fragState.entryPoint = "fs_main";
+        fragState.entryPoint = {"fs_main", WGPU_STRLEN};
         fragState.targetCount = 1;
         fragState.targets = &colorTarget;
 
         WGPURenderPipelineDescriptor pipelineDesc = {};
-        pipelineDesc.label = "shader-toy pipeline";
+        pipelineDesc.label = {"shader-toy pipeline", WGPU_STRLEN};
         pipelineDesc.layout = _pipelineLayout;
         pipelineDesc.vertex.module = _shaderModule;
-        pipelineDesc.vertex.entryPoint = "vs_main";
+        pipelineDesc.vertex.entryPoint = {"vs_main", WGPU_STRLEN};
         pipelineDesc.fragment = &fragState;
         pipelineDesc.primitive.topology = WGPUPrimitiveTopology_TriangleList;
         pipelineDesc.primitive.cullMode = WGPUCullMode_None;

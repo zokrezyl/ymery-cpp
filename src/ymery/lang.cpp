@@ -2,8 +2,53 @@
 #include <fstream>
 #include <queue>
 #include <algorithm>
+#include <sstream>
 
 namespace ymery {
+
+// Builtin filesystem browser layout - shown when no layout is specified
+static const char* BUILTIN_YAML = R"(
+widgets:
+  # Recursive filesystem tree display
+  fs-recursive:
+    type: composite
+    body:
+      - foreach-child:
+          - tree-node:
+              body: builtin.fs-recursive
+
+  # Main filesystem browser window
+  filesystem-browser:
+    type: imgui-main-window
+    label: "Ymery - Filesystem Browser"
+    window-size: [900, 600]
+    body:
+      - text:
+          content: "Filesystem Browser"
+      - separator
+      - text:
+          content: "Navigate to a layout file (.yaml) to open it"
+      - separator
+      - child:
+          size: [0, 0]
+          border: true
+          body:
+            - collapsing-header:
+                label: "Available Locations"
+                data-path: /available
+                default-open: true
+                body:
+                  - builtin.fs-recursive:
+            - collapsing-header:
+                label: "Recent Files"
+                data-path: /opened
+                body:
+                  - builtin.fs-recursive:
+
+app:
+  root-widget: builtin.filesystem-browser
+  data-tree: filesystem
+)";
 
 Result<std::shared_ptr<Lang>> Lang::create(
     const std::vector<std::filesystem::path>& layout_paths,
@@ -20,11 +65,23 @@ Result<std::shared_ptr<Lang>> Lang::create(
     return lang;
 }
 
+const char* Lang::_get_builtin_yaml() {
+    return BUILTIN_YAML;
+}
+
 Result<void> Lang::init() {
-    // Breadth-first loading starting from main module and builtin
+    // Breadth-first loading starting from main module
     std::queue<std::pair<std::string, std::string>> to_load; // (module_name, namespace)
+
+    // Always load builtin first (from embedded string)
+    if (auto res = _load_module_from_string(BUILTIN_YAML, "builtin", to_load); !res) {
+        // Builtin should always work, but don't fail if it doesn't
+    } else {
+        _loaded_modules.insert("builtin");
+    }
+
+    // Then load main module
     to_load.push({_main_module, _main_module});
-    to_load.push({"builtin", "builtin"});  // Load builtin layouts like Python
 
     while (!to_load.empty()) {
         auto [module_name, ns] = to_load.front();
@@ -36,10 +93,6 @@ Result<void> Lang::init() {
 
         auto res = _load_module(module_name, ns, to_load);
         if (!res) {
-            // builtin module is optional - don't fail if not found
-            if (module_name == "builtin") {
-                continue;
-            }
             return Err<void>("Lang::init: failed to load module '" + module_name + "'", res);
         }
 
@@ -97,6 +150,52 @@ Result<void> Lang::_load_module(
 
     // Process 'app' section
     if (root["app"]) {
+        _app_config = _yaml_to_dict(root["app"]);
+    }
+
+    return Ok();
+}
+
+Result<void> Lang::_load_module_from_string(
+    const std::string& yaml_content,
+    const std::string& namespace_,
+    std::queue<std::pair<std::string, std::string>>& to_load
+) {
+    // Parse YAML from string
+    YAML::Node root;
+    try {
+        root = YAML::Load(yaml_content);
+    } catch (const YAML::Exception& e) {
+        return Err<void>("Lang::_load_module_from_string: YAML parse error: " + std::string(e.what()));
+    }
+
+    // Process 'import' section - queue imported modules for loading
+    if (root["import"]) {
+        for (const auto& import_node : root["import"]) {
+            std::string import_name = import_node.as<std::string>();
+            to_load.push({import_name, import_name});
+        }
+    }
+
+    // Process 'widgets' section
+    if (root["widgets"]) {
+        for (const auto& kv : root["widgets"]) {
+            std::string widget_name = kv.first.as<std::string>();
+            std::string full_name = namespace_ + "." + widget_name;
+            _widget_definitions[full_name] = _yaml_to_dict(kv.second);
+        }
+    }
+
+    // Process 'data' section
+    if (root["data"]) {
+        for (const auto& kv : root["data"]) {
+            std::string data_name = kv.first.as<std::string>();
+            _data_definitions[data_name] = _yaml_to_dict(kv.second);
+        }
+    }
+
+    // Process 'app' section - only if not already set by main module
+    if (root["app"] && _app_config.empty()) {
         _app_config = _yaml_to_dict(root["app"]);
     }
 

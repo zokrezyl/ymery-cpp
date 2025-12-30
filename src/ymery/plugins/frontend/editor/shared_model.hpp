@@ -225,6 +225,12 @@ public:
         _bump_version();
     }
 
+    // Set data-path at path
+    void set_data_path_at(const SelectionPath& path, const std::string& data_path) {
+        _root = _set_data_path_recursive(_root, path, 0, data_path);
+        _bump_version();
+    }
+
     // Move node up (swap with previous sibling)
     bool can_move_up(const SelectionPath& path) const {
         if (path.empty()) return false;
@@ -297,6 +303,18 @@ public:
         return uid ? *uid : "";
     }
 
+    // Get data-path from widget
+    static std::string get_data_path(const Value& widget) {
+        auto dict = get_as<Dict>(widget);
+        if (!dict || dict->empty()) return "";
+        auto props = get_as<Dict>(dict->begin()->second);
+        if (!props) return "";
+        auto dp_it = props->find("data-path");
+        if (dp_it == props->end()) return "";
+        auto dp = get_as<std::string>(dp_it->second);
+        return dp ? *dp : "";
+    }
+
     // Set label on widget
     static void set_label(Value& widget, const std::string& label) {
         auto dict = get_as<Dict>(widget);
@@ -351,9 +369,45 @@ public:
 
     void remove_data_entry(size_t idx) {
         if (idx < _data_entries.size()) {
+            // Also remove live tree if exists
+            if (idx < _data_entries.size()) {
+                _live_trees.erase(_data_entries[idx].name);
+            }
             _data_entries.erase(_data_entries.begin() + idx);
             _bump_version();
         }
+    }
+
+    // ========== Live Tree Management ==========
+
+    void set_live_tree(const std::string& name, TreeLikePtr tree) {
+        _live_trees[name] = tree;
+        _bump_version();
+    }
+
+    TreeLikePtr get_live_tree(const std::string& name) const {
+        auto it = _live_trees.find(name);
+        return it != _live_trees.end() ? it->second : nullptr;
+    }
+
+    const std::map<std::string, TreeLikePtr>& live_trees() const {
+        return _live_trees;
+    }
+
+    std::vector<std::string> live_tree_names() const {
+        std::vector<std::string> names;
+        for (const auto& [name, tree] : _live_trees) {
+            names.push_back(name);
+        }
+        return names;
+    }
+
+    Result<std::vector<std::string>> get_tree_children(const std::string& name, const DataPath& path) const {
+        auto tree = get_live_tree(name);
+        if (!tree) {
+            return Err<std::vector<std::string>>("Tree '" + name + "' not found");
+        }
+        return tree->get_children_names(path);
     }
 
     void add_child_to_data_entry(size_t entry_idx, const std::string& type, const std::string& name) {
@@ -393,6 +447,7 @@ private:
     Value _root;
     SelectionPath _selection;
     std::vector<DataEntry> _data_entries;
+    std::map<std::string, TreeLikePtr> _live_trees;
     uint64_t _version = 0;
 
     // Navigate to a node by path
@@ -611,6 +666,46 @@ private:
         size_t idx = path[depth];
         if (idx < body.size()) {
             body[idx] = _set_label_recursive(body[idx], path, depth + 1, label);
+        }
+
+        new_props["body"] = Value(body);
+        Dict new_node;
+        new_node[type] = Value(new_props);
+        return Value(new_node);
+    }
+
+    // Set data-path at path
+    Value _set_data_path_recursive(const Value& node, const SelectionPath& path, size_t depth, const std::string& data_path) {
+        auto dict = get_as<Dict>(node);
+        if (!dict || dict->empty()) return node;
+
+        std::string type = dict->begin()->first;
+        auto props = get_as<Dict>(dict->begin()->second);
+        Dict new_props = props ? *props : Dict{};
+
+        if (path.empty() || depth >= path.size()) {
+            // Set data-path on this node
+            if (data_path.empty()) {
+                new_props.erase("data-path");
+            } else {
+                new_props["data-path"] = data_path;
+            }
+            Dict new_node;
+            new_node[type] = Value(new_props);
+            return Value(new_node);
+        }
+
+        List body;
+        auto body_it = new_props.find("body");
+        if (body_it != new_props.end()) {
+            if (auto existing = get_as<List>(body_it->second)) {
+                body = *existing;
+            }
+        }
+
+        size_t idx = path[depth];
+        if (idx < body.size()) {
+            body[idx] = _set_data_path_recursive(body[idx], path, depth + 1, data_path);
         }
 
         new_props["body"] = Value(body);

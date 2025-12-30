@@ -32,4 +32,4 @@ widgets:
           size: [800, 500]
 
 app:
-  widget: app.main-window
+  root-widget: app.main-window

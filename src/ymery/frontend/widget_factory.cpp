@@ -172,13 +172,13 @@ Result<WidgetPtr> WidgetFactory::create_root_widget() {
     std::map<std::string, TreeLikePtr> data_trees;
     data_trees["data"] = _data_tree;
 
-    // Get root widget name from app config (Python pattern: app.widget)
+    // Get root widget name from app config (e.g., app.root-widget: app.main-window)
     std::string widget_name;
-    auto widget_it = app_config.find("widget");
+    auto widget_it = app_config.find("root-widget");
     if (widget_it != app_config.end()) {
         if (auto name = get_as<std::string>(widget_it->second)) {
             widget_name = *name;
-            spdlog::info("Found 'widget' in app config: {}", widget_name);
+            spdlog::info("Found 'root-widget' in app config: {}", widget_name);
         }
     }
 

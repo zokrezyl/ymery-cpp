@@ -48,6 +48,10 @@ public:
     Result<std::string> get_data_path_str();
     std::string main_data_key() const { return _main_data_key; }
 
+    // Tree browsing (for editor/inspector use)
+    std::vector<std::string> get_tree_names() const;
+    Result<std::vector<std::string>> get_tree_children(const std::string& tree_name, const DataPath& path);
+
     // Child management
     Result<void> add_child(const Dict& child_spec);
 

@@ -140,4 +140,4 @@ widgets:
     type: logs-view
 
 app:
-  widget: app.main-widget
+  root-widget: app.main-widget

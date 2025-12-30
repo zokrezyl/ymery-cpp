@@ -2,6 +2,7 @@
 // In C++, the App class manages the window, so this just renders body children
 #include "../../frontend/composite.hpp"
 #include "../../frontend/widget_factory.hpp"
+#include "../../plugin_export.hpp"
 #include <imgui.h>
 #include <spdlog/spdlog.h>
 
@@ -43,9 +44,9 @@ protected:
 
 } // namespace ymery::plugins
 
-extern "C" const char* name() { return "imgui-main-window"; }
-extern "C" const char* type() { return "widget"; }
-extern "C" ymery::Result<ymery::WidgetPtr> create(
+extern "C" const char* PLUGIN_EXPORT_NAME() { return "imgui-main-window"; }
+extern "C" const char* PLUGIN_EXPORT_TYPE() { return "widget"; }
+extern "C" ymery::Result<ymery::WidgetPtr> PLUGIN_EXPORT_CREATE(
     std::shared_ptr<ymery::WidgetFactory> wf,
     std::shared_ptr<ymery::Dispatcher> d,
     const std::string& ns,

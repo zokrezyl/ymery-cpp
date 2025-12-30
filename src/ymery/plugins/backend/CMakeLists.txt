@@ -7,6 +7,21 @@ else()
     set(PLUGIN_OUTPUT_DIR "${CMAKE_BINARY_DIR}/plugins")
 endif()
 
+# For Emscripten: compile plugins as side modules for dynamic linking
+if(YMERY_WEB)
+    set(EMSCRIPTEN_SIDE_MODULE_FLAGS "-sSIDE_MODULE=1 -sEXPORTED_FUNCTIONS=['_name','_type','_create'] -sEXPORT_ALL=1")
+endif()
+
+# Helper macro to configure a plugin target (handles Emscripten side module flags)
+macro(configure_plugin target)
+    if(YMERY_WEB)
+        set_target_properties(${target} PROPERTIES
+            SUFFIX ".wasm"
+            LINK_FLAGS "${EMSCRIPTEN_SIDE_MODULE_FLAGS}"
+        )
+    endif()
+endmacro()
+
 set(BACKEND_PLUGINS
     simple-data-tree
     data-tree
@@ -26,6 +41,7 @@ foreach(plugin ${BACKEND_PLUGINS})
         LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO "${PLUGIN_OUTPUT_DIR}"
         LIBRARY_OUTPUT_DIRECTORY_MINSIZEREL "${PLUGIN_OUTPUT_DIR}"
     )
+    configure_plugin(${plugin})
 endforeach()
 
 # Waveform plugin (requires threading)
@@ -41,6 +57,10 @@ set_target_properties(waveform PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO "${PLUGIN_OUTPUT_DIR}"
     LIBRARY_OUTPUT_DIRECTORY_MINSIZEREL "${PLUGIN_OUTPUT_DIR}"
 )
+configure_plugin(waveform)
+
+# Platform-specific audio plugins (not available on web)
+if(NOT YMERY_WEB)
 
 # ALSA plugin (Linux only)
 if(UNIX AND NOT APPLE AND NOT YMERY_ANDROID)
@@ -141,6 +161,8 @@ if(APPLE)
         message(STATUS "Core Audio frameworks not found - coreaudio plugin disabled")
     endif()
 endif()
+
+endif() # NOT YMERY_WEB
 
 # Filesystem plugin (exposes both tree-like and device-manager)
 add_subdirectory(filesystem)

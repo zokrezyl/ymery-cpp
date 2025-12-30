@@ -1,5 +1,19 @@
 # Filesystem plugin - exposes both tree-like and device-manager interfaces
 
+# For Emscripten: compile plugins as side modules for dynamic linking
+if(YMERY_WEB)
+    set(EMSCRIPTEN_SIDE_MODULE_FLAGS "-sSIDE_MODULE=1 -sEXPORTED_FUNCTIONS=['_name','_type','_create'] -sEXPORT_ALL=1")
+endif()
+
+macro(configure_plugin target)
+    if(YMERY_WEB)
+        set_target_properties(${target} PROPERTIES
+            SUFFIX ".wasm"
+            LINK_FLAGS "${EMSCRIPTEN_SIDE_MODULE_FLAGS}"
+        )
+    endif()
+endmacro()
+
 # Shared implementation as object library
 add_library(filesystem_common OBJECT common.cpp)
 target_include_directories(filesystem_common PRIVATE ${CMAKE_SOURCE_DIR}/src)
@@ -18,6 +32,7 @@ set_target_properties(filesystem PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO "${PLUGIN_OUTPUT_DIR}"
     LIBRARY_OUTPUT_DIRECTORY_MINSIZEREL "${PLUGIN_OUTPUT_DIR}"
 )
+configure_plugin(filesystem)
 
 # Device-manager plugin (for kernel: /providers/filesystem)
 add_library(filesystem-provider SHARED device.cpp $<TARGET_OBJECTS:filesystem_common>)
@@ -32,3 +47,4 @@ set_target_properties(filesystem-provider PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO "${PLUGIN_OUTPUT_DIR}"
     LIBRARY_OUTPUT_DIRECTORY_MINSIZEREL "${PLUGIN_OUTPUT_DIR}"
 )
+configure_plugin(filesystem-provider)

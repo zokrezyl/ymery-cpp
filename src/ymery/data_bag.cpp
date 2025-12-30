@@ -323,4 +323,20 @@ Result<std::string> DataBag::_interpolate(const std::string& str) {
     return Ok(output);
 }
 
+std::vector<std::string> DataBag::get_tree_names() const {
+    std::vector<std::string> names;
+    for (const auto& [name, tree] : _data_trees) {
+        names.push_back(name);
+    }
+    return names;
+}
+
+Result<std::vector<std::string>> DataBag::get_tree_children(const std::string& tree_name, const DataPath& path) {
+    auto it = _data_trees.find(tree_name);
+    if (it == _data_trees.end()) {
+        return Err<std::vector<std::string>>("DataBag::get_tree_children: tree '" + tree_name + "' not found");
+    }
+    return it->second->get_children_names(path);
+}
+
 } // namespace ymery

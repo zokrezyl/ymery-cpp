@@ -114,4 +114,4 @@ widgets:
                       end_note: 72
 
 app:
-  widget: app.main-window
+  root-widget: app.main-window

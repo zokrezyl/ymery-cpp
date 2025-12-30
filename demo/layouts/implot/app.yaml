@@ -99,5 +99,5 @@ widgets:
 
 
 app:
-  widget: app.main-window
+  root-widget: app.main-window
   data-tree: waveform

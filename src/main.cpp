@@ -29,17 +29,21 @@ int main(int argc, char* argv[]) {
                 plugin_paths.push_back(argv[++i]);
             }
         } else if (arg == "-h" || arg == "--help") {
-            std::cout << "Usage: ymery [options]\n"
+            std::cout << "Usage: ymery [options] [layout-file]\n"
                       << "Options:\n"
                       << "  -p, --layouts-path <path>  Add layout search path (for imports)\n"
-                      << "  -m, --main <file>          Main layout file (default: app.yaml)\n"
+                      << "  -m, --main <file>          Main layout file\n"
                       << "  --plugins-path <path>      Add plugin search path\n"
                       << "  -h, --help                 Show this help\n"
                       << "\nExamples:\n"
-                      << "  ymery -m /home/user/layouts/app.yaml\n"
+                      << "  ymery                                   # Opens builtin file browser\n"
+                      << "  ymery /home/user/layouts/app.yaml\n"
                       << "  ymery -m layouts/app.yaml\n"
-                      << "  ymery -m app.yaml -p /path/to/shared/layouts\n";
+                      << "  ymery app.yaml -p /path/to/shared/layouts\n";
             return 0;
+        } else if (main_file.empty()) {
+            // First positional arg is the main file
+            main_file = arg;
         } else {
             // Treat as layout path - if it's a file, use its parent directory
             std::filesystem::path path(arg);
@@ -51,31 +55,45 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    // Default main file
+    // Determine main module
+    std::string main_module;
+    bool use_builtin = false;
+
     if (main_file.empty()) {
-        main_file = "app.yaml";
+#ifdef YMERY_WEB
+        // Web build: use preloaded simple demo (filesystem plugin not available on web)
+        main_file = "/demo/simple/app.yaml";
+        spdlog::info("Web build: using preloaded demo at {}", main_file.string());
+#else
+        // Native build: use builtin filesystem browser
+        main_module = "builtin";
+        use_builtin = true;
+        spdlog::info("No layout specified, using builtin filesystem browser");
+#endif
     }
 
-    // Resolve main file path (relative to current directory if not absolute)
-    if (!main_file.is_absolute()) {
-        main_file = std::filesystem::current_path() / main_file;
+    if (!use_builtin) {
+        // Resolve main file path (relative to current directory if not absolute)
+        if (!main_file.is_absolute()) {
+            main_file = std::filesystem::current_path() / main_file;
+        }
+
+        // Check if main file exists
+        if (!std::filesystem::exists(main_file)) {
+            std::cerr << "Error: Main file not found: " << main_file << std::endl;
+            return 1;
+        }
+
+        // Add main file's directory to layout_paths (at the front for highest priority)
+        auto main_dir = main_file.parent_path();
+        layout_paths.insert(layout_paths.begin(), main_dir);
+
+        // Extract module name from file (strip .yaml extension)
+        main_module = main_file.stem().string();
+
+        spdlog::info("Main file: {}", main_file.string());
+        spdlog::info("Main module: {}", main_module);
     }
-
-    // Check if main file exists
-    if (!std::filesystem::exists(main_file)) {
-        std::cerr << "Error: Main file not found: " << main_file << std::endl;
-        return 1;
-    }
-
-    // Add main file's directory to layout_paths (at the front for highest priority)
-    auto main_dir = main_file.parent_path();
-    layout_paths.insert(layout_paths.begin(), main_dir);
-
-    // Extract module name from file (strip .yaml extension)
-    std::string main_module = main_file.stem().string();
-
-    spdlog::info("Main file: {}", main_file.string());
-    spdlog::info("Main module: {}", main_module);
     for (const auto& p : layout_paths) {
         spdlog::info("Layout path: {}", p.string());
     }

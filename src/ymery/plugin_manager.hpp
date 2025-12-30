@@ -18,7 +18,7 @@ class Widget;
 class PluginManager;
 using WidgetPtr = std::shared_ptr<Widget>;
 
-// Plugin create function types
+// Plugin create function types (std::function for flexibility)
 using WidgetCreateFn = std::function<Result<WidgetPtr>(
     std::shared_ptr<WidgetFactory>,
     std::shared_ptr<Dispatcher>,
@@ -30,6 +30,19 @@ using TreeLikeCreateFn = std::function<Result<TreeLikePtr>(
     std::shared_ptr<Dispatcher>,
     std::shared_ptr<PluginManager>
 )>;
+
+// Raw function pointer types (for static plugins and dlsym)
+using WidgetCreateFnPtr = Result<WidgetPtr>(*)(
+    std::shared_ptr<WidgetFactory>,
+    std::shared_ptr<Dispatcher>,
+    const std::string&,
+    std::shared_ptr<DataBag>
+);
+
+using TreeLikeCreateFnPtr = Result<TreeLikePtr>(*)(
+    std::shared_ptr<Dispatcher>,
+    std::shared_ptr<PluginManager>
+);
 
 // Plugin metadata
 struct PluginMeta {

@@ -82,5 +82,5 @@ widgets:
                       data-path: /opened/triangle/0
 
 app:
-  widget: app.main-window
+  root-widget: app.main-window
   data-tree: waveform

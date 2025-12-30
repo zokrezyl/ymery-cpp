@@ -37,7 +37,15 @@ private:
         const std::string& namespace_,
         std::queue<std::pair<std::string, std::string>>& to_load
     );
+    Result<void> _load_module_from_string(
+        const std::string& yaml_content,
+        const std::string& namespace_,
+        std::queue<std::pair<std::string, std::string>>& to_load
+    );
     Result<std::filesystem::path> _resolve_module_path(const std::string& module_name);
+
+    // Builtin layouts
+    static const char* _get_builtin_yaml();
 
     // YAML to Dict conversion
     static Dict _yaml_to_dict(const YAML::Node& node);

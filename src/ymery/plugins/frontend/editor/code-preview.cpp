@@ -7,6 +7,7 @@
 #include <TextEditor.h>
 #include <spdlog/spdlog.h>
 #include <sstream>
+#include <set>
 
 namespace ymery::plugins {
 
@@ -47,8 +48,8 @@ protected:
     Result<void> _pre_render_head() override {
         auto& model = SharedLayoutModel::instance();
 
-        // Convert model to YAML string
-        std::string yaml = _to_yaml(model.root(), 0);
+        // Generate complete YAML structure
+        std::string yaml = _generate_full_yaml(model);
 
         // Update editor if content changed
         if (yaml != _last_yaml) {
@@ -71,19 +72,181 @@ protected:
 private:
     TextEditor _editor;
     std::string _last_yaml;
+    std::set<std::string> _used_types;
 
-    // Convert Value to YAML string
-    std::string _to_yaml(const Value& value, int indent) {
-        std::string prefix(indent * 2, ' ');
+    // Generate complete YAML with data, widgets, and app sections
+    std::string _generate_full_yaml(SharedLayoutModel& model) {
+        std::string result;
+        _used_types.clear();
 
-        // Empty value
-        if (!value.has_value()) {
-            return prefix + "~\n";
+        // Collect all widget types used in the tree
+        if (!model.empty()) {
+            _collect_types(model.root());
         }
 
-        // String
+        // 1. Data section (if any data entries)
+        auto& entries = model.data_entries();
+        if (!entries.empty()) {
+            result += "data:\n";
+            for (const auto& entry : entries) {
+                result += _data_entry_to_yaml(entry, 1);
+            }
+            result += "\n";
+        }
+
+        // 2. Widgets section
+        result += "widgets:\n";
+
+        // First output widget type definitions
+        for (const auto& type : _used_types) {
+            result += "  " + type + ":\n";
+            result += "    type: " + type + "\n";
+        }
+
+        // Then output the main widget
+        if (!model.empty()) {
+            result += "\n  # Main widget\n";
+            result += "  main-widget:\n";
+            result += _widget_to_yaml(model.root(), 2);
+        }
+
+        // 3. App section
+        result += "\napp:\n";
+        result += "  root-widget: app.main-widget\n";
+
+        // Include data-tree reference if data entries exist
+        if (!entries.empty()) {
+            // Use first data entry name as data-tree reference
+            result += "  data-tree: " + entries[0].name + "\n";
+        }
+
+        return result;
+    }
+
+    // Collect all widget types used in the tree
+    void _collect_types(const Value& widget) {
+        std::string type = SharedLayoutModel::get_widget_type(widget);
+        if (!type.empty()) {
+            _used_types.insert(type);
+        }
+
+        // Recursively collect from children
+        List body = SharedLayoutModel::get_body(widget);
+        for (const auto& child : body) {
+            _collect_types(child);
+        }
+    }
+
+    // Convert DataEntry to YAML
+    std::string _data_entry_to_yaml(const DataEntry& entry, int indent) {
+        std::string prefix(indent * 2, ' ');
+        std::string result;
+
+        result += prefix + entry.name + ":\n";
+        result += prefix + "  type: " + entry.type + "\n";
+
+        if (!entry.children.empty()) {
+            result += prefix + "  children:\n";
+            for (const auto& child : entry.children) {
+                result += _data_child_to_yaml(child, indent + 2);
+            }
+        }
+
+        return result;
+    }
+
+    // Convert DataEntry child to YAML
+    std::string _data_child_to_yaml(const DataEntry& entry, int indent) {
+        std::string prefix(indent * 2, ' ');
+        std::string result;
+
+        result += prefix + "- name: " + entry.name + "\n";
+        result += prefix + "  type: " + entry.type + "\n";
+
+        if (!entry.children.empty()) {
+            result += prefix + "  children:\n";
+            for (const auto& child : entry.children) {
+                result += _data_child_to_yaml(child, indent + 2);
+            }
+        }
+
+        return result;
+    }
+
+    // Convert widget to YAML (indented under main-widget)
+    std::string _widget_to_yaml(const Value& widget, int indent) {
+        std::string prefix(indent * 2, ' ');
+        std::string result;
+
+        auto dict = get_as<Dict>(widget);
+        if (!dict || dict->empty()) return result;
+
+        std::string type = dict->begin()->first;
+        auto props = get_as<Dict>(dict->begin()->second);
+
+        result += prefix + "type: " + type + "\n";
+
+        if (props) {
+            for (const auto& [key, val] : *props) {
+                // Skip uid in output
+                if (key == "uid") continue;
+
+                if (key == "body") {
+                    auto body = get_as<List>(val);
+                    if (body && !body->empty()) {
+                        result += prefix + "body:\n";
+                        for (const auto& child : *body) {
+                            result += _body_item_to_yaml(child, indent + 1);
+                        }
+                    }
+                } else {
+                    result += prefix + key + ": " + _value_to_string(val) + "\n";
+                }
+            }
+        }
+
+        return result;
+    }
+
+    // Convert body item (child widget) to YAML
+    std::string _body_item_to_yaml(const Value& widget, int indent) {
+        std::string prefix(indent * 2, ' ');
+        std::string result;
+
+        auto dict = get_as<Dict>(widget);
+        if (!dict || dict->empty()) return result;
+
+        std::string type = dict->begin()->first;
+        auto props = get_as<Dict>(dict->begin()->second);
+
+        result += prefix + "- " + type + ":\n";
+
+        if (props) {
+            for (const auto& [key, val] : *props) {
+                // Skip uid in output
+                if (key == "uid") continue;
+
+                if (key == "body") {
+                    auto body = get_as<List>(val);
+                    if (body && !body->empty()) {
+                        result += prefix + "    body:\n";
+                        for (const auto& child : *body) {
+                            result += _body_item_to_yaml(child, indent + 2);
+                        }
+                    }
+                } else {
+                    result += prefix + "    " + key + ": " + _value_to_string(val) + "\n";
+                }
+            }
+        }
+
+        return result;
+    }
+
+    // Convert a simple value to string
+    std::string _value_to_string(const Value& value) {
         if (auto s = get_as<std::string>(value)) {
-            // Check if needs quoting
+            // Quote if contains special chars
             if (s->find(':') != std::string::npos ||
                 s->find('#') != std::string::npos ||
                 s->find('\n') != std::string::npos ||
@@ -92,90 +255,18 @@ private:
             }
             return *s;
         }
-
-        // Int
         if (auto i = get_as<int>(value)) {
             return std::to_string(*i);
         }
-
-        // Double
         if (auto d = get_as<double>(value)) {
             std::ostringstream oss;
             oss << *d;
             return oss.str();
         }
-
-        // Bool
         if (auto b = get_as<bool>(value)) {
             return *b ? "true" : "false";
         }
-
-        // List
-        if (auto list = get_as<List>(value)) {
-            if (list->empty()) {
-                return "[]\n";
-            }
-            std::string result;
-            for (const auto& item : *list) {
-                result += prefix + "- ";
-                // Check if item is a dict (widget)
-                if (auto dict = get_as<Dict>(item)) {
-                    if (!dict->empty()) {
-                        auto& [key, val] = *dict->begin();
-                        result += key + ":\n";
-                        result += _dict_to_yaml(val, indent + 2);
-                    }
-                } else {
-                    result += _to_yaml(item, 0) + "\n";
-                }
-            }
-            return result;
-        }
-
-        // Dict (widget format: {type: {props}})
-        if (auto dict = get_as<Dict>(value)) {
-            if (dict->empty()) {
-                return "{}\n";
-            }
-            std::string result;
-            for (const auto& [key, val] : *dict) {
-                result += prefix + key + ":";
-                if (auto nested_dict = get_as<Dict>(val)) {
-                    result += "\n" + _dict_to_yaml(val, indent + 1);
-                } else if (auto nested_list = get_as<List>(val)) {
-                    result += "\n" + _to_yaml(val, indent + 1);
-                } else {
-                    result += " " + _to_yaml(val, 0) + "\n";
-                }
-            }
-            return result;
-        }
-
-        return "# unknown type\n";
-    }
-
-    std::string _dict_to_yaml(const Value& value, int indent) {
-        auto dict = get_as<Dict>(value);
-        if (!dict) return "";
-
-        std::string prefix(indent * 2, ' ');
-        std::string result;
-
-        for (const auto& [key, val] : *dict) {
-            // Skip uid in output for cleaner display
-            if (key == "uid") continue;
-
-            result += prefix + key + ":";
-            if (auto nested_dict = get_as<Dict>(val)) {
-                result += "\n" + _dict_to_yaml(val, indent + 1);
-            } else if (auto nested_list = get_as<List>(val)) {
-                result += "\n" + _to_yaml(val, indent + 1);
-            } else {
-                result += " " + _to_yaml(val, 0) + "\n";
-            }
-        }
-
-        return result;
+        return "~";
     }
 };
 

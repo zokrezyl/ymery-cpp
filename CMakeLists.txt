@@ -121,63 +121,61 @@ if(NOT YMERY_WEB AND NOT YMERY_ANDROID)
     )
 endif()
 
-# ImGui - use master for web (Dawn WebGPU support), docking for others
-if(YMERY_WEB)
-    CPMAddPackage(
-        NAME imgui
-        GITHUB_REPOSITORY ocornut/imgui
-        GIT_TAG master
-        DOWNLOAD_ONLY YES
-    )
-else()
-    CPMAddPackage(
-        NAME imgui
-        GITHUB_REPOSITORY ocornut/imgui
-        VERSION 1.91.6-docking
-        DOWNLOAD_ONLY YES
-    )
-endif()
+# ImGui - use docking branch for all builds (has both docking and latest WebGPU API support)
+CPMAddPackage(
+    NAME imgui
+    GITHUB_REPOSITORY ocornut/imgui
+    GIT_TAG docking
+    DOWNLOAD_ONLY YES
+)
 
 # WebGPU native library
 # Not needed for Emscripten - browser provides WebGPU
+# Uses pre-built wgpu-native v27+ for all native platforms
 if(YMERY_USE_WEBGPU AND NOT YMERY_WEB)
+    # Headers are shared between desktop and Android
+    set(WGPU_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/external/wgpu-native/include")
+
     if(YMERY_ANDROID)
         # Android: Use pre-built wgpu-native from android/ymery/app/libs
         # Downloaded by android/ymery/build-wgpu.sh script
-        set(WGPU_ANDROID_LIB "${CMAKE_CURRENT_SOURCE_DIR}/android/ymery/app/libs/arm64-v8a/libwgpu_native.so")
+        set(WGPU_LIB "${CMAKE_CURRENT_SOURCE_DIR}/android/ymery/app/libs/arm64-v8a/libwgpu_native.so")
 
-        if(NOT EXISTS "${WGPU_ANDROID_LIB}")
+        if(NOT EXISTS "${WGPU_LIB}")
             message(FATAL_ERROR
-                "wgpu-native Android library not found at ${WGPU_ANDROID_LIB}\n"
+                "wgpu-native Android library not found at ${WGPU_LIB}\n"
                 "Run 'make android-webgpu' or 'android/ymery/build-wgpu.sh' first to download it.")
         endif()
-
-        # Fetch headers from eliemichel's distribution (headers only)
-        CPMAddPackage(
-            NAME webgpu
-            GITHUB_REPOSITORY eliemichel/WebGPU-distribution
-            GIT_TAG wgpu-v0.19.4.1
-            DOWNLOAD_ONLY YES
-        )
-
-        # Create imported library target for Android
-        add_library(webgpu SHARED IMPORTED GLOBAL)
-        set_target_properties(webgpu PROPERTIES
-            IMPORTED_LOCATION "${WGPU_ANDROID_LIB}"
-            IMPORTED_NO_SONAME TRUE
-            INTERFACE_INCLUDE_DIRECTORIES "${webgpu_SOURCE_DIR}/include"
-        )
-        target_compile_definitions(webgpu INTERFACE WEBGPU_BACKEND_WGPU)
-
-        message(STATUS "Using wgpu-native for Android: ${WGPU_ANDROID_LIB}")
     else()
-        # Desktop: Use eliemichel's WebGPU-distribution
-        CPMAddPackage(
-            NAME webgpu
-            GITHUB_REPOSITORY eliemichel/WebGPU-distribution
-            GIT_TAG wgpu-v0.19.4.1
-        )
+        # Desktop: Use pre-built wgpu-native from external/wgpu-native
+        # Downloaded by scripts/build-wgpu-desktop.sh
+        set(WGPU_LIB "${CMAKE_CURRENT_SOURCE_DIR}/external/wgpu-native/lib/libwgpu_native.so")
+
+        if(NOT EXISTS "${WGPU_LIB}")
+            message(FATAL_ERROR
+                "wgpu-native library not found at ${WGPU_LIB}\n"
+                "Run 'scripts/build-wgpu-desktop.sh' first to download it.")
+        endif()
     endif()
+
+    if(NOT EXISTS "${WGPU_INCLUDE}/webgpu/webgpu.h")
+        message(FATAL_ERROR
+            "wgpu-native headers not found at ${WGPU_INCLUDE}\n"
+            "Run the appropriate build script first.")
+    endif()
+
+    # Create imported library target
+    add_library(webgpu SHARED IMPORTED GLOBAL)
+    set_target_properties(webgpu PROPERTIES
+        IMPORTED_LOCATION "${WGPU_LIB}"
+        IMPORTED_NO_SONAME TRUE
+        INTERFACE_INCLUDE_DIRECTORIES "${WGPU_INCLUDE};${WGPU_INCLUDE}/webgpu"
+    )
+    target_compile_definitions(webgpu INTERFACE WEBGPU_BACKEND_WGPU)
+
+    message(STATUS "Using wgpu-native v27+:")
+    message(STATUS "  Library: ${WGPU_LIB}")
+    message(STATUS "  Headers: ${WGPU_INCLUDE}")
 endif()
 
 if(imgui_ADDED)
@@ -228,7 +226,8 @@ if(imgui_ADDED)
         target_link_libraries(imgui PUBLIC android log EGL GLESv3)
     elseif(YMERY_USE_WEBGPU)
         # Native WebGPU (wgpu-native)
-        target_link_libraries(imgui PUBLIC glfw webgpu)
+        find_package(X11 REQUIRED)
+        target_link_libraries(imgui PUBLIC glfw webgpu X11::X11)
         target_compile_definitions(imgui PUBLIC
             YMERY_USE_WEBGPU=1
             IMGUI_IMPL_WEBGPU_BACKEND_WGPU=1
@@ -241,22 +240,13 @@ if(imgui_ADDED)
     endif()
 endif()
 
-# ImPlot - plotting library (use master for web to match imgui master)
-if(YMERY_WEB)
-    CPMAddPackage(
-        NAME implot
-        GITHUB_REPOSITORY epezent/implot
-        GIT_TAG master
-        DOWNLOAD_ONLY YES
-    )
-else()
-    CPMAddPackage(
-        NAME implot
-        GITHUB_REPOSITORY epezent/implot
-        VERSION 0.16
-        DOWNLOAD_ONLY YES
-    )
-endif()
+# ImPlot - plotting library (use master for imgui docking compatibility)
+CPMAddPackage(
+    NAME implot
+    GITHUB_REPOSITORY epezent/implot
+    GIT_TAG master
+    DOWNLOAD_ONLY YES
+)
 
 if(implot_ADDED)
     add_library(implot STATIC
@@ -451,6 +441,7 @@ set(YMERY_CORE_SOURCES
     src/ymery/frontend/composite.cpp
     src/ymery/backend/audio_buffer.cpp
     src/ymery/embedded.cpp
+    src/ymery/static_plugins.cpp
 )
 
 # App initialization
@@ -485,6 +476,7 @@ if(YMERY_WEB)
         imcoolbar
         imguizmo
         implot3d
+        imgui_color_text_edit
         spdlog::spdlog
     )
     # Add tl::expected include directory (header-only library)
@@ -564,10 +556,14 @@ if(NOT YMERY_ANDROID)
 
     if(YMERY_WEB)
         # Emscripten linker flags (emscripten 4.x+ uses ports)
+        # Plugins are compiled statically (no dlopen) - see static_plugins.cpp
+        # Preload demo layouts into virtual filesystem
         set_target_properties(ymery PROPERTIES
             SUFFIX ".html"
-            LINK_FLAGS "--use-port=contrib.glfw3 --use-port=emdawnwebgpu -sWASM=1 -sALLOW_MEMORY_GROWTH=1 -sNO_EXIT_RUNTIME=0 -sASSERTIONS=1"
+            LINK_FLAGS "--use-port=contrib.glfw3 --use-port=emdawnwebgpu -sWASM=1 -sALLOW_MEMORY_GROWTH=1 -sNO_EXIT_RUNTIME=0 -sASSERTIONS=1 --preload-file ${CMAKE_SOURCE_DIR}/demo/layouts@/demo"
         )
+        # Define YMERY_WEB for conditional code
+        target_compile_definitions(ymery PRIVATE YMERY_WEB=1)
     else()
         # Native: enable symbol exports for plugins
         set_target_properties(ymery PROPERTIES ENABLE_EXPORTS ON)
@@ -603,8 +599,44 @@ if(NOT YMERY_WEB AND NOT YMERY_ANDROID)
     endif()
 endif()
 
-# Plugins (desktop and Android - no dynamic loading on Web)
-if(NOT YMERY_WEB)
+# Plugins
+# For web builds, plugins are compiled statically with unique symbol names
+# For native builds, plugins are compiled as shared libraries for dynamic loading
+if(YMERY_WEB)
+    # Macro to add a static plugin for web builds
+    macro(add_web_plugin plugin_name source_file)
+        set(target_name ${plugin_name}_web_plugin)
+        add_library(${target_name} OBJECT ${source_file})
+        target_link_libraries(${target_name} PRIVATE ymery_lib imgui)
+        target_include_directories(${target_name} PRIVATE ${CMAKE_SOURCE_DIR}/src)
+        # Set plugin name prefix for unique export symbols
+        target_compile_definitions(${target_name} PRIVATE
+            YMERY_PLUGIN_NAME_PREFIX=${plugin_name}_plugin_
+        )
+        target_sources(ymery PRIVATE $<TARGET_OBJECTS:${target_name}>)
+    endmacro()
+
+    # Add minimal set of widget plugins for web demos
+    add_web_plugin(text src/ymery/plugins/frontend/text.cpp)
+    add_web_plugin(button src/ymery/plugins/frontend/button.cpp)
+    add_web_plugin(window src/ymery/plugins/frontend/window.cpp)
+    add_web_plugin(column src/ymery/plugins/frontend/column.cpp)
+    add_web_plugin(row src/ymery/plugins/frontend/row.cpp)
+    add_web_plugin(imgui_main_window src/ymery/plugins/frontend/imgui-main-window.cpp)
+    add_web_plugin(slider_int src/ymery/plugins/frontend/slider-int.cpp)
+    add_web_plugin(slider_float src/ymery/plugins/frontend/slider-float.cpp)
+    add_web_plugin(checkbox src/ymery/plugins/frontend/checkbox.cpp)
+    add_web_plugin(input_text src/ymery/plugins/frontend/input-text.cpp)
+    add_web_plugin(combo src/ymery/plugins/frontend/combo.cpp)
+    add_web_plugin(separator src/ymery/plugins/frontend/separator.cpp)
+    add_web_plugin(spacing src/ymery/plugins/frontend/spacing.cpp)
+    add_web_plugin(tree_node src/ymery/plugins/frontend/tree-node.cpp)
+    add_web_plugin(group src/ymery/plugins/frontend/group.cpp)
+
+    # Add backend plugins
+    add_web_plugin(simple_data_tree src/ymery/plugins/backend/simple-data-tree.cpp)
+    add_web_plugin(data_tree src/ymery/plugins/backend/data-tree.cpp)
+else()
     add_subdirectory(src/ymery/plugins)
 endif()
 

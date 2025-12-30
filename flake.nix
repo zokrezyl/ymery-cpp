@@ -3,11 +3,12 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.05";
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     rust-overlay.url = "github:oxalica/rust-overlay";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, rust-overlay, flake-utils }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, rust-overlay, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         overlays = [ (import rust-overlay) ];
@@ -17,6 +18,10 @@
             allowUnfree = true;
             android_sdk.accept_license = true;
           };
+        };
+        # Use unstable for emscripten (needs Clang 18+ for libc++)
+        pkgsUnstable = import nixpkgs-unstable {
+          inherit system;
         };
 
         # Android SDK/NDK setup
@@ -68,35 +73,23 @@
             '';
           };
 
-          # Web/Emscripten build environment
+          # Web/Emscripten build environment (uses unstable for newer emscripten with Clang 18+)
           web = pkgs.mkShell {
-            buildInputs = with pkgs; [
-              emscripten
-              cmake
-              ninja
-              nodejs
-              python3
+            buildInputs = [
+              pkgsUnstable.emscripten
+              pkgs.cmake
+              pkgs.ninja
+              pkgsUnstable.nodejs
+              pkgs.python3
             ];
 
+            # Use XDG cache or /tmp for emscripten cache to avoid permission issues
+            EM_CACHE = "/tmp/ymery-em-cache";
+
             shellHook = ''
-              export EM_CACHE="$PWD/.em_cache"
               mkdir -p "$EM_CACHE"
-              # Workaround: Nix emscripten has file_packager.py but not file_packager wrapper
-              # Create wrapper in tools dir overlay
-              export EMSCRIPTEN_TOOLS_ORIG="$(dirname $(which emcc))/../share/emscripten/tools"
-              mkdir -p "$EM_CACHE/tools"
-              if [ -f "$EMSCRIPTEN_TOOLS_ORIG/file_packager.py" ]; then
-                cat > "$EM_CACHE/tools/file_packager" << 'WRAPPER'
-#!/usr/bin/env python3
-import sys, os
-script_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, script_dir)
-exec(open(os.environ.get("EMSCRIPTEN_TOOLS_ORIG") + "/file_packager.py").read())
-WRAPPER
-                chmod +x "$EM_CACHE/tools/file_packager"
-                # Copy all tools and replace file_packager
-                cp -rn "$EMSCRIPTEN_TOOLS_ORIG"/* "$EM_CACHE/tools/" 2>/dev/null || true
-              fi
+              echo "Emscripten cache: $EM_CACHE"
+              echo "Emscripten version: $(emcc --version | head -1)"
             '';
           };
 

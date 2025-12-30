@@ -7,6 +7,25 @@ else()
     set(PLUGIN_OUTPUT_DIR "${CMAKE_BINARY_DIR}/plugins")
 endif()
 
+# For Emscripten: compile plugins as side modules for dynamic linking
+if(YMERY_WEB)
+    set(EMSCRIPTEN_SIDE_MODULE_FLAGS "-sSIDE_MODULE=2")
+endif()
+
+# Helper macro to configure a plugin target (handles Emscripten side module flags)
+macro(configure_plugin target)
+    if(YMERY_WEB)
+        # Side modules don't link libraries - they import from main module
+        set_target_properties(${target} PROPERTIES
+            SUFFIX ".wasm"
+            LINK_FLAGS "${EMSCRIPTEN_SIDE_MODULE_FLAGS}"
+        )
+        # Remove library dependencies for web - main module provides them
+        get_target_property(_libs ${target} LINK_LIBRARIES)
+        set_target_properties(${target} PROPERTIES LINK_LIBRARIES "")
+    endif()
+endmacro()
+
 set(WIDGET_PLUGINS
     text
     button
@@ -68,6 +87,7 @@ foreach(plugin ${WIDGET_PLUGINS})
         LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO "${PLUGIN_OUTPUT_DIR}"
         LIBRARY_OUTPUT_DIRECTORY_MINSIZEREL "${PLUGIN_OUTPUT_DIR}"
     )
+    configure_plugin(${plugin})
 endforeach()
 
 # Markdown widget (requires imgui_md)
@@ -83,6 +103,7 @@ set_target_properties(markdown PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO "${PLUGIN_OUTPUT_DIR}"
     LIBRARY_OUTPUT_DIRECTORY_MINSIZEREL "${PLUGIN_OUTPUT_DIR}"
 )
+configure_plugin(markdown)
 
 # ImPlot widgets (require implot) - use _plugin suffix to avoid conflict with library
 set(IMPLOT_PLUGINS implot implot-group implot-layer)
@@ -99,6 +120,7 @@ foreach(plugin ${IMPLOT_PLUGINS})
         LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO "${PLUGIN_OUTPUT_DIR}"
         LIBRARY_OUTPUT_DIRECTORY_MINSIZEREL "${PLUGIN_OUTPUT_DIR}"
     )
+    configure_plugin(${plugin}_plugin)
 endforeach()
 
 # Node editor widgets - DISABLED (requires pthom's patched imgui)
@@ -118,7 +140,7 @@ endforeach()
 #     )
 # endforeach()
 
-# Helper macro for setting plugin output directories
+# Helper macro for setting plugin output directories and web config
 macro(set_plugin_output_dirs target)
     set_target_properties(${target} PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY "${PLUGIN_OUTPUT_DIR}"
@@ -127,6 +149,7 @@ macro(set_plugin_output_dirs target)
         LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO "${PLUGIN_OUTPUT_DIR}"
         LIBRARY_OUTPUT_DIRECTORY_MINSIZEREL "${PLUGIN_OUTPUT_DIR}"
     )
+    configure_plugin(${target})
 endmacro()
 
 # Knob widget (requires imgui_knobs)

@@ -6,6 +6,7 @@
 // - Delegates to nested TreeLike objects
 #include "../../types.hpp"
 #include "../../result.hpp"
+#include "../../plugin_export.hpp"
 #include <yaml-cpp/yaml.h>
 #include <spdlog/spdlog.h>
 
@@ -436,9 +437,9 @@ private:
 
 } // namespace ymery::plugins
 
-extern "C" const char* name() { return "simple-data-tree"; }
-extern "C" const char* type() { return "tree-like"; }
-extern "C" ymery::Result<ymery::TreeLikePtr> create(
+extern "C" const char* PLUGIN_EXPORT_NAME() { return "simple-data-tree"; }
+extern "C" const char* PLUGIN_EXPORT_TYPE() { return "tree-like"; }
+extern "C" ymery::Result<ymery::TreeLikePtr> PLUGIN_EXPORT_CREATE(
     std::shared_ptr<ymery::Dispatcher> /*dispatcher*/,
     std::shared_ptr<ymery::PluginManager> /*plugin_manager*/
 ) {
