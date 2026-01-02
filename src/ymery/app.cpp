@@ -684,8 +684,24 @@ Result<void> App::_init_graphics() {
     surface_desc.nextInChain = reinterpret_cast<const WGPUChainedStruct*>(&canvas_desc);
 
     _wgpu_surface = wgpuInstanceCreateSurface(_wgpu_instance, &surface_desc);
+#elif defined(__APPLE__)
+    // macOS: create surface from Cocoa window using Metal
+    id metal_layer = nullptr;
+    NSWindow* ns_window = glfwGetCocoaWindow(static_cast<GLFWwindow*>(_window));
+    [ns_window.contentView setWantsLayer:YES];
+    metal_layer = [CAMetalLayer layer];
+    [ns_window.contentView setLayer:metal_layer];
+
+    WGPUSurfaceSourceMetalLayer metal_surface_desc = {};
+    metal_surface_desc.chain.sType = WGPUSType_SurfaceSourceMetalLayer;
+    metal_surface_desc.layer = metal_layer;
+
+    WGPUSurfaceDescriptor surface_desc = {};
+    surface_desc.nextInChain = reinterpret_cast<const WGPUChainedStruct*>(&metal_surface_desc);
+
+    _wgpu_surface = wgpuInstanceCreateSurface(_wgpu_instance, &surface_desc);
 #else
-    // Native: create surface from X11 window
+    // Linux: create surface from X11 window
     Display* x11_display = glfwGetX11Display();
     Window x11_window = glfwGetX11Window(static_cast<GLFWwindow*>(_window));
 
