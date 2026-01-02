@@ -111,6 +111,14 @@ endif()
 
 # GLFW - Emscripten and Android provide their own windowing
 if(NOT YMERY_WEB AND NOT YMERY_ANDROID)
+    # Platform-specific GLFW options
+    set(GLFW_PLATFORM_OPTIONS "")
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        list(APPEND GLFW_PLATFORM_OPTIONS "GLFW_BUILD_X11 ON" "GLFW_BUILD_WAYLAND OFF")
+    elseif(APPLE)
+        list(APPEND GLFW_PLATFORM_OPTIONS "GLFW_BUILD_X11 OFF")
+    endif()
+
     CPMAddPackage(
         NAME glfw
         GITHUB_REPOSITORY glfw/glfw
@@ -119,8 +127,7 @@ if(NOT YMERY_WEB AND NOT YMERY_ANDROID)
             "GLFW_BUILD_EXAMPLES OFF"
             "GLFW_BUILD_TESTS OFF"
             "GLFW_BUILD_DOCS OFF"
-            "GLFW_BUILD_X11 ON"
-            "GLFW_BUILD_WAYLAND OFF"
+            ${GLFW_PLATFORM_OPTIONS}
     )
 endif()
 
@@ -236,6 +243,9 @@ if(imgui_ADDED)
                 ${imgui_SOURCE_DIR}/backends/imgui_impl_wgpu.cpp
                 PROPERTIES COMPILE_FLAGS "-x objective-c++"
             )
+        elseif(WIN32)
+            # Windows - use Win32 (via GLFW), no X11 needed
+            target_link_libraries(imgui PUBLIC glfw webgpu)
         else()
             # Linux - requires X11
             find_package(X11 REQUIRED)

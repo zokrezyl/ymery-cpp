@@ -127,3 +127,37 @@ jobs:
 
     - name: Build and Test
       run: make test-webasm-webgpu
+
+  # Windows WebGPU build
+  windows-webgpu:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Configure CMake
+      run: cmake -B build -DYMERY_USE_WEBGPU=ON -DYMERY_BUILD_TESTS=ON
+
+    - name: Build
+      run: cmake --build build --config Release --parallel
+
+    - name: Test
+      working-directory: build
+      run: ctest --build-config Release --output-on-failure
+
+  # macOS WebGPU build
+  macos-webgpu:
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Configure CMake
+      run: cmake -B build -DYMERY_USE_WEBGPU=ON -DYMERY_BUILD_TESTS=ON
+
+    - name: Build
+      run: cmake --build build --config Release --parallel
+
+    - name: Test
+      working-directory: build
+      run: ctest --build-config Release --output-on-failure
