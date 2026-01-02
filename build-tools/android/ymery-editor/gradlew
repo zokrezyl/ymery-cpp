@@ -1,0 +1,13 @@
+#!/bin/sh
+# Gradle wrapper script
+
+# Determine the Java command to use
+if [ -n "$JAVA_HOME" ] ; then
+    JAVACMD="$JAVA_HOME/bin/java"
+else
+    JAVACMD="java"
+fi
+
+WRAPPER_JAR="gradle/wrapper/gradle-wrapper.jar"
+
+exec "$JAVACMD" -classpath "$WRAPPER_JAR" org.gradle.wrapper.GradleWrapperMain "$@"
