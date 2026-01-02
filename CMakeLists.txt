@@ -584,6 +584,9 @@ else()
     # dl library is only needed on Unix-like systems (not macOS)
     if(UNIX AND NOT APPLE)
         target_link_libraries(ymery_lib PUBLIC dl)
+        # Linux needs X11 for GLFW
+        find_package(X11 REQUIRED)
+        target_link_libraries(ymery_lib PUBLIC X11::X11)
     endif()
     # macOS: compile app.cpp as Objective-C++ and link frameworks
     if(APPLE AND YMERY_USE_WEBGPU)
@@ -656,6 +659,11 @@ if(NOT YMERY_WEB AND NOT YMERY_ANDROID)
     else()
         find_package(OpenGL REQUIRED)
         target_link_libraries(ymery-editor PRIVATE OpenGL::GL)
+        # Linux needs X11
+        if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+            find_package(X11 REQUIRED)
+            target_link_libraries(ymery-editor PRIVATE X11::X11)
+        endif()
     endif()
 endif()
 

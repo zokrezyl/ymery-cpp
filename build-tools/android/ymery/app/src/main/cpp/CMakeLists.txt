@@ -2,8 +2,9 @@ cmake_minimum_required(VERSION 3.22.1)
 project(ymery_android)
 
 # Include the main ymery project
+# Path: cpp -> main -> src -> app -> ymery -> android -> build-tools -> ymery-cpp (7 levels)
 set(YMERY_ANDROID ON CACHE BOOL "" FORCE)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../../../../.. ${CMAKE_CURRENT_BINARY_DIR}/ymery)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../.. ${CMAKE_CURRENT_BINARY_DIR}/ymery)
 
 # Add native_app_glue from NDK
 add_library(native_app_glue STATIC

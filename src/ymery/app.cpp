@@ -378,8 +378,8 @@ Result<void> App::_init_graphics() {
     LOGI("WebGPU instance created");
 
     // Create surface from Android native window
-    WGPUSurfaceDescriptorFromAndroidNativeWindow android_surface_desc = {};
-    android_surface_desc.chain.sType = WGPUSType_SurfaceDescriptorFromAndroidNativeWindow;
+    WGPUSurfaceSourceAndroidNativeWindow android_surface_desc = {};
+    android_surface_desc.chain.sType = WGPUSType_SurfaceSourceAndroidNativeWindow;
     android_surface_desc.window = _android_app->window;
 
     WGPUSurfaceDescriptor surface_desc = {};
@@ -395,18 +395,18 @@ Result<void> App::_init_graphics() {
     adapter_opts.compatibleSurface = _wgpu_surface;
     adapter_opts.powerPreference = WGPUPowerPreference_HighPerformance;
 
-    wgpuInstanceRequestAdapter(
-        _wgpu_instance,
-        &adapter_opts,
-        [](WGPURequestAdapterStatus status, WGPUAdapter adapter, char const* message, void* userdata) {
-            if (status == WGPURequestAdapterStatus_Success) {
-                *static_cast<WGPUAdapter*>(userdata) = adapter;
-            } else {
-                __android_log_print(ANDROID_LOG_ERROR, "ymery", "Adapter request failed: %s", message ? message : "unknown");
-            }
-        },
-        &_wgpu_adapter
-    );
+    WGPURequestAdapterCallbackInfo adapter_callback_info = {};
+    adapter_callback_info.mode = WGPUCallbackMode_AllowSpontaneous;
+    adapter_callback_info.callback = [](WGPURequestAdapterStatus status, WGPUAdapter adapter, WGPUStringView message, void* userdata1, void* userdata2) {
+        if (status == WGPURequestAdapterStatus_Success) {
+            *static_cast<WGPUAdapter*>(userdata1) = adapter;
+        } else {
+            __android_log_print(ANDROID_LOG_ERROR, "ymery", "Adapter request failed: %.*s",
+                (int)message.length, message.data ? message.data : "unknown");
+        }
+    };
+    adapter_callback_info.userdata1 = &_wgpu_adapter;
+    wgpuInstanceRequestAdapter(_wgpu_instance, &adapter_opts, adapter_callback_info);
 
     if (!_wgpu_adapter) {
         return Err<void>("App::_init_graphics: wgpuInstanceRequestAdapter failed");
@@ -415,23 +415,23 @@ Result<void> App::_init_graphics() {
 
     // Request device
     WGPUDeviceDescriptor device_desc = {};
-    device_desc.label = "ymery device";
+    device_desc.label = {"ymery device", WGPU_STRLEN};
     device_desc.requiredFeatureCount = 0;
     device_desc.requiredLimits = nullptr;
-    device_desc.defaultQueue.label = "default queue";
+    device_desc.defaultQueue.label = {"default queue", WGPU_STRLEN};
 
-    wgpuAdapterRequestDevice(
-        _wgpu_adapter,
-        &device_desc,
-        [](WGPURequestDeviceStatus status, WGPUDevice device, char const* message, void* userdata) {
-            if (status == WGPURequestDeviceStatus_Success) {
-                *static_cast<WGPUDevice*>(userdata) = device;
-            } else {
-                __android_log_print(ANDROID_LOG_ERROR, "ymery", "Device request failed: %s", message ? message : "unknown");
-            }
-        },
-        &_wgpu_device
-    );
+    WGPURequestDeviceCallbackInfo device_callback_info = {};
+    device_callback_info.mode = WGPUCallbackMode_AllowSpontaneous;
+    device_callback_info.callback = [](WGPURequestDeviceStatus status, WGPUDevice device, WGPUStringView message, void* userdata1, void* userdata2) {
+        if (status == WGPURequestDeviceStatus_Success) {
+            *static_cast<WGPUDevice*>(userdata1) = device;
+        } else {
+            __android_log_print(ANDROID_LOG_ERROR, "ymery", "Device request failed: %.*s",
+                (int)message.length, message.data ? message.data : "unknown");
+        }
+    };
+    device_callback_info.userdata1 = &_wgpu_device;
+    wgpuAdapterRequestDevice(_wgpu_adapter, &device_desc, device_callback_info);
 
     if (!_wgpu_device) {
         return Err<void>("App::_init_graphics: wgpuAdapterRequestDevice failed");
