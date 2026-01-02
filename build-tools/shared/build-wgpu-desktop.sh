@@ -21,7 +21,7 @@ mkdir -p "$OUTPUT_DIR"
 # Detect platform and architecture
 detect_platform() {
     local OS=$(uname -s)
-    local ARCH=$(uname -m)
+    local UARCH=$(uname -m)
 
     case "$OS" in
         Linux)
@@ -43,7 +43,7 @@ detect_platform() {
             ;;
     esac
 
-    case "$ARCH" in
+    case "$UARCH" in
         x86_64|amd64|AMD64)
             ARCH="x86_64"
             ;;
@@ -51,7 +51,7 @@ detect_platform() {
             ARCH="aarch64"
             ;;
         *)
-            echo "Unsupported architecture: $ARCH"
+            echo "Unsupported architecture: $UARCH"
             exit 1
             ;;
     esac
