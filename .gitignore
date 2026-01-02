@@ -1,5 +1,6 @@
-# Build directories
+# Build directories (but not build-tools which contains scripts)
 build-*/
+!build-tools/
 
 # External dependencies (downloaded at build time)
 external/

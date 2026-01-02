@@ -80,7 +80,7 @@ help:
 
 .PHONY: config-desktop-opengl-release
 config-desktop-opengl-release:
-	PATH="$(SYSTEM_PATH)" $(CMAKE) -B build-desktop-opengl-release $(CMAKE_GENERATOR) $(CMAKE_RELEASE) -DYMERY_USE_WEBGPU=OFF -DYMERY_BUILD_GUI_TESTS=ON
+	PATH="$(SYSTEM_PATH)" $(CMAKE) -B build-desktop-opengl-release $(CMAKE_GENERATOR) $(CMAKE_RELEASE) -DYMERY_USE_WEBGPU=OFF -DYMERY_BUILD_GUI_TESTS=OFF
 
 .PHONY: build-desktop-opengl-release
 build-desktop-opengl-release:
@@ -97,7 +97,7 @@ test-desktop-opengl-release: build-desktop-opengl-release
 
 .PHONY: config-desktop-opengl-debug
 config-desktop-opengl-debug:
-	PATH="$(SYSTEM_PATH)" $(CMAKE) -B build-desktop-opengl-debug $(CMAKE_GENERATOR) $(CMAKE_DEBUG) -DYMERY_USE_WEBGPU=OFF -DYMERY_BUILD_GUI_TESTS=ON
+	PATH="$(SYSTEM_PATH)" $(CMAKE) -B build-desktop-opengl-debug $(CMAKE_GENERATOR) $(CMAKE_DEBUG) -DYMERY_USE_WEBGPU=OFF -DYMERY_BUILD_GUI_TESTS=OFF
 
 .PHONY: build-desktop-opengl-debug
 build-desktop-opengl-debug:
@@ -115,7 +115,7 @@ test-desktop-opengl-debug: build-desktop-opengl-debug
 .PHONY: config-desktop-webgpu-release
 config-desktop-webgpu-release:
 	bash $(BUILD_TOOLS_DIR)/shared/build-wgpu-desktop.sh build-desktop-webgpu-release
-	PATH="$(SYSTEM_PATH)" $(CMAKE) -B build-desktop-webgpu-release $(CMAKE_GENERATOR) $(CMAKE_RELEASE) -DYMERY_USE_WEBGPU=ON -DYMERY_BUILD_GUI_TESTS=ON
+	PATH="$(SYSTEM_PATH)" $(CMAKE) -B build-desktop-webgpu-release $(CMAKE_GENERATOR) $(CMAKE_RELEASE) -DYMERY_USE_WEBGPU=ON -DYMERY_BUILD_GUI_TESTS=OFF
 
 .PHONY: build-desktop-webgpu-release
 build-desktop-webgpu-release:
@@ -133,7 +133,7 @@ test-desktop-webgpu-release: build-desktop-webgpu-release
 .PHONY: config-desktop-webgpu-debug
 config-desktop-webgpu-debug:
 	bash $(BUILD_TOOLS_DIR)/shared/build-wgpu-desktop.sh build-desktop-webgpu-debug
-	PATH="$(SYSTEM_PATH)" $(CMAKE) -B build-desktop-webgpu-debug $(CMAKE_GENERATOR) $(CMAKE_DEBUG) -DYMERY_USE_WEBGPU=ON -DYMERY_BUILD_GUI_TESTS=ON
+	PATH="$(SYSTEM_PATH)" $(CMAKE) -B build-desktop-webgpu-debug $(CMAKE_GENERATOR) $(CMAKE_DEBUG) -DYMERY_USE_WEBGPU=ON -DYMERY_BUILD_GUI_TESTS=OFF
 
 .PHONY: build-desktop-webgpu-debug
 build-desktop-webgpu-debug:

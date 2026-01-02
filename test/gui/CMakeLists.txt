@@ -1,11 +1,10 @@
 # GUI tests using imgui_test_engine
 
-# Fetch imgui_test_engine via CPM (version must match imgui version)
-# imgui 1.91.6 requires imgui_test_engine v1.91.6
+# Fetch imgui_test_engine via CPM (must match imgui branch - docking)
 CPMAddPackage(
     NAME imgui_test_engine
     GITHUB_REPOSITORY ocornut/imgui_test_engine
-    GIT_TAG v1.91.6
+    GIT_TAG v1.91.5
     DOWNLOAD_ONLY YES
 )
 
