@@ -40,8 +40,12 @@
 #include <emscripten/html5_webgpu.h>
 #endif
 #elif defined(YMERY_USE_WEBGPU) && !defined(YMERY_ANDROID)
-// For X11 surface creation with wgpu-native
+// For native surface creation with wgpu-native
+#ifdef __APPLE__
+#define GLFW_EXPOSE_NATIVE_COCOA
+#else
 #define GLFW_EXPOSE_NATIVE_X11
+#endif
 #include <GLFW/glfw3native.h>
 #endif
 
