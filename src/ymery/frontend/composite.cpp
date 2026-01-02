@@ -22,11 +22,11 @@ Result<std::shared_ptr<Composite>> Composite::create(
         auto body_res = data_bag->get_static("body");
         if (body_res && body_res->has_value()) {
             if (auto body_list = get_as<List>(*body_res)) {
-                spdlog::info("Composite::create: body has {} items", body_list->size());
+                spdlog::debug("Composite::create: body has {} items", body_list->size());
                 for (const auto& item : *body_list) {
                     if (auto dict = get_as<Dict>(item)) {
                         for (const auto& [k, v] : *dict) {
-                            spdlog::info("  body item key: '{}'", k);
+                            spdlog::debug("  body item key: '{}'", k);
                         }
                     }
                 }
@@ -156,11 +156,11 @@ Result<void> Composite::_ensure_children() {
         body_list = *children_list;
     } else if (auto body_str = get_as<std::string>(body_val)) {
         // Body is a string - convert to single-item list
-        spdlog::info("Composite: body is string '{}', converting to list", *body_str);
+        spdlog::debug("Composite: body is string '{}', converting to list", *body_str);
         body_list.push_back(body_val);
     } else if (auto body_dict = get_as<Dict>(body_val)) {
         // Body is a dict - convert to single-item list
-        spdlog::info("Composite: body is dict, converting to list");
+        spdlog::debug("Composite: body is dict, converting to list");
         body_list.push_back(body_val);
     } else {
         spdlog::warn("'body' is not a list, string, or dict");
@@ -200,7 +200,7 @@ Result<void> Composite::_ensure_children() {
             // No change - keep existing widgets
             return Ok();
         }
-        spdlog::info("Composite: foreach-child data changed, rebuilding ({} -> {} children)",
+        spdlog::debug("Composite: foreach-child data changed, rebuilding ({} -> {} children)",
                      _foreach_child_names.size(), current_names.size());
         // Data changed - clear and rebuild
         for (auto& child : _children) {
@@ -210,22 +210,22 @@ Result<void> Composite::_ensure_children() {
         _foreach_child_names.clear();
     }
 
-    spdlog::info("Composite::_ensure_children: {} body specs, has_foreach_child={}", children_list->size(), has_foreach_child);
+    spdlog::debug("Composite::_ensure_children: {} body specs, has_foreach_child={}", children_list->size(), has_foreach_child);
 
     // Create each child widget
     for (const auto& child_spec : *children_list) {
         // Check for foreach-child
         if (auto dict = get_as<Dict>(child_spec)) {
-            spdlog::info("Composite: body item is dict with {} keys", dict->size());
+            spdlog::debug("Composite: body item is dict with {} keys", dict->size());
             for (const auto& [k, v] : *dict) {
-                spdlog::info("  key: '{}'", k);
+                spdlog::debug("  key: '{}'", k);
             }
             auto foreach_it = dict->find("foreach-child");
             if (foreach_it != dict->end()) {
-                spdlog::info("foreach-child: FOUND! Getting children from data bag");
+                spdlog::debug("foreach-child: FOUND! Getting children from data bag");
                 // Get data path for debugging
                 if (auto path_res = _data_bag->get_data_path_str(); path_res) {
-                    spdlog::info("foreach-child: current data path = '{}'", *path_res);
+                    spdlog::debug("foreach-child: current data path = '{}'", *path_res);
                 }
                 // Get children names from data tree
                 auto children_res = _data_bag->get_children_names();
@@ -234,7 +234,7 @@ Result<void> Composite::_ensure_children() {
                     continue;
                 }
                 auto child_names = *children_res;
-                spdlog::info("foreach-child: found {} children", child_names.size());
+                spdlog::debug("foreach-child: found {} children", child_names.size());
 
                 // Get the widget spec inside foreach-child
                 auto foreach_val = foreach_it->second;
@@ -252,7 +252,7 @@ Result<void> Composite::_ensure_children() {
 
                 // Create a widget for each child - like Python, add data-path to widget spec
                 for (const auto& child_name : child_names) {
-                    spdlog::info("foreach-child: creating widget for '{}'", child_name);
+                    spdlog::debug("foreach-child: creating widget for '{}'", child_name);
 
                     // Clone widget_spec and add data-path (like Python composite.py lines 174-187)
                     Value child_spec;

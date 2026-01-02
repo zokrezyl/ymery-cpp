@@ -137,7 +137,7 @@ EditorApp::~EditorApp() {
 }
 
 bool EditorApp::init(const EditorConfig& config) {
-    spdlog::info("EditorApp::init starting");
+    spdlog::debug("EditorApp::init starting");
 
 #ifdef YMERY_ANDROID
     // Android/EGL initialization
@@ -423,7 +423,7 @@ bool EditorApp::init(const EditorConfig& config) {
         auto pm_res = ymery::PluginManager::create(config.plugins_path);
         if (pm_res) {
             _plugin_manager = *pm_res;
-            spdlog::info("Plugin manager created with path: {}", config.plugins_path);
+            spdlog::debug("Plugin manager created with path: {}", config.plugins_path);
         } else {
             spdlog::warn("Failed to create plugin manager: {}", ymery::error_msg(pm_res));
         }
@@ -433,7 +433,7 @@ bool EditorApp::init(const EditorConfig& config) {
     _widget_tree = std::make_unique<WidgetTree>();
     _canvas = std::make_unique<EditorCanvas>(_model, *_widget_tree, _plugin_manager);
 
-    spdlog::info("EditorApp initialized successfully");
+    spdlog::debug("EditorApp initialized successfully");
     return true;
 }
 
@@ -485,13 +485,13 @@ void EditorApp::dispose() {
 }
 
 void EditorApp::run() {
-    spdlog::info("EditorApp::run starting main loop");
+    spdlog::debug("EditorApp::run starting main loop");
 
     while (!_should_close) {
         frame();
     }
 
-    spdlog::info("EditorApp::run exiting");
+    spdlog::debug("EditorApp::run exiting");
 }
 
 void EditorApp::frame() {
@@ -617,7 +617,7 @@ void EditorApp::render_menu_bar() {
             ImGui::Separator();
             if (ImGui::MenuItem("Export YAML...")) {
                 std::string yaml = _model.to_yaml();
-                spdlog::info("Generated YAML:\n{}", yaml);
+                spdlog::debug("Generated YAML:\n{}", yaml);
                 // TODO: Save dialog
             }
             ImGui::Separator();
@@ -669,40 +669,40 @@ void EditorApp::render_dockspace() {
 
     // Create the dockspace
     ImGuiID dockspace_id = ImGui::GetID("EditorDockSpace");
-    spdlog::info("EDITOR: DockSpace dockspace_id={}", dockspace_id);
+    spdlog::debug("EDITOR: DockSpace dockspace_id={}", dockspace_id);
     ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
 
     // First time setup: create default layout
     static bool first_time = true;
-    spdlog::info("EDITOR: first_time={}", first_time);
+    spdlog::debug("EDITOR: first_time={}", first_time);
     if (first_time) {
         first_time = false;
 
-        spdlog::info("EDITOR: DockBuilderRemoveNode({})", dockspace_id);
+        spdlog::debug("EDITOR: DockBuilderRemoveNode({})", dockspace_id);
         ImGui::DockBuilderRemoveNode(dockspace_id);
-        spdlog::info("EDITOR: DockBuilderAddNode({})", dockspace_id);
+        spdlog::debug("EDITOR: DockBuilderAddNode({})", dockspace_id);
         ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_None);
-        spdlog::info("EDITOR: DockBuilderSetNodeSize({}, {}x{})", dockspace_id, viewport->WorkSize.x, viewport->WorkSize.y);
+        spdlog::debug("EDITOR: DockBuilderSetNodeSize({}, {}x{})", dockspace_id, viewport->WorkSize.x, viewport->WorkSize.y);
         ImGui::DockBuilderSetNodeSize(dockspace_id, viewport->WorkSize);
 
         // Split into left and right
         ImGuiID dock_left, dock_right;
         ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Left, 0.25f, &dock_left, &dock_right);
-        spdlog::info("EDITOR: SplitNode({}, Left, 0.25) -> dock_left={}, dock_right={}", dockspace_id, dock_left, dock_right);
+        spdlog::debug("EDITOR: SplitNode({}, Left, 0.25) -> dock_left={}, dock_right={}", dockspace_id, dock_left, dock_right);
 
         // Split right into top (Layout View) and bottom (Preview)
         ImGuiID dock_right_top, dock_right_bottom;
         ImGui::DockBuilderSplitNode(dock_right, ImGuiDir_Up, 0.5f, &dock_right_top, &dock_right_bottom);
-        spdlog::info("EDITOR: SplitNode({}, Up, 0.5) -> dock_right_top={}, dock_right_bottom={}", dock_right, dock_right_top, dock_right_bottom);
+        spdlog::debug("EDITOR: SplitNode({}, Up, 0.5) -> dock_right_top={}, dock_right_bottom={}", dock_right, dock_right_top, dock_right_bottom);
 
-        spdlog::info("EDITOR: DockBuilderDockWindow('Widget Browser', {})", dock_left);
+        spdlog::debug("EDITOR: DockBuilderDockWindow('Widget Browser', {})", dock_left);
         ImGui::DockBuilderDockWindow("Widget Browser", dock_left);
-        spdlog::info("EDITOR: DockBuilderDockWindow('Layout View', {})", dock_right_top);
+        spdlog::debug("EDITOR: DockBuilderDockWindow('Layout View', {})", dock_right_top);
         ImGui::DockBuilderDockWindow("Layout View", dock_right_top);
-        spdlog::info("EDITOR: DockBuilderDockWindow('Preview', {})", dock_right_bottom);
+        spdlog::debug("EDITOR: DockBuilderDockWindow('Preview', {})", dock_right_bottom);
         ImGui::DockBuilderDockWindow("Preview", dock_right_bottom);
 
-        spdlog::info("EDITOR: DockBuilderFinish({})", dockspace_id);
+        spdlog::debug("EDITOR: DockBuilderFinish({})", dockspace_id);
         ImGui::DockBuilderFinish(dockspace_id);
     }
 

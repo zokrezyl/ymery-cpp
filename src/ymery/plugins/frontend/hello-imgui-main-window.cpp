@@ -213,7 +213,7 @@ private:
                 else if (dir_str == "up") split.direction = ImGuiDir_Up;
                 else split.direction = ImGuiDir_Down;
 
-                spdlog::info("HelloImguiMainWindow: split initial='{}' new='{}' ratio={}",
+                spdlog::debug("HelloImguiMainWindow: split initial='{}' new='{}' ratio={}",
                     split.initial_dock, split.new_dock, split.ratio);
                 _splits.push_back(split);
             }
@@ -230,7 +230,7 @@ private:
                 }
                 dw.widget = child;
 
-                spdlog::info("HelloImguiMainWindow: dockable-window label='{}' dock='{}'",
+                spdlog::debug("HelloImguiMainWindow: dockable-window label='{}' dock='{}'",
                     dw.label, dw.dock_space_name);
                 _dockable_windows.push_back(dw);
             }
@@ -239,7 +239,7 @@ private:
             }
         }
 
-        spdlog::info("HelloImguiMainWindow: {} splits, {} dockable_windows, {} menus, {} regular",
+        spdlog::debug("HelloImguiMainWindow: {} splits, {} dockable_windows, {} menus, {} regular",
             _splits.size(), _dockable_windows.size(), _menu_widgets.size(), _regular_widgets.size());
     }
 };

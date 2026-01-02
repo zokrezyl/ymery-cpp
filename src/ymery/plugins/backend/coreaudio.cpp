@@ -99,7 +99,7 @@ public:
         // Allocate deinterleave buffer
         device->_channel_buffer.resize(1024);
 
-        spdlog::info("CoreAudioDevice: created '{}' with {} channels at {}Hz",
+        spdlog::debug("CoreAudioDevice: created '{}' with {} channels at {}Hz",
                      device_name, num_channels, sample_rate);
 
         return device;
@@ -115,7 +115,7 @@ public:
         }
 
         _running = true;
-        spdlog::info("CoreAudioDevice: started '{}'", _device_name);
+        spdlog::debug("CoreAudioDevice: started '{}'", _device_name);
     }
 
     void stop() {
@@ -123,7 +123,7 @@ public:
         _running = false;
 
         AudioQueueStop(_queue, true);
-        spdlog::info("CoreAudioDevice: stopped '{}'", _device_name);
+        spdlog::debug("CoreAudioDevice: stopped '{}'", _device_name);
     }
 
     bool is_running() const { return _running; }

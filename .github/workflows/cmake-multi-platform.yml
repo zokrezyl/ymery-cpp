@@ -8,7 +8,7 @@ on:
 
 jobs:
   # Desktop OpenGL build
-  opengl:
+  desktop-opengl:
     runs-on: ubuntu-latest
 
     steps:
@@ -32,23 +32,11 @@ jobs:
           pkg-config \
           ninja-build
 
-    - name: Configure CMake
-      run: >
-        cmake -B build-opengl -G Ninja
-        -DCMAKE_BUILD_TYPE=Release
-        -DCMAKE_POLICY_VERSION_MINIMUM=3.5
-        -DYMERY_USE_WEBGPU=OFF
-        -DYMERY_BUILD_GUI_TESTS=ON
-
-    - name: Build
-      run: cmake --build build-opengl --parallel
-
-    - name: Test
-      working-directory: build-opengl
-      run: ctest --output-on-failure
+    - name: Build and Test
+      run: make test-desktop-opengl
 
   # Desktop WebGPU build
-  webgpu:
+  desktop-webgpu:
     runs-on: ubuntu-latest
 
     steps:
@@ -72,20 +60,8 @@ jobs:
           pkg-config \
           ninja-build
 
-    - name: Configure CMake
-      run: >
-        cmake -B build-webgpu -G Ninja
-        -DCMAKE_BUILD_TYPE=Release
-        -DCMAKE_POLICY_VERSION_MINIMUM=3.5
-        -DYMERY_USE_WEBGPU=ON
-        -DYMERY_BUILD_GUI_TESTS=ON
-
-    - name: Build
-      run: cmake --build build-webgpu --parallel
-
-    - name: Test
-      working-directory: build-webgpu
-      run: ctest --output-on-failure
+    - name: Build and Test
+      run: make test-desktop-webgpu
 
   # Android OpenGL build
   android-opengl:
@@ -103,17 +79,14 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
-    - name: Build OpenGL APK
-      working-directory: android/ymery
-      run: |
-        chmod +x ./gradlew 2>/dev/null || true
-        ./gradlew assembleOpenglDebug --no-daemon
+    - name: Build and Test
+      run: make test-android-opengl
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: ymery-android-opengl-debug
-        path: android/ymery/app/build/outputs/apk/opengl/debug/*.apk
+        path: build-tools/android/ymery/app/build/outputs/apk/opengl/debug/*.apk
 
   # Android WebGPU build
   android-webgpu:
@@ -131,20 +104,26 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
-    - name: Download wgpu-native
-      run: |
-        cd android/ymery
-        chmod +x ./build-wgpu.sh
-        ./build-wgpu.sh
-
-    - name: Build WebGPU APK
-      working-directory: android/ymery
-      run: |
-        chmod +x ./gradlew 2>/dev/null || true
-        ./gradlew assembleWebgpuDebug --no-daemon
+    - name: Build and Test
+      run: make test-android-webgpu
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: ymery-android-webgpu-debug
-        path: android/ymery/app/build/outputs/apk/webgpu/debug/*.apk
+        path: build-tools/android/ymery/app/build/outputs/apk/webgpu/debug/*.apk
+
+  # WebAssembly WebGPU build
+  webasm-webgpu:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Nix
+      uses: cachix/install-nix-action@v27
+      with:
+        nix_path: nixpkgs=channel:nixos-unstable
+
+    - name: Build and Test
+      run: make test-webasm-webgpu

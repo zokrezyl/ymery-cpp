@@ -160,7 +160,7 @@ private:
             child_spec["metadata"] = metadata;
             auto res = _data_bag->add_child(child_spec);
             if (res) {
-                spdlog::info("DataEditor: added '{}' (type: {}) to shared data", name, type);
+                spdlog::debug("DataEditor: added '{}' (type: {}) to shared data", name, type);
             }
         }
     }

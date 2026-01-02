@@ -119,14 +119,14 @@ Result<std::shared_ptr<App>> App::create(struct android_app* android_app, const 
 #endif
 
 Result<void> App::init() {
-    spdlog::info("App::init starting");
+    spdlog::debug("App::init starting");
 
     // Initialize graphics backend (platform-specific)
     if (auto gfx_res = _init_graphics(); !gfx_res) {
         spdlog::error("App::init: graphics init failed");
         return Err<void>("App::init: graphics init failed", gfx_res);
     }
-    spdlog::info("Graphics initialized");
+    spdlog::debug("Graphics initialized");
 
     // Initialize core components (platform-independent, implemented in app-core.cpp)
     if (auto core_res = _init_core(); !core_res) {
@@ -623,11 +623,14 @@ static void configure_wgpu_surface(int width, int height) {
 }
 
 Result<void> App::_init_graphics() {
+    spdlog::debug("_init_graphics starting (WebGPU desktop/web)");
     glfwSetErrorCallback(glfw_error_callback);
 
+    spdlog::debug("Calling glfwInit");
     if (!glfwInit()) {
         return Err<void>("App::_init_graphics: glfwInit failed");
     }
+    spdlog::debug("glfwInit succeeded");
 
     // No OpenGL context for WebGPU
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -695,6 +698,7 @@ Result<void> App::_init_graphics() {
     if (!_wgpu_surface) {
         return Err<void>("App::_init_graphics: wgpuInstanceCreateSurface failed");
     }
+    spdlog::debug("Surface created, requesting adapter");
 
     // Request adapter
     WGPURequestAdapterOptions adapter_opts = {};
@@ -708,7 +712,12 @@ Result<void> App::_init_graphics() {
 
     // v22+ API: use WGPURequestAdapterCallbackInfo
     WGPURequestAdapterCallbackInfo adapter_callback_info = {};
+#ifdef YMERY_WEB_DAWN
+    spdlog::debug("Using WGPUCallbackMode_AllowProcessEvents for web");
+    adapter_callback_info.mode = WGPUCallbackMode_AllowProcessEvents;
+#else
     adapter_callback_info.mode = WGPUCallbackMode_AllowSpontaneous;
+#endif
     adapter_callback_info.callback = [](WGPURequestAdapterStatus status, WGPUAdapter adapter, WGPUStringView message, void* userdata1, void* userdata2) {
         auto* data = static_cast<AdapterUserData*>(userdata1);
         if (status == WGPURequestAdapterStatus_Success) {
@@ -720,14 +729,18 @@ Result<void> App::_init_graphics() {
         data->done = true;
     };
     adapter_callback_info.userdata1 = &adapter_data;
+    spdlog::debug("Calling wgpuInstanceRequestAdapter");
     wgpuInstanceRequestAdapter(_wgpu_instance, &adapter_opts, adapter_callback_info);
+    spdlog::debug("wgpuInstanceRequestAdapter returned, waiting for callback");
 
     while (!adapter_data.done) {
-        // Busy wait for adapter (could use proper async)
+        // Process events to trigger callbacks
 #ifdef YMERY_WEB_DAWN
+        wgpuInstanceProcessEvents(_wgpu_instance);
         emscripten_sleep(10);
 #endif
     }
+    spdlog::debug("Adapter callback completed");
 
     _wgpu_adapter = adapter_data.adapter;
     if (!_wgpu_adapter) {
@@ -737,6 +750,11 @@ Result<void> App::_init_graphics() {
     // Request device
     WGPUDeviceDescriptor device_desc = {};
     // v22+ API: set callbacks via callback info structs
+#ifdef YMERY_WEB_DAWN
+    device_desc.deviceLostCallbackInfo.mode = WGPUCallbackMode_AllowProcessEvents;
+#else
+    device_desc.deviceLostCallbackInfo.mode = WGPUCallbackMode_AllowSpontaneous;
+#endif
     device_desc.deviceLostCallbackInfo.callback = wgpu_device_lost_callback;
     device_desc.uncapturedErrorCallbackInfo.callback = wgpu_error_callback;
 
@@ -747,7 +765,11 @@ Result<void> App::_init_graphics() {
 
     // v22+ API: use WGPURequestDeviceCallbackInfo
     WGPURequestDeviceCallbackInfo device_callback_info = {};
+#ifdef YMERY_WEB_DAWN
+    device_callback_info.mode = WGPUCallbackMode_AllowProcessEvents;
+#else
     device_callback_info.mode = WGPUCallbackMode_AllowSpontaneous;
+#endif
     device_callback_info.callback = [](WGPURequestDeviceStatus status, WGPUDevice device, WGPUStringView message, void* userdata1, void* userdata2) {
         auto* data = static_cast<DeviceUserData*>(userdata1);
         if (status == WGPURequestDeviceStatus_Success) {
@@ -762,8 +784,9 @@ Result<void> App::_init_graphics() {
     wgpuAdapterRequestDevice(_wgpu_adapter, &device_desc, device_callback_info);
 
     while (!device_data.done) {
-        // Busy wait for device
+        // Process events to trigger callbacks
 #ifdef YMERY_WEB_DAWN
+        wgpuInstanceProcessEvents(_wgpu_instance);
         emscripten_sleep(10);
 #endif
     }
@@ -903,7 +926,10 @@ Result<void> App::_end_frame() {
     wgpuCommandEncoderRelease(encoder);
     wgpuTextureViewRelease(view);
 
+#ifndef YMERY_WEB
+    // Browser handles presentation via requestAnimationFrame
     wgpuSurfacePresent(_wgpu_surface);
+#endif
 
     // Release texture after present
     wgpuTextureRelease(surface_texture.texture);

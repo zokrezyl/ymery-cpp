@@ -210,7 +210,8 @@ Result<std::filesystem::path> Lang::_resolve_module_path(const std::string& modu
 
     for (const auto& base_path : _layout_paths) {
         auto full_path = base_path / path_str;
-        if (std::filesystem::exists(full_path)) {
+        std::error_code ec;
+        if (std::filesystem::exists(full_path, ec) && !ec) {
             return Ok(full_path);
         }
     }

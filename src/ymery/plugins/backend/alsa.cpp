@@ -127,7 +127,7 @@ public:
         device->_interleaved_buffer.resize(period_size * num_channels * sample_bytes);
         device->_channel_buffer.resize(period_size);
 
-        spdlog::info("AlsaDevice: opened {} with {} channels at {}Hz, period={}",
+        spdlog::debug("AlsaDevice: opened {} with {} channels at {}Hz, period={}",
                      device_name, num_channels, device->_sample_rate, device->_period_size);
 
         return device;

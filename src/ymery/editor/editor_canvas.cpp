@@ -56,7 +56,7 @@ void EditorCanvas::_render_empty_state() {
         if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("WIDGET_TYPE")) {
             std::string type(static_cast<const char*>(payload->Data));
             _model.set_root(type);
-            spdlog::info("Added root widget: {}", type);
+            spdlog::debug("Added root widget: {}", type);
         }
         ImGui::EndDragDropTarget();
     }
@@ -211,15 +211,15 @@ void EditorCanvas::_process_pending_drops() {
 
         if (drop.add_as_child) {
             _model.add_child(target, drop.widget_type);
-            spdlog::info("Added {} as child of {}", drop.widget_type, target->widget_type);
+            spdlog::debug("Added {} as child of {}", drop.widget_type, target->widget_type);
         } else {
             // If target has no parent (it's root), wrap in column first
             if (!target->parent) {
                 _wrap_root_and_add(drop.widget_type, false);
-                spdlog::info("Wrapped root and added {}", drop.widget_type);
+                spdlog::debug("Wrapped root and added {}", drop.widget_type);
             } else {
                 _model.insert_after(target, drop.widget_type);
-                spdlog::info("Inserted {} after {}", drop.widget_type, target->widget_type);
+                spdlog::debug("Inserted {} after {}", drop.widget_type, target->widget_type);
             }
         }
     }
@@ -234,7 +234,7 @@ void EditorCanvas::_process_pending_drops() {
         if (move.into_container) {
             // Move into container as last child
             _model.move_node(node, target);
-            spdlog::info("Moved {} into {}", node->widget_type, target->widget_type);
+            spdlog::debug("Moved {} into {}", node->widget_type, target->widget_type);
         } else if (target->parent) {
             // Move to same parent, insert after target
             auto* parent = target->parent;
@@ -247,7 +247,7 @@ void EditorCanvas::_process_pending_drops() {
                 }
             }
             _model.move_node(node, parent, pos);
-            spdlog::info("Moved {} after {}", node->widget_type, target->widget_type);
+            spdlog::debug("Moved {} after {}", node->widget_type, target->widget_type);
         }
     }
     _pending_moves.clear();

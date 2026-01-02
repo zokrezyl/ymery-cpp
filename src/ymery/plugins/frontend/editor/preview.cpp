@@ -51,14 +51,14 @@ protected:
         // Only recreate widget when model changes
         uint64_t current_version = model.version();
         if (!_cached_widget || _cached_version != current_version) {
-            spdlog::info("Preview: model changed (v{} -> v{}), recreating widget", _cached_version, current_version);
+            spdlog::debug("Preview: model changed (v{} -> v{}), recreating widget", _cached_version, current_version);
             // Debug: log the model structure
             if (auto root_dict = get_as<Dict>(model.root())) {
                 for (const auto& [k, v] : *root_dict) {
-                    spdlog::info("Preview: root key = '{}'", k);
+                    spdlog::debug("Preview: root key = '{}'", k);
                     if (auto props = get_as<Dict>(v)) {
                         for (const auto& [pk, pv] : *props) {
-                            spdlog::info("Preview:   prop '{}' type={}", pk, pv.type().name());
+                            spdlog::debug("Preview:   prop '{}' type={}", pk, pv.type().name());
                         }
                     }
                 }

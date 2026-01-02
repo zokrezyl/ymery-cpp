@@ -176,14 +176,14 @@ Result<void> PluginManager::_ensure_plugins_loaded() {
 
 #ifdef YMERY_WEB
     // Web builds use static plugins (no dlopen available)
-    spdlog::info("PluginManager: loading static plugins (web build)");
+    spdlog::debug("PluginManager: loading static plugins (web build)");
 
     const auto& static_plugins = get_static_plugins();
     for (const auto& plugin : static_plugins) {
         std::string plugin_name = plugin.name();
         std::string plugin_type = plugin.type();
 
-        spdlog::info("Loaded static plugin: {} (type: {})", plugin_name, plugin_type);
+        spdlog::debug("Loaded static plugin: {} (type: {})", plugin_name, plugin_type);
 
         PluginMeta meta;
         meta.registered_name = plugin_name;
@@ -208,7 +208,7 @@ Result<void> PluginManager::_ensure_plugins_loaded() {
 
 #else
     // Native builds use dynamic loading
-    spdlog::info("PluginManager: loading plugins from {}", _plugins_path);
+    spdlog::debug("PluginManager: loading plugins from {}", _plugins_path);
 
     // Parse path-separated paths (: on Unix, ; on Windows)
     std::vector<std::string> plugin_dirs;
@@ -270,7 +270,7 @@ Result<void> PluginManager::_load_plugin(const std::string& path) {
     std::string plugin_name = name_fn();
     std::string plugin_type = type_fn();
 
-    spdlog::info("Loaded plugin: {} (type: {})", plugin_name, plugin_type);
+    spdlog::debug("Loaded plugin: {} (type: {})", plugin_name, plugin_type);
 
     // Load meta.yaml for this plugin
     Dict meta_dict = load_plugin_meta(path);

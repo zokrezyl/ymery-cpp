@@ -176,14 +176,14 @@ public:
         if (!windows_res) return Err<void>("Kernel: failed to create RegisteredObjectsManager", windows_res);
         _windows_manager = *windows_res;
 
-        spdlog::info("Kernel: initialized (dispatcher={}, plugin_manager={})",
+        spdlog::debug("Kernel: initialized (dispatcher={}, plugin_manager={})",
             _dispatcher ? "yes" : "no", _plugin_manager ? "yes" : "no");
 
         // Log available providers at startup
         auto providers = get_available_providers();
-        spdlog::info("Kernel: available providers: {}", providers.size());
+        spdlog::debug("Kernel: available providers: {}", providers.size());
         for (const auto& p : providers) {
-            spdlog::info("Kernel:   - {}", p);
+            spdlog::debug("Kernel:   - {}", p);
         }
 
         return Ok();
@@ -301,7 +301,7 @@ public:
 
         // Delegate to sub-managers
         if (branch == "providers") {
-            spdlog::info("Kernel::get: providers path='{}', remaining='{}'", path_str, remaining.to_string());
+            spdlog::debug("Kernel::get: providers path='{}', remaining='{}'", path_str, remaining.to_string());
             return _providers_proxy->get(remaining);
         } else if (branch == "settings") {
             return _settings_manager->get(remaining);
@@ -403,7 +403,7 @@ public:
         }
 
         _providers[provider_name] = *tree_res;
-        spdlog::info("Kernel: loaded provider '{}'", provider_name);
+        spdlog::debug("Kernel: loaded provider '{}'", provider_name);
         return Ok(*tree_res);
     }
 

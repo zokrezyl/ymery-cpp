@@ -55,14 +55,14 @@ Result<std::shared_ptr<WebApp>> WebApp::create(const WebAppConfig& config) {
 }
 
 Result<void> WebApp::_init() {
-    spdlog::info("WebApp::_init starting");
+    spdlog::debug("WebApp::_init starting");
 
     // Initialize graphics backend
     if (auto gfx_res = _init_graphics(); !gfx_res) {
         spdlog::error("WebApp::_init: graphics init failed");
         return Err<void>("WebApp::_init: graphics init failed", gfx_res);
     }
-    spdlog::info("Graphics initialized");
+    spdlog::debug("Graphics initialized");
 
     // Create dispatcher
     auto disp_res = Dispatcher::create();
@@ -99,7 +99,7 @@ Result<void> WebApp::_init() {
     if (tree_it != app_config.end()) {
         if (auto t = get_as<std::string>(tree_it->second)) {
             tree_type = *t;
-            spdlog::info("Using data-tree type from config: {}", tree_type);
+            spdlog::debug("Using data-tree type from config: {}", tree_type);
         }
     }
 
@@ -119,14 +119,14 @@ Result<void> WebApp::_init() {
     _widget_factory = *wf_res;
 
     // Create root widget
-    spdlog::info("Creating root widget");
+    spdlog::debug("Creating root widget");
     auto root_res = _widget_factory->create_root_widget();
     if (!root_res) {
         spdlog::error("WebApp::_init: root widget create failed: {}", error_msg(root_res));
         return Err<void>("WebApp::_init: root widget create failed", root_res);
     }
     _root_widget = *root_res;
-    spdlog::info("Root widget created successfully");
+    spdlog::debug("Root widget created successfully");
 
     return Ok();
 }
@@ -148,7 +148,7 @@ Result<void> WebApp::dispose() {
 }
 
 Result<void> WebApp::run() {
-    spdlog::info("WebApp::run starting main loop");
+    spdlog::debug("WebApp::run starting main loop");
 
     g_web_app = this;
     emscripten_set_main_loop(em_main_loop_callback, 0, true);
@@ -466,7 +466,7 @@ Result<void> WebApp::_end_frame() {
     wgpuCommandEncoderRelease(encoder);
     wgpuTextureViewRelease(view);
 
-    wgpuSurfacePresent(_wgpu_surface);
+    // Browser handles presentation via requestAnimationFrame - no explicit present needed
 
     wgpuTextureRelease(surface_texture.texture);
 

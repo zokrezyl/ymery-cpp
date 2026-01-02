@@ -28,7 +28,7 @@ public:
 
         // Debug: log creation with data-path
         auto path_res = data_bag->get_data_path();
-        spdlog::info("ImplotLayer CREATED: data-path='{}'", path_res ? (*path_res).to_string() : "N/A");
+        spdlog::debug("ImplotLayer CREATED: data-path='{}'", path_res ? (*path_res).to_string() : "N/A");
 
         return widget;
     }
@@ -47,7 +47,7 @@ protected:
         if (!_debug_printed) {
             auto path_res = _data_bag->get_data_path();
             if (path_res) {
-                spdlog::info("ImplotLayer '{}': data-path = {}", label, (*path_res).to_string());
+                spdlog::debug("ImplotLayer '{}': data-path = {}", label, (*path_res).to_string());
             }
             _debug_printed = true;
         }
@@ -58,12 +58,12 @@ protected:
         if (!buffer) {
             // Try to get buffer directly from data tree via get()
             if (auto res = _data_bag->get("buffer"); res) {
-                spdlog::info("ImplotLayer '{}': got buffer from get()", label);
+                spdlog::debug("ImplotLayer '{}': got buffer from get()", label);
                 // The buffer is stored as a Value containing shared_ptr
                 if (auto buf_ptr = get_as<MediatedAudioBufferPtr>(*res)) {
                     buffer = *buf_ptr;
                     _cached_buffer = buffer;
-                    spdlog::info("ImplotLayer '{}': buffer extracted successfully", label);
+                    spdlog::debug("ImplotLayer '{}': buffer extracted successfully", label);
                 } else {
                     spdlog::warn("ImplotLayer '{}': buffer value exists but wrong type", label);
                 }
@@ -83,7 +83,7 @@ protected:
                         if (auto open = get_as<bool>(openable_it->second); open && *open) {
                             // This is openable - we need to open it
                             // For now, just skip rendering
-                            spdlog::info("ImplotLayer '{}': channel is openable but not opened yet", label);
+                            spdlog::debug("ImplotLayer '{}': channel is openable but not opened yet", label);
                             return Ok();
                         }
                     }

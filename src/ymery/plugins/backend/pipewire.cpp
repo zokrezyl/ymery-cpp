@@ -55,7 +55,7 @@ public:
         // Allocate deinterleave buffer
         device->_channel_buffer.resize(period_size);
 
-        spdlog::info("PipeWireDevice: created for '{}' with {} channels at {}Hz",
+        spdlog::debug("PipeWireDevice: created for '{}' with {} channels at {}Hz",
                      target_name, num_channels, sample_rate);
 
         return device;
@@ -67,7 +67,7 @@ public:
         _running = true;
         _thread = std::thread(&PipeWireDevice::_run, this);
 
-        spdlog::info("PipeWireDevice: started '{}'", _target_name);
+        spdlog::debug("PipeWireDevice: started '{}'", _target_name);
         return Ok();
     }
 
@@ -84,7 +84,7 @@ public:
             _thread.join();
         }
 
-        spdlog::info("PipeWireDevice: stopped '{}'", _target_name);
+        spdlog::debug("PipeWireDevice: stopped '{}'", _target_name);
     }
 
     bool is_running() const { return _running; }
@@ -307,7 +307,7 @@ public:
     Result<void> init() override {
         pw_init(nullptr, nullptr);
         _initialized = true;
-        spdlog::info("PipeWireManager: initialized");
+        spdlog::debug("PipeWireManager: initialized");
         return Ok();
     }
 

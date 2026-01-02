@@ -47,7 +47,8 @@ int main(int argc, char* argv[]) {
         } else {
             // Treat as layout path - if it's a file, use its parent directory
             std::filesystem::path path(arg);
-            if (std::filesystem::is_regular_file(path)) {
+            std::error_code ec;
+            if (std::filesystem::is_regular_file(path, ec) && !ec) {
                 layout_paths.push_back(path.parent_path());
             } else {
                 layout_paths.push_back(path);
@@ -60,29 +61,36 @@ int main(int argc, char* argv[]) {
     bool use_builtin = false;
 
     if (main_file.empty()) {
-#ifdef YMERY_WEB
-        // Web build: use preloaded simple demo (filesystem plugin not available on web)
-        main_file = "/demo/simple/app.yaml";
-        spdlog::info("Web build: using preloaded demo at {}", main_file.string());
-#else
-        // Native build: use builtin filesystem browser
+        // Use builtin filesystem browser
         main_module = "builtin";
         use_builtin = true;
-        spdlog::info("No layout specified, using builtin filesystem browser");
+#ifdef YMERY_WEB
+        // Web build: add /demo to layout paths for virtual filesystem
+        layout_paths.push_back("/demo");
+        spdlog::debug("Web build: using builtin filesystem browser with /demo");
+#else
+        spdlog::debug("No layout specified, using builtin filesystem browser");
 #endif
     }
 
     if (!use_builtin) {
+#ifndef YMERY_WEB
         // Resolve main file path (relative to current directory if not absolute)
         if (!main_file.is_absolute()) {
-            main_file = std::filesystem::current_path() / main_file;
+            std::error_code ec;
+            auto cwd = std::filesystem::current_path(ec);
+            if (!ec) {
+                main_file = cwd / main_file;
+            }
         }
 
         // Check if main file exists
-        if (!std::filesystem::exists(main_file)) {
+        std::error_code ec;
+        if (!std::filesystem::exists(main_file, ec) || ec) {
             std::cerr << "Error: Main file not found: " << main_file << std::endl;
             return 1;
         }
+#endif
 
         // Add main file's directory to layout_paths (at the front for highest priority)
         auto main_dir = main_file.parent_path();
@@ -91,25 +99,32 @@ int main(int argc, char* argv[]) {
         // Extract module name from file (strip .yaml extension)
         main_module = main_file.stem().string();
 
-        spdlog::info("Main file: {}", main_file.string());
-        spdlog::info("Main module: {}", main_module);
+        spdlog::debug("Main file: {}", main_file.string());
+        spdlog::debug("Main module: {}", main_module);
     }
     for (const auto& p : layout_paths) {
-        spdlog::info("Layout path: {}", p.string());
+        spdlog::debug("Layout path: {}", p.string());
     }
 
-    // Default plugin path - look for plugins directory next to executable
+#ifndef YMERY_WEB
+    // Default plugin path - look for plugins directory next to executable (Linux only)
     if (plugin_paths.empty()) {
-        auto exe_path = std::filesystem::canonical("/proc/self/exe").parent_path();
-        plugin_paths.push_back(exe_path / "plugins");
+        std::error_code ec;
+        auto exe_path = std::filesystem::canonical("/proc/self/exe", ec);
+        if (!ec) {
+            plugin_paths.push_back(exe_path.parent_path() / "plugins");
+        }
     }
+#endif
 
     // Create app config
+    spdlog::debug("Creating app config");
     ymery::AppConfig config;
     config.layout_paths = layout_paths;
     config.plugin_paths = plugin_paths;
     config.main_module = main_module;
     config.window_title = "Ymery";
+    spdlog::debug("App config created, calling App::create");
 
     // Create and run app
     auto app_res = ymery::App::create(config);

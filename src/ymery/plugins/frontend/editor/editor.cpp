@@ -145,7 +145,7 @@ private:
                     auto tree_res = _widget_factory->plugin_manager()->create_tree(tt.name, _dispatcher);
                     if (tree_res) {
                         model.set_live_tree(name, *tree_res);
-                        spdlog::info("Editor: created live tree '{}' of type '{}'", name, tt.name);
+                        spdlog::debug("Editor: created live tree '{}' of type '{}'", name, tt.name);
                     } else {
                         spdlog::warn("Editor: failed to create tree '{}': {}", name, error_msg(tree_res));
                     }

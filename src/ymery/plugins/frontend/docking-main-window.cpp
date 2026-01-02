@@ -192,11 +192,11 @@ private:
                 }
             }
 
-            spdlog::info("DockingMainWindow: child widget_type = '{}'", widget_type);
+            spdlog::debug("DockingMainWindow: child widget_type = '{}'", widget_type);
 
             if (widget_type == "menu-bar" || widget_type == "main-menu-bar") {
                 _menu_bar.widget = child;
-                spdlog::info("DockingMainWindow: found menu-bar widget");
+                spdlog::debug("DockingMainWindow: found menu-bar widget");
             }
             else if (widget_type == "docking-split") {
                 DockingSplitInfo split;
@@ -224,7 +224,7 @@ private:
                 else if (dir_str == "up") split.direction = ImGuiDir_Up;
                 else split.direction = ImGuiDir_Down;
 
-                spdlog::info("DockingMainWindow: split initial='{}' new='{}' dir='{}' ratio={}",
+                spdlog::debug("DockingMainWindow: split initial='{}' new='{}' dir='{}' ratio={}",
                     split.initial_dock, split.new_dock, dir_str, split.ratio);
                 _splits.push_back(split);
             }
@@ -241,7 +241,7 @@ private:
                 }
                 dw.widget = child;
 
-                spdlog::info("DockingMainWindow: dockable-window label='{}' dock='{}'",
+                spdlog::debug("DockingMainWindow: dockable-window label='{}' dock='{}'",
                     dw.label, dw.dock_space_name);
                 _dockable_windows.push_back(dw);
             }
@@ -250,7 +250,7 @@ private:
             }
         }
 
-        spdlog::info("DockingMainWindow: classified {} splits, {} dockable_windows, {} regular",
+        spdlog::debug("DockingMainWindow: classified {} splits, {} dockable_windows, {} regular",
             _splits.size(), _dockable_windows.size(), _regular_widgets.size());
     }
 };

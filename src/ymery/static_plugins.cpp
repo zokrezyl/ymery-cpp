@@ -75,6 +75,14 @@ extern "C" {
     const char* group_plugin_type();
     Result<WidgetPtr> group_plugin_create(std::shared_ptr<WidgetFactory>, std::shared_ptr<Dispatcher>, const std::string&, std::shared_ptr<DataBag>);
 
+    const char* child_plugin_name();
+    const char* child_plugin_type();
+    Result<WidgetPtr> child_plugin_create(std::shared_ptr<WidgetFactory>, std::shared_ptr<Dispatcher>, const std::string&, std::shared_ptr<DataBag>);
+
+    const char* collapsing_header_plugin_name();
+    const char* collapsing_header_plugin_type();
+    Result<WidgetPtr> collapsing_header_plugin_create(std::shared_ptr<WidgetFactory>, std::shared_ptr<Dispatcher>, const std::string&, std::shared_ptr<DataBag>);
+
     // Backend tree-like plugins
     const char* simple_data_tree_plugin_name();
     const char* simple_data_tree_plugin_type();
@@ -83,6 +91,10 @@ extern "C" {
     const char* data_tree_plugin_name();
     const char* data_tree_plugin_type();
     Result<TreeLikePtr> data_tree_plugin_create(std::shared_ptr<Dispatcher>, std::shared_ptr<PluginManager>);
+
+    const char* filesystem_plugin_name();
+    const char* filesystem_plugin_type();
+    Result<TreeLikePtr> filesystem_plugin_create(std::shared_ptr<Dispatcher>, std::shared_ptr<PluginManager>);
 }
 
 const std::vector<StaticPlugin>& get_static_plugins() {
@@ -103,9 +115,12 @@ const std::vector<StaticPlugin>& get_static_plugins() {
         {spacing_plugin_name, spacing_plugin_type, reinterpret_cast<void*>(spacing_plugin_create)},
         {tree_node_plugin_name, tree_node_plugin_type, reinterpret_cast<void*>(tree_node_plugin_create)},
         {group_plugin_name, group_plugin_type, reinterpret_cast<void*>(group_plugin_create)},
+        {child_plugin_name, child_plugin_type, reinterpret_cast<void*>(child_plugin_create)},
+        {collapsing_header_plugin_name, collapsing_header_plugin_type, reinterpret_cast<void*>(collapsing_header_plugin_create)},
         // Backend tree-like
         {simple_data_tree_plugin_name, simple_data_tree_plugin_type, reinterpret_cast<void*>(simple_data_tree_plugin_create)},
         {data_tree_plugin_name, data_tree_plugin_type, reinterpret_cast<void*>(data_tree_plugin_create)},
+        {filesystem_plugin_name, filesystem_plugin_type, reinterpret_cast<void*>(filesystem_plugin_create)},
     };
     return plugins;
 }

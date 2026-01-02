@@ -1,14 +1,15 @@
 # Build directories
-build*/
-cmake-build*/
+build-*/
 
-# Android
-android/**/.gradle/
-android/**/build/
-android/**/.cxx/
-android/ymery-editor/.gradle/
-android/ymery-editor/app/build/
-android/ymery-editor/app/.cxx/
+# External dependencies (downloaded at build time)
+external/
+
+# Android build artifacts
+build-tools/android/**/build/
+build-tools/android/**/.gradle/
+build-tools/android/**/.cxx/
+build-tools/android/**/app/libs/
+build-tools/android/**/wgpu-native/
 *.apk
 *.aab
 local.properties
@@ -26,19 +27,6 @@ CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake
 compile_commands.json
-Makefile.cmake
-
-# Libraries and objects
-*.a
-*.so
-*.dylib
-*.dll
-*.o
-*.obj
-
-# Executables
-/ymery-cli
-/ymery-editor
 
 # imgui.ini (generated at runtime)
 imgui.ini

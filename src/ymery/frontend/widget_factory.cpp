@@ -159,13 +159,13 @@ Result<WidgetPtr> WidgetFactory::create_widget(
 }
 
 Result<WidgetPtr> WidgetFactory::create_root_widget() {
-    spdlog::info("WidgetFactory::create_root_widget");
+    spdlog::debug("WidgetFactory::create_root_widget");
     const Dict& app_config = _lang->app_config();
-    spdlog::info("App config has {} keys", app_config.size());
+    spdlog::debug("App config has {} keys", app_config.size());
 
     // Debug: print all keys in app_config
     for (const auto& [key, val] : app_config) {
-        spdlog::info("App config key: '{}'", key);
+        spdlog::debug("App config key: '{}'", key);
     }
 
     // Simple data trees map with just the main data tree
@@ -178,7 +178,7 @@ Result<WidgetPtr> WidgetFactory::create_root_widget() {
     if (widget_it != app_config.end()) {
         if (auto name = get_as<std::string>(widget_it->second)) {
             widget_name = *name;
-            spdlog::info("Found 'root-widget' in app config: {}", widget_name);
+            spdlog::debug("Found 'root-widget' in app config: {}", widget_name);
         }
     }
 
@@ -275,7 +275,7 @@ Result<std::pair<std::string, Dict>> WidgetFactory::_parse_widget_spec(
         auto dp_it = spec_dict->find("data-path");
         if (dp_it != spec_dict->end()) {
             inline_props["data-path"] = dp_it->second;
-            spdlog::info("_parse_widget_spec: found sibling data-path for '{}'", name);
+            spdlog::debug("_parse_widget_spec: found sibling data-path for '{}'", name);
         }
 
         return Ok(std::make_pair(name, inline_props));
@@ -323,7 +323,7 @@ Result<std::shared_ptr<DataBag>> WidgetFactory::_create_data_bag(
         if (!keys_str.empty()) keys_str += ", ";
         keys_str += k;
     }
-    spdlog::info("_create_data_bag: widget_def keys=[{}]", keys_str);
+    spdlog::debug("_create_data_bag: widget_def keys=[{}]", keys_str);
 
     // Create statics from widget definition (excluding data-path)
     Dict statics;
@@ -341,7 +341,7 @@ Result<std::shared_ptr<DataBag>> WidgetFactory::_create_data_bag(
         if (dp_it != widget_def.end()) {
             if (auto path_str = get_as<std::string>(dp_it->second)) {
                 data_path_spec = *path_str;
-                spdlog::info("_create_data_bag: inheriting with data-path='{}'", data_path_spec);
+                spdlog::debug("_create_data_bag: inheriting with data-path='{}'", data_path_spec);
             }
         }
 

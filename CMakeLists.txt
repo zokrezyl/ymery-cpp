@@ -41,6 +41,9 @@ if(EMSCRIPTEN)
         SPDLOG_NO_SOURCE_LOC
         YMERY_WEB_DAWN=1
     )
+    # Enable C++ exceptions for emscripten (must be set before adding packages)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fexceptions")
 else()
     set(YMERY_WEB OFF)
 endif()
@@ -133,28 +136,27 @@ CPMAddPackage(
 # Not needed for Emscripten - browser provides WebGPU
 # Uses pre-built wgpu-native v27+ for all native platforms
 if(YMERY_USE_WEBGPU AND NOT YMERY_WEB)
-    # Headers are shared between desktop and Android
-    set(WGPU_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/external/wgpu-native/include")
-
     if(YMERY_ANDROID)
-        # Android: Use pre-built wgpu-native from android/ymery/app/libs
-        # Downloaded by android/ymery/build-wgpu.sh script
-        set(WGPU_LIB "${CMAKE_CURRENT_SOURCE_DIR}/android/ymery/app/libs/arm64-v8a/libwgpu_native.so")
+        # Android: Use pre-built wgpu-native from build-tools/android/ymery/app/libs
+        # Downloaded by build-tools/android/ymery/build-wgpu.sh script
+        set(WGPU_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/build-tools/android/ymery/wgpu-native/include")
+        set(WGPU_LIB "${CMAKE_CURRENT_SOURCE_DIR}/build-tools/android/ymery/app/libs/arm64-v8a/libwgpu_native.so")
 
         if(NOT EXISTS "${WGPU_LIB}")
             message(FATAL_ERROR
                 "wgpu-native Android library not found at ${WGPU_LIB}\n"
-                "Run 'make android-webgpu' or 'android/ymery/build-wgpu.sh' first to download it.")
+                "Run 'make config-android-webgpu' first to download it.")
         endif()
     else()
-        # Desktop: Use pre-built wgpu-native from external/wgpu-native
-        # Downloaded by scripts/build-wgpu-desktop.sh
-        set(WGPU_LIB "${CMAKE_CURRENT_SOURCE_DIR}/external/wgpu-native/lib/libwgpu_native.so")
+        # Desktop: Use pre-built wgpu-native from build directory
+        # Downloaded by build-tools/shared/build-wgpu-desktop.sh
+        set(WGPU_INCLUDE "${CMAKE_BINARY_DIR}/wgpu-native/include")
+        set(WGPU_LIB "${CMAKE_BINARY_DIR}/wgpu-native/lib/libwgpu_native.so")
 
         if(NOT EXISTS "${WGPU_LIB}")
             message(FATAL_ERROR
                 "wgpu-native library not found at ${WGPU_LIB}\n"
-                "Run 'scripts/build-wgpu-desktop.sh' first to download it.")
+                "Run 'make config-desktop-webgpu' first to download it.")
         endif()
     endif()
 
@@ -226,8 +228,19 @@ if(imgui_ADDED)
         target_link_libraries(imgui PUBLIC android log EGL GLESv3)
     elseif(YMERY_USE_WEBGPU)
         # Native WebGPU (wgpu-native)
-        find_package(X11 REQUIRED)
-        target_link_libraries(imgui PUBLIC glfw webgpu X11::X11)
+        if(APPLE)
+            # macOS - use Cocoa (via GLFW), no X11 needed
+            target_link_libraries(imgui PUBLIC glfw webgpu)
+            # imgui_impl_wgpu.cpp includes Cocoa.h and must be compiled as Objective-C++
+            set_source_files_properties(
+                ${imgui_SOURCE_DIR}/backends/imgui_impl_wgpu.cpp
+                PROPERTIES COMPILE_FLAGS "-x objective-c++"
+            )
+        else()
+            # Linux - requires X11
+            find_package(X11 REQUIRED)
+            target_link_libraries(imgui PUBLIC glfw webgpu X11::X11)
+        endif()
         target_compile_definitions(imgui PUBLIC
             YMERY_USE_WEBGPU=1
             IMGUI_IMPL_WEBGPU_BACKEND_WGPU=1
@@ -557,10 +570,10 @@ if(NOT YMERY_ANDROID)
     if(YMERY_WEB)
         # Emscripten linker flags (emscripten 4.x+ uses ports)
         # Plugins are compiled statically (no dlopen) - see static_plugins.cpp
-        # Preload demo layouts into virtual filesystem
+        # Preload demo directory into virtual filesystem for builtin browser
         set_target_properties(ymery PROPERTIES
             SUFFIX ".html"
-            LINK_FLAGS "--use-port=contrib.glfw3 --use-port=emdawnwebgpu -sWASM=1 -sALLOW_MEMORY_GROWTH=1 -sNO_EXIT_RUNTIME=0 -sASSERTIONS=1 --preload-file ${CMAKE_SOURCE_DIR}/demo/layouts@/demo"
+            LINK_FLAGS "--use-port=contrib.glfw3 --use-port=emdawnwebgpu -sWASM=1 -sALLOW_MEMORY_GROWTH=1 -sNO_EXIT_RUNTIME=0 -sASSERTIONS=1 -sASYNCIFY -fexceptions --preload-file ${CMAKE_SOURCE_DIR}/demo@/demo"
         )
         # Define YMERY_WEB for conditional code
         target_compile_definitions(ymery PRIVATE YMERY_WEB=1)
@@ -632,10 +645,24 @@ if(YMERY_WEB)
     add_web_plugin(spacing src/ymery/plugins/frontend/spacing.cpp)
     add_web_plugin(tree_node src/ymery/plugins/frontend/tree-node.cpp)
     add_web_plugin(group src/ymery/plugins/frontend/group.cpp)
+    add_web_plugin(child src/ymery/plugins/frontend/child.cpp)
+    add_web_plugin(collapsing_header src/ymery/plugins/frontend/collapsing-header.cpp)
 
     # Add backend plugins
     add_web_plugin(simple_data_tree src/ymery/plugins/backend/simple-data-tree.cpp)
     add_web_plugin(data_tree src/ymery/plugins/backend/data-tree.cpp)
+
+    # Filesystem plugin (multi-file plugin - compile as object library)
+    add_library(filesystem_web_plugin OBJECT
+        src/ymery/plugins/backend/filesystem/common.cpp
+        src/ymery/plugins/backend/filesystem/tree.cpp
+    )
+    target_link_libraries(filesystem_web_plugin PRIVATE ymery_lib)
+    target_include_directories(filesystem_web_plugin PRIVATE ${CMAKE_SOURCE_DIR}/src)
+    target_compile_definitions(filesystem_web_plugin PRIVATE
+        YMERY_PLUGIN_NAME_PREFIX=filesystem_plugin_
+    )
+    target_sources(ymery PRIVATE $<TARGET_OBJECTS:filesystem_web_plugin>)
 else()
     add_subdirectory(src/ymery/plugins)
 endif()

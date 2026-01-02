@@ -15,7 +15,7 @@ Result<std::shared_ptr<EmbeddedApp>> EmbeddedApp::create(const EmbeddedConfig& c
 }
 
 Result<void> EmbeddedApp::_init_core() {
-    spdlog::info("EmbeddedApp::_init_core starting");
+    spdlog::debug("EmbeddedApp::_init_core starting");
 
     // Create dispatcher
     auto disp_res = Dispatcher::create();
@@ -52,7 +52,7 @@ Result<void> EmbeddedApp::_init_core() {
     if (tree_it != app_config.end()) {
         if (auto t = get_as<std::string>(tree_it->second)) {
             tree_type = *t;
-            spdlog::info("Using data-tree type from config: {}", tree_type);
+            spdlog::debug("Using data-tree type from config: {}", tree_type);
         }
     }
 
@@ -72,14 +72,14 @@ Result<void> EmbeddedApp::_init_core() {
     _widget_factory = *wf_res;
 
     // Create root widget
-    spdlog::info("Creating root widget");
+    spdlog::debug("Creating root widget");
     auto root_res = _widget_factory->create_root_widget();
     if (!root_res) {
         spdlog::error("EmbeddedApp::_init_core: root widget create failed: {}", error_msg(root_res));
         return Err<void>("EmbeddedApp::_init_core: root widget create failed", root_res);
     }
     _root_widget = *root_res;
-    spdlog::info("Root widget created successfully");
+    spdlog::debug("Root widget created successfully");
 
     return Ok();
 }

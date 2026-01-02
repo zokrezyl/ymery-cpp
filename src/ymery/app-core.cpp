@@ -8,7 +8,10 @@
 namespace ymery {
 
 Result<void> App::_init_core() {
+    spdlog::debug("_init_core starting");
+
     // Create dispatcher
+    spdlog::debug("Creating dispatcher");
     auto disp_res = Dispatcher::create();
     if (!disp_res) {
         return Err<void>("App::_init_core: dispatcher create failed", disp_res);
@@ -23,18 +26,23 @@ Result<void> App::_init_core() {
     }
 
     // Create plugin manager (TreeLike that holds all plugins)
+    spdlog::debug("Creating plugin manager with path: {}", plugins_path);
     auto pm_res = PluginManager::create(plugins_path);
     if (!pm_res) {
         return Err<void>("App::_init_core: plugin manager create failed", pm_res);
     }
     _plugin_manager = *pm_res;
 
+    spdlog::debug("Plugin manager created");
+
     // Load YAML modules
+    spdlog::debug("Loading YAML modules, main_module: {}", _config.main_module);
     auto lang_res = Lang::create(_config.layout_paths, _config.main_module);
     if (!lang_res) {
         return Err<void>("App::_init_core: lang create failed", lang_res);
     }
     _lang = *lang_res;
+    spdlog::debug("Lang loaded successfully");
 
     // Get data tree type from app config (default: simple-data-tree)
     std::string tree_type = "simple-data-tree";
@@ -43,11 +51,12 @@ Result<void> App::_init_core() {
     if (tree_it != app_config.end()) {
         if (auto t = get_as<std::string>(tree_it->second)) {
             tree_type = *t;
-            spdlog::info("Using data-tree type from config: {}", tree_type);
+            spdlog::debug("Using data-tree type from config: {}", tree_type);
         }
     }
 
     // Create data tree from plugin
+    spdlog::debug("Creating data tree of type: {}", tree_type);
     auto tree_res = _plugin_manager->create_tree(tree_type, _dispatcher);
     if (!tree_res) {
         spdlog::warn("Could not create {} from plugin: {}", tree_type, error_msg(tree_res));
@@ -64,14 +73,14 @@ Result<void> App::_init_core() {
     _widget_factory = *wf_res;
 
     // Create root widget
-    spdlog::info("Creating root widget");
+    spdlog::debug("Creating root widget");
     auto root_res = _widget_factory->create_root_widget();
     if (!root_res) {
         spdlog::error("App::_init_core: root widget create failed: {}", error_msg(root_res));
         return Err<void>("App::_init_core: root widget create failed", root_res);
     }
     _root_widget = *root_res;
-    spdlog::info("Root widget created successfully");
+    spdlog::debug("Root widget created successfully");
 
     return Ok();
 }

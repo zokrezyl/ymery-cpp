@@ -54,7 +54,7 @@ public:
                 while (ports[count]) count++;
                 if (count > 0) {
                     device->_num_channels = count;
-                    spdlog::info("JackDevice: auto-detected {} channels from {}", count, target_client);
+                    spdlog::debug("JackDevice: auto-detected {} channels from {}", count, target_client);
                 }
                 jack_free(ports);
             }
@@ -97,7 +97,7 @@ public:
         // Set shutdown callback
         jack_on_shutdown(device->_client, _shutdown_callback, device.get());
 
-        spdlog::info("JackDevice: created client '{}' with {} channels at {}Hz, buffer={}",
+        spdlog::debug("JackDevice: created client '{}' with {} channels at {}Hz, buffer={}",
                      client_name, device->_num_channels, device->_sample_rate, device->_buffer_size);
 
         return device;
@@ -112,7 +112,7 @@ public:
         }
 
         _running = true;
-        spdlog::info("JackDevice: activated client '{}'", _client_name);
+        spdlog::debug("JackDevice: activated client '{}'", _client_name);
 
         // Auto-connect if requested
         if (_auto_connect && !_target_client.empty()) {
@@ -123,7 +123,7 @@ public:
                     const char* src_port = ports[i];
                     const char* dst_port = jack_port_name(_input_ports[i]);
                     if (jack_connect(_client, src_port, dst_port) == 0) {
-                        spdlog::info("JackDevice: connected {} -> {}", src_port, dst_port);
+                        spdlog::debug("JackDevice: connected {} -> {}", src_port, dst_port);
                     }
                 }
                 jack_free(ports);
@@ -139,7 +139,7 @@ public:
 
         if (_client) {
             jack_deactivate(_client);
-            spdlog::info("JackDevice: deactivated client '{}'", _client_name);
+            spdlog::debug("JackDevice: deactivated client '{}'", _client_name);
         }
     }
 
