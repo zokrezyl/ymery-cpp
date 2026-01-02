@@ -28,7 +28,11 @@
 #include <spdlog/spdlog.h>
 
 #if defined(YMERY_USE_WEBGPU) && !defined(YMERY_ANDROID)
+#ifdef __APPLE__
+#define GLFW_EXPOSE_NATIVE_COCOA
+#else
 #define GLFW_EXPOSE_NATIVE_X11
+#endif
 #include <GLFW/glfw3native.h>
 #endif
 
