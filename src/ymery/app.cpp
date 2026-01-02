@@ -43,6 +43,8 @@
 // For native surface creation with wgpu-native
 #ifdef __APPLE__
 #define GLFW_EXPOSE_NATIVE_COCOA
+#import <Cocoa/Cocoa.h>
+#import <QuartzCore/CAMetalLayer.h>
 #else
 #define GLFW_EXPOSE_NATIVE_X11
 #endif

@@ -30,6 +30,8 @@
 #if defined(YMERY_USE_WEBGPU) && !defined(YMERY_ANDROID)
 #ifdef __APPLE__
 #define GLFW_EXPOSE_NATIVE_COCOA
+#import <Cocoa/Cocoa.h>
+#import <QuartzCore/CAMetalLayer.h>
 #else
 #define GLFW_EXPOSE_NATIVE_X11
 #endif
@@ -271,7 +273,23 @@ bool EditorApp::init(const EditorConfig& config) {
         return false;
     }
 
-    // Create surface from X11 window
+    // Create surface from native window
+#ifdef __APPLE__
+    // macOS: create surface using Metal
+    id metal_layer = nullptr;
+    NSWindow* ns_window = glfwGetCocoaWindow(_window);
+    [ns_window.contentView setWantsLayer:YES];
+    metal_layer = [CAMetalLayer layer];
+    [ns_window.contentView setLayer:metal_layer];
+
+    WGPUSurfaceSourceMetalLayer metal_surface_desc = {};
+    metal_surface_desc.chain.sType = WGPUSType_SurfaceSourceMetalLayer;
+    metal_surface_desc.layer = metal_layer;
+
+    WGPUSurfaceDescriptor surface_desc = {};
+    surface_desc.nextInChain = reinterpret_cast<const WGPUChainedStruct*>(&metal_surface_desc);
+#else
+    // Linux: create surface from X11 window
     Display* x11_display = glfwGetX11Display();
     Window x11_window = glfwGetX11Window(_window);
 
@@ -282,6 +300,7 @@ bool EditorApp::init(const EditorConfig& config) {
 
     WGPUSurfaceDescriptor surface_desc = {};
     surface_desc.nextInChain = reinterpret_cast<const WGPUChainedStruct*>(&x11_surface_desc);
+#endif
 
     s_wgpu_surface = wgpuInstanceCreateSurface(s_wgpu_instance, &surface_desc);
     if (!s_wgpu_surface) {

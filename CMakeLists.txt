@@ -556,9 +556,20 @@ else()
         glfw
         spdlog::spdlog
     )
-    # dl library is only needed on Unix-like systems
-    if(UNIX)
+    # dl library is only needed on Unix-like systems (not macOS)
+    if(UNIX AND NOT APPLE)
         target_link_libraries(ymery_lib PUBLIC dl)
+    endif()
+    # macOS: compile app.cpp as Objective-C++ and link frameworks
+    if(APPLE AND YMERY_USE_WEBGPU)
+        set_source_files_properties(
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/ymery/app.cpp
+            PROPERTIES COMPILE_FLAGS "-x objective-c++"
+        )
+        target_link_libraries(ymery_lib PUBLIC
+            "-framework Cocoa"
+            "-framework QuartzCore"
+        )
     endif()
 endif()
 
@@ -606,6 +617,17 @@ if(NOT YMERY_WEB AND NOT YMERY_ANDROID)
     if(YMERY_USE_WEBGPU)
         target_link_libraries(ymery-editor PRIVATE webgpu)
         target_compile_definitions(ymery-editor PRIVATE YMERY_USE_WEBGPU)
+        # macOS: compile editor_app.cpp as Objective-C++ and link frameworks
+        if(APPLE)
+            set_source_files_properties(
+                ${CMAKE_CURRENT_SOURCE_DIR}/src/ymery/editor/editor_app.cpp
+                PROPERTIES COMPILE_FLAGS "-x objective-c++"
+            )
+            target_link_libraries(ymery-editor PRIVATE
+                "-framework Cocoa"
+                "-framework QuartzCore"
+            )
+        endif()
     else()
         find_package(OpenGL REQUIRED)
         target_link_libraries(ymery-editor PRIVATE OpenGL::GL)
