@@ -7,7 +7,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-  # Desktop OpenGL build
+  # Desktop OpenGL build (Linux)
   desktop-opengl:
     runs-on: ubuntu-latest
 
@@ -33,9 +33,9 @@ jobs:
           ninja-build
 
     - name: Build and Test
-      run: make test-desktop-opengl
+      run: make test-desktop-opengl-release
 
-  # Desktop WebGPU build
+  # Desktop WebGPU build (Linux)
   desktop-webgpu:
     runs-on: ubuntu-latest
 
@@ -61,7 +61,7 @@ jobs:
           ninja-build
 
     - name: Build and Test
-      run: make test-desktop-webgpu
+      run: make test-desktop-webgpu-release
 
   # Android OpenGL build
   android-opengl:
@@ -80,13 +80,13 @@ jobs:
       uses: android-actions/setup-android@v3
 
     - name: Build and Test
-      run: make test-android-opengl
+      run: make test-android-opengl-release
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: ymery-android-opengl-debug
-        path: build-tools/android/ymery/app/build/outputs/apk/opengl/debug/*.apk
+        name: ymery-android-opengl-release
+        path: build-tools/android/ymery/app/build/outputs/apk/opengl/release/*.apk
 
   # Android WebGPU build
   android-webgpu:
@@ -105,13 +105,13 @@ jobs:
       uses: android-actions/setup-android@v3
 
     - name: Build and Test
-      run: make test-android-webgpu
+      run: make test-android-webgpu-release
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: ymery-android-webgpu-debug
-        path: build-tools/android/ymery/app/build/outputs/apk/webgpu/debug/*.apk
+        name: ymery-android-webgpu-release
+        path: build-tools/android/ymery/app/build/outputs/apk/webgpu/release/*.apk
 
   # WebAssembly WebGPU build
   webasm-webgpu:
@@ -126,7 +126,7 @@ jobs:
         nix_path: nixpkgs=channel:nixos-unstable
 
     - name: Build and Test
-      run: make test-webasm-webgpu
+      run: make test-webasm-webgpu-release
 
   # Windows WebGPU build
   windows-webgpu:
@@ -135,8 +135,12 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Download wgpu-native
+      shell: bash
+      run: bash build-tools/shared/build-wgpu-desktop.sh build
+
     - name: Configure CMake
-      run: cmake -B build -DYMERY_USE_WEBGPU=ON -DYMERY_BUILD_TESTS=ON
+      run: cmake -B build -DYMERY_USE_WEBGPU=ON -DYMERY_BUILD_TESTS=ON -DYMERY_BUILD_GUI_TESTS=OFF
 
     - name: Build
       run: cmake --build build --config Release --parallel
@@ -152,8 +156,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Download wgpu-native
+      run: bash build-tools/shared/build-wgpu-desktop.sh build
+
     - name: Configure CMake
-      run: cmake -B build -DYMERY_USE_WEBGPU=ON -DYMERY_BUILD_TESTS=ON
+      run: cmake -B build -DYMERY_USE_WEBGPU=ON -DYMERY_BUILD_TESTS=ON -DYMERY_BUILD_GUI_TESTS=OFF
 
     - name: Build
       run: cmake --build build --config Release --parallel

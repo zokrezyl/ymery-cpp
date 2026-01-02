@@ -158,7 +158,16 @@ if(YMERY_USE_WEBGPU AND NOT YMERY_WEB)
         # Desktop: Use pre-built wgpu-native from build directory
         # Downloaded by build-tools/shared/build-wgpu-desktop.sh
         set(WGPU_INCLUDE "${CMAKE_BINARY_DIR}/wgpu-native/include")
-        set(WGPU_LIB "${CMAKE_BINARY_DIR}/wgpu-native/lib/libwgpu_native.so")
+
+        # Platform-specific library name
+        if(WIN32)
+            set(WGPU_LIB "${CMAKE_BINARY_DIR}/wgpu-native/lib/wgpu_native.dll")
+            set(WGPU_IMPLIB "${CMAKE_BINARY_DIR}/wgpu-native/lib/wgpu_native.dll.lib")
+        elseif(APPLE)
+            set(WGPU_LIB "${CMAKE_BINARY_DIR}/wgpu-native/lib/libwgpu_native.dylib")
+        else()
+            set(WGPU_LIB "${CMAKE_BINARY_DIR}/wgpu-native/lib/libwgpu_native.so")
+        endif()
 
         if(NOT EXISTS "${WGPU_LIB}")
             message(FATAL_ERROR
@@ -180,6 +189,12 @@ if(YMERY_USE_WEBGPU AND NOT YMERY_WEB)
         IMPORTED_NO_SONAME TRUE
         INTERFACE_INCLUDE_DIRECTORIES "${WGPU_INCLUDE};${WGPU_INCLUDE}/webgpu"
     )
+    # Windows needs import library
+    if(WIN32 AND WGPU_IMPLIB)
+        set_target_properties(webgpu PROPERTIES
+            IMPORTED_IMPLIB "${WGPU_IMPLIB}"
+        )
+    endif()
     target_compile_definitions(webgpu INTERFACE WEBGPU_BACKEND_WGPU)
 
     message(STATUS "Using wgpu-native v27+:")
