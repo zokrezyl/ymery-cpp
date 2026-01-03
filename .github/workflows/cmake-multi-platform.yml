@@ -8,37 +8,6 @@ on:
     branches: [ "main" ]
 
 jobs:
-  # Linux OpenGL build
-  linux-opengl:
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          libx11-dev \
-          libxrandr-dev \
-          libxinerama-dev \
-          libxcursor-dev \
-          libxi-dev \
-          libxext-dev \
-          libgl1-mesa-dev \
-          libglu1-mesa-dev \
-          libasound2-dev \
-          libjack-jackd2-dev \
-          libpipewire-0.3-dev \
-          pkg-config \
-          ninja-build
-
-    - name: Build
-      run: make build-desktop-opengl-release
-
-    - name: Test
-      run: cd build-desktop-opengl-release && ctest --output-on-failure
-
   # Linux WebGPU build
   linux-webgpu:
     runs-on: ubuntu-latest
@@ -79,70 +48,8 @@ jobs:
       if: startsWith(github.ref, 'refs/tags/')
       uses: actions/upload-artifact@v4
       with:
-        name: linux-build
+        name: linux-webgpu
         path: dist/*.zip
-
-  # Android OpenGL build
-  android-opengl:
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
-
-    - name: Build
-      run: make build-android-opengl-release
-
-    - name: Package
-      if: startsWith(github.ref, 'refs/tags/')
-      run: make release-android-opengl-release VERSION=${{ github.ref_name }}
-
-    - name: Upload artifact
-      if: startsWith(github.ref, 'refs/tags/')
-      uses: actions/upload-artifact@v4
-      with:
-        name: android-opengl-build
-        path: dist/*.apk
-        if-no-files-found: ignore
-
-  # Android WebGPU build
-  android-webgpu:
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
-
-    - name: Build
-      run: make build-android-webgpu-release
-
-    - name: Package
-      if: startsWith(github.ref, 'refs/tags/')
-      run: make release-android-webgpu-release VERSION=${{ github.ref_name }}
-
-    - name: Upload artifact
-      if: startsWith(github.ref, 'refs/tags/')
-      uses: actions/upload-artifact@v4
-      with:
-        name: android-webgpu-build
-        path: dist/*.apk
-        if-no-files-found: ignore
 
   # WebAssembly WebGPU build
   webasm-webgpu:
@@ -170,7 +77,7 @@ jobs:
       if: startsWith(github.ref, 'refs/tags/')
       uses: actions/upload-artifact@v4
       with:
-        name: web-build
+        name: webasm-webgpu
         path: dist/*.zip
 
   # Windows WebGPU build
@@ -204,12 +111,12 @@ jobs:
       if: startsWith(github.ref, 'refs/tags/')
       uses: actions/upload-artifact@v4
       with:
-        name: windows-build
+        name: windows-webgpu
         path: dist/*.zip
 
   # macOS WebGPU build (Intel x86_64)
   macos-webgpu:
-    runs-on: macos-15-intel
+    runs-on: macos-13
 
     steps:
     - uses: actions/checkout@v4
@@ -237,13 +144,13 @@ jobs:
       if: startsWith(github.ref, 'refs/tags/')
       uses: actions/upload-artifact@v4
       with:
-        name: macos-build
+        name: macos-webgpu
         path: dist/*.zip
 
   # Create GitHub Release (only on tags)
   release:
     if: startsWith(github.ref, 'refs/tags/')
-    needs: [linux-opengl, linux-webgpu, android-opengl, android-webgpu, webasm-webgpu, windows-webgpu, macos-webgpu]
+    needs: [linux-webgpu, webasm-webgpu, windows-webgpu, macos-webgpu]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -257,7 +164,7 @@ jobs:
     - name: Collect release files
       run: |
         mkdir -p release-files
-        find artifacts -type f \( -name "*.zip" -o -name "*.apk" \) -exec cp {} release-files/ \;
+        find artifacts -type f -name "*.zip" -exec cp {} release-files/ \;
         ls -la release-files/
 
     - name: Create Release
