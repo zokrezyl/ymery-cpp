@@ -630,9 +630,9 @@ private:
 
 extern "C" const char* name() { return "coreaudio"; }
 extern "C" const char* type() { return "tree-like"; }
-extern "C" ymery::Result<ymery::TreeLikePtr> create(
+extern "C" void* create(
     std::shared_ptr<ymery::Dispatcher> /*dispatcher*/,
     std::shared_ptr<ymery::PluginManager> /*plugin_manager*/
 ) {
-    return ymery::plugins::CoreAudioManager::create();
+    return static_cast<void*>(new ymery::Result<ymery::TreeLikePtr>(ymery::plugins::CoreAudioManager::create()));
 }

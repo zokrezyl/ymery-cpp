@@ -80,11 +80,11 @@ private:
 
 extern "C" const char* name() { return "dockable-window"; }
 extern "C" const char* type() { return "widget"; }
-extern "C" ymery::Result<ymery::WidgetPtr> create(
+extern "C" void* create(
     std::shared_ptr<ymery::WidgetFactory> wf,
     std::shared_ptr<ymery::Dispatcher> d,
     const std::string& ns,
     std::shared_ptr<ymery::DataBag> db
 ) {
-    return ymery::plugins::DockableWindow::create(wf, d, ns, db);
+    return static_cast<void*>(new ymery::Result<ymery::WidgetPtr>(ymery::plugins::DockableWindow::create(wf, d, ns, db)));
 }

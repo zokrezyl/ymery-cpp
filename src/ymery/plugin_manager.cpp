@@ -125,15 +125,16 @@ static Dict load_plugin_meta(const std::string& plugin_path) {
 }
 
 // Plugin function types (from .so files - native only)
+// Returns void* pointing to heap-allocated Result - caller takes ownership
 using PluginNameFn = const char*(*)();
 using PluginTypeFn = const char*(*)();
-using PluginWidgetCreateFn = Result<WidgetPtr>(*)(
+using PluginWidgetCreateFn = void*(*)(
     std::shared_ptr<WidgetFactory>,
     std::shared_ptr<Dispatcher>,
     const std::string&,
     std::shared_ptr<DataBag>
 );
-using PluginTreeCreateFn = Result<TreeLikePtr>(*)(std::shared_ptr<Dispatcher>, std::shared_ptr<PluginManager>);
+using PluginTreeCreateFn = void*(*)(std::shared_ptr<Dispatcher>, std::shared_ptr<PluginManager>);
 #endif // !YMERY_WEB
 
 Result<std::shared_ptr<PluginManager>> PluginManager::create(const std::string& plugins_path) {
@@ -288,30 +289,62 @@ Result<void> PluginManager::_load_plugin(const std::string& path) {
     }
 
     if (plugin_type == "widget") {
-        auto create_fn = reinterpret_cast<PluginWidgetCreateFn>(ymery_dlsym(handle, "create"));
-        if (!create_fn) {
+        auto raw_fn = reinterpret_cast<PluginWidgetCreateFn>(ymery_dlsym(handle, "create"));
+        if (!raw_fn) {
             ymery_dlclose(handle);
             return Err<void>("Widget plugin has no 'create' function: " + path);
         }
-        meta.create_fn = WidgetCreateFn(create_fn);
+        // Wrap raw function to convert void* to Result
+        meta.create_fn = WidgetCreateFn([raw_fn](
+            std::shared_ptr<WidgetFactory> factory,
+            std::shared_ptr<Dispatcher> dispatcher,
+            const std::string& name,
+            std::shared_ptr<DataBag> bag
+        ) -> Result<WidgetPtr> {
+            void* ptr = raw_fn(factory, dispatcher, name, bag);
+            auto* result = static_cast<Result<WidgetPtr>*>(ptr);
+            Result<WidgetPtr> ret = std::move(*result);
+            delete result;
+            return ret;
+        });
         _plugins["widget"][plugin_name] = meta;
     }
     else if (plugin_type == "tree-like") {
-        auto create_fn = reinterpret_cast<PluginTreeCreateFn>(ymery_dlsym(handle, "create"));
-        if (!create_fn) {
+        auto raw_fn = reinterpret_cast<PluginTreeCreateFn>(ymery_dlsym(handle, "create"));
+        if (!raw_fn) {
             ymery_dlclose(handle);
             return Err<void>("Tree-like plugin has no 'create' function: " + path);
         }
-        meta.create_fn = TreeLikeCreateFn(create_fn);
+        // Wrap raw function to convert void* to Result
+        meta.create_fn = TreeLikeCreateFn([raw_fn](
+            std::shared_ptr<Dispatcher> dispatcher,
+            std::shared_ptr<PluginManager> pm
+        ) -> Result<TreeLikePtr> {
+            void* ptr = raw_fn(dispatcher, pm);
+            auto* result = static_cast<Result<TreeLikePtr>*>(ptr);
+            Result<TreeLikePtr> ret = std::move(*result);
+            delete result;
+            return ret;
+        });
         _plugins["tree-like"][plugin_name] = meta;
     }
     else if (plugin_type == "device-manager") {
-        auto create_fn = reinterpret_cast<PluginTreeCreateFn>(ymery_dlsym(handle, "create"));
-        if (!create_fn) {
+        auto raw_fn = reinterpret_cast<PluginTreeCreateFn>(ymery_dlsym(handle, "create"));
+        if (!raw_fn) {
             ymery_dlclose(handle);
             return Err<void>("Device-manager plugin has no 'create' function: " + path);
         }
-        meta.create_fn = TreeLikeCreateFn(create_fn);
+        // Wrap raw function to convert void* to Result
+        meta.create_fn = TreeLikeCreateFn([raw_fn](
+            std::shared_ptr<Dispatcher> dispatcher,
+            std::shared_ptr<PluginManager> pm
+        ) -> Result<TreeLikePtr> {
+            void* ptr = raw_fn(dispatcher, pm);
+            auto* result = static_cast<Result<TreeLikePtr>*>(ptr);
+            Result<TreeLikePtr> ret = std::move(*result);
+            delete result;
+            return ret;
+        });
         _plugins["device-manager"][plugin_name] = meta;
     }
     else {

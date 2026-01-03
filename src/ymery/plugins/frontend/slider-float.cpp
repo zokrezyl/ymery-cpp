@@ -69,11 +69,11 @@ private:
 
 extern "C" const char* PLUGIN_EXPORT_NAME() { return "slider-float"; }
 extern "C" const char* PLUGIN_EXPORT_TYPE() { return "widget"; }
-extern "C" ymery::Result<ymery::WidgetPtr> PLUGIN_EXPORT_CREATE(
+extern "C" void* PLUGIN_EXPORT_CREATE(
     std::shared_ptr<ymery::WidgetFactory> wf,
     std::shared_ptr<ymery::Dispatcher> d,
     const std::string& ns,
     std::shared_ptr<ymery::DataBag> db
 ) {
-    return ymery::plugins::SliderFloat::create(wf, d, ns, db);
+    return static_cast<void*>(new ymery::Result<ymery::WidgetPtr>(ymery::plugins::SliderFloat::create(wf, d, ns, db)));
 }

@@ -306,13 +306,13 @@ private:
 
 extern "C" const char* name() { return "shader-toy"; }
 extern "C" const char* type() { return "widget"; }
-extern "C" ymery::Result<ymery::WidgetPtr> create(
+extern "C" void* create(
     std::shared_ptr<ymery::WidgetFactory> wf,
     std::shared_ptr<ymery::Dispatcher> d,
     const std::string& ns,
     std::shared_ptr<ymery::DataBag> db
 ) {
-    return ymery::plugins::ShaderToy::create(wf, d, ns, db);
+    return static_cast<void*>(new ymery::Result<ymery::WidgetPtr>(ymery::plugins::ShaderToy::create(wf, d, ns, db)));
 }
 
 #else // !YMERY_USE_WEBGPU
@@ -350,13 +350,13 @@ protected:
 
 extern "C" const char* name() { return "shader-toy"; }
 extern "C" const char* type() { return "widget"; }
-extern "C" ymery::Result<ymery::WidgetPtr> create(
+extern "C" void* create(
     std::shared_ptr<ymery::WidgetFactory> wf,
     std::shared_ptr<ymery::Dispatcher> d,
     const std::string& ns,
     std::shared_ptr<ymery::DataBag> db
 ) {
-    return ymery::plugins::ShaderToyStub::create(wf, d, ns, db);
+    return static_cast<void*>(new ymery::Result<ymery::WidgetPtr>(ymery::plugins::ShaderToyStub::create(wf, d, ns, db)));
 }
 
 #endif // YMERY_USE_WEBGPU

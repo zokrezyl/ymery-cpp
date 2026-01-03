@@ -32,14 +32,15 @@ using TreeLikeCreateFn = std::function<Result<TreeLikePtr>(
 )>;
 
 // Raw function pointer types (for static plugins and dlsym)
-using WidgetCreateFnPtr = Result<WidgetPtr>(*)(
+// Returns void* pointing to heap-allocated Result - caller takes ownership
+using WidgetCreateFnPtr = void*(*)(
     std::shared_ptr<WidgetFactory>,
     std::shared_ptr<Dispatcher>,
     const std::string&,
     std::shared_ptr<DataBag>
 );
 
-using TreeLikeCreateFnPtr = Result<TreeLikePtr>(*)(
+using TreeLikeCreateFnPtr = void*(*)(
     std::shared_ptr<Dispatcher>,
     std::shared_ptr<PluginManager>
 );

@@ -6,6 +6,8 @@
 //
 // Plugins should use PLUGIN_EXPORT_NAME, PLUGIN_EXPORT_TYPE, PLUGIN_EXPORT_CREATE
 // to define their export functions.
+//
+// Plugin create functions return void* pointing to heap-allocated Result.
 
 // If a plugin name prefix is defined, use it
 #ifdef YMERY_PLUGIN_NAME_PREFIX

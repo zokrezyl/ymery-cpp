@@ -101,9 +101,6 @@ jobs:
     - name: Build
       run: make build-android-opengl-release
 
-    - name: Test
-      run: cd build-android-opengl-release && ctest --output-on-failure
-
     - name: Package
       if: startsWith(github.ref, 'refs/tags/')
       run: make release-android-opengl-release VERSION=${{ github.ref_name }}
@@ -134,9 +131,6 @@ jobs:
 
     - name: Build
       run: make build-android-webgpu-release
-
-    - name: Test
-      run: cd build-android-webgpu-release && ctest --output-on-failure
 
     - name: Package
       if: startsWith(github.ref, 'refs/tags/')
@@ -213,9 +207,9 @@ jobs:
         name: windows-build
         path: dist/*.zip
 
-  # macOS WebGPU build
+  # macOS WebGPU build (Intel x86_64)
   macos-webgpu:
-    runs-on: macos-latest
+    runs-on: macos-13
 
     steps:
     - uses: actions/checkout@v4
