@@ -34,7 +34,7 @@ jobs:
           ninja-build
 
     - name: Build
-      run: make desktop-opengl-release
+      run: make build-desktop-opengl-release
 
     - name: Test
       run: cd build-desktop-opengl-release && ctest --output-on-failure
@@ -66,16 +66,14 @@ jobs:
           zip
 
     - name: Build
-      run: make desktop-webgpu-release
+      run: make build-desktop-webgpu-release
 
     - name: Test
       run: cd build-desktop-webgpu-release && ctest --output-on-failure
 
     - name: Package
       if: startsWith(github.ref, 'refs/tags/')
-      run: |
-        chmod +x build-tools/release/package-linux.sh
-        build-tools/release/package-linux.sh build-desktop-webgpu-release ${{ github.ref_name }}
+      run: make release-desktop-webgpu-release VERSION=${{ github.ref_name }}
 
     - name: Upload artifact
       if: startsWith(github.ref, 'refs/tags/')
@@ -101,16 +99,14 @@ jobs:
       uses: android-actions/setup-android@v3
 
     - name: Build
-      run: make android-opengl-release
+      run: make build-android-opengl-release
 
     - name: Test
       run: cd build-android-opengl-release && ctest --output-on-failure
 
     - name: Package
       if: startsWith(github.ref, 'refs/tags/')
-      run: |
-        mkdir -p dist
-        cp build-tools/android/ymery/app/build/outputs/apk/opengl/release/*.apk dist/ymery-android-opengl-${{ github.ref_name }}.apk || true
+      run: make release-android-opengl-release VERSION=${{ github.ref_name }}
 
     - name: Upload artifact
       if: startsWith(github.ref, 'refs/tags/')
@@ -137,16 +133,14 @@ jobs:
       uses: android-actions/setup-android@v3
 
     - name: Build
-      run: make android-webgpu-release
+      run: make build-android-webgpu-release
 
     - name: Test
       run: cd build-android-webgpu-release && ctest --output-on-failure
 
     - name: Package
       if: startsWith(github.ref, 'refs/tags/')
-      run: |
-        mkdir -p dist
-        cp build-tools/android/ymery/app/build/outputs/apk/webgpu/release/*.apk dist/ymery-android-webgpu-${{ github.ref_name }}.apk || true
+      run: make release-android-webgpu-release VERSION=${{ github.ref_name }}
 
     - name: Upload artifact
       if: startsWith(github.ref, 'refs/tags/')
@@ -169,16 +163,14 @@ jobs:
         nix_path: nixpkgs=channel:nixos-unstable
 
     - name: Build
-      run: make webasm-webgpu-release
+      run: make build-webasm-webgpu-release
 
     - name: Test
       run: cd build-webasm-webgpu-release && ctest --output-on-failure
 
     - name: Package
       if: startsWith(github.ref, 'refs/tags/')
-      run: |
-        chmod +x build-tools/release/package-web.sh
-        build-tools/release/package-web.sh build-webasm-webgpu-release ${{ github.ref_name }}
+      run: make release-webasm-webgpu-release VERSION=${{ github.ref_name }}
 
     - name: Upload artifact
       if: startsWith(github.ref, 'refs/tags/')

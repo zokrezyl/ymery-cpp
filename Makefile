@@ -245,6 +245,28 @@ test-webasm-webgpu-debug: build-webasm-webgpu-debug
 	cd build-webasm-webgpu-debug && ctest --output-on-failure
 
 # =============================================================================
+# Release Packaging
+# =============================================================================
+
+VERSION ?= dev
+
+.PHONY: release-desktop-webgpu-release
+release-desktop-webgpu-release: build-desktop-webgpu-release
+	bash $(BUILD_TOOLS_DIR)/release/package-linux.sh build-desktop-webgpu-release $(VERSION)
+
+.PHONY: release-android-opengl-release
+release-android-opengl-release: build-android-opengl-release
+	bash $(BUILD_TOOLS_DIR)/release/package-android.sh $(VERSION)
+
+.PHONY: release-android-webgpu-release
+release-android-webgpu-release: build-android-webgpu-release
+	bash $(BUILD_TOOLS_DIR)/release/package-android.sh $(VERSION)
+
+.PHONY: release-webasm-webgpu-release
+release-webasm-webgpu-release: build-webasm-webgpu-release
+	bash $(BUILD_TOOLS_DIR)/release/package-web.sh build-webasm-webgpu-release $(VERSION)
+
+# =============================================================================
 # Clean
 # =============================================================================
 
