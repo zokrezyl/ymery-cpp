@@ -118,7 +118,11 @@ protected:
             msg.time.time_since_epoch()) % 1000;
 
         std::tm tm_buf;
+#ifdef _WIN32
+        localtime_s(&tm_buf, &time_t);
+#else
         localtime_r(&time_t, &tm_buf);
+#endif
 
         char timestamp[32];
         std::strftime(timestamp, sizeof(timestamp), "%H:%M:%S", &tm_buf);

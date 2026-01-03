@@ -717,6 +717,7 @@ suite foreach_child_tests = [] {
         expect(meta.count("buffer") > 0_ul) << "leaf channel should have buffer";
     };
 
+#ifdef __linux__
     "alsa_provider_has_available_and_opened"_test = [] {
         auto pm_res = PluginManager::create(PLUGINS_PATH);
         expect(pm_res.has_value());
@@ -846,6 +847,7 @@ suite foreach_child_tests = [] {
         expect(has_default) << "Missing 'default'";
         expect(has_nodes) << "Missing 'nodes'";
     };
+#endif // __linux__
 };
 
 int main() {

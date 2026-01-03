@@ -32,6 +32,9 @@
 #define GLFW_EXPOSE_NATIVE_COCOA
 #import <Cocoa/Cocoa.h>
 #import <QuartzCore/CAMetalLayer.h>
+#elif defined(_WIN32)
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <windows.h>
 #else
 #define GLFW_EXPOSE_NATIVE_X11
 #endif
