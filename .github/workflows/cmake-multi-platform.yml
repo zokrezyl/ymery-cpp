@@ -167,7 +167,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: android-opengl
-        path: build-tools/android/ymery/app/build/outputs/apk/opengl/debug/*.apk
+        path: build-android/app/outputs/apk/opengl/debug/*.apk
 
   # Android WebGPU build
   android-webgpu:
@@ -193,7 +193,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: android-webgpu
-        path: build-tools/android/ymery/app/build/outputs/apk/webgpu/debug/*.apk
+        path: build-android/app/outputs/apk/webgpu/debug/*.apk
 
   # Create GitHub Release (only on tags)
   release:
