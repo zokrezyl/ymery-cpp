@@ -34,13 +34,13 @@ New-Item -ItemType Directory -Force -Path $PackageDir | Out-Null
 New-Item -ItemType Directory -Force -Path (Join-Path $PackageDir "plugins") | Out-Null
 
 # Copy main executable
-$ExePath = Join-Path $BuildDir "Release/ymery.exe"
+$ExePath = Join-Path $BuildDir "ymery.exe"
 if (Test-Path $ExePath) {
     Copy-Item $ExePath $PackageDir
 }
 
 # Copy plugins
-$PluginsDir = Join-Path $BuildDir "plugins/Release"
+$PluginsDir = Join-Path $BuildDir "plugins"
 if (Test-Path $PluginsDir) {
     Get-ChildItem -Path $PluginsDir -Filter "*.dll" | ForEach-Object {
         Copy-Item $_.FullName (Join-Path $PackageDir "plugins")
