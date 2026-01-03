@@ -3,6 +3,7 @@ name: Build
 on:
   push:
     branches: [ "main" ]
+    tags: [ "v*" ]
   pull_request:
     branches: [ "main" ]
 
@@ -61,13 +62,27 @@ jobs:
           libjack-jackd2-dev \
           libpipewire-0.3-dev \
           pkg-config \
-          ninja-build
+          ninja-build \
+          zip
 
     - name: Build
       run: make desktop-webgpu-release
 
     - name: Test
       run: cd build-desktop-webgpu-release && ctest --output-on-failure
+
+    - name: Package
+      if: startsWith(github.ref, 'refs/tags/')
+      run: |
+        chmod +x build-tools/release/package-linux.sh
+        build-tools/release/package-linux.sh build-desktop-webgpu-release ${{ github.ref_name }}
+
+    - name: Upload artifact
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: actions/upload-artifact@v4
+      with:
+        name: linux-build
+        path: dist/*.zip
 
   # Android OpenGL build
   android-opengl:
@@ -91,11 +106,19 @@ jobs:
     - name: Test
       run: cd build-android-opengl-release && ctest --output-on-failure
 
-    - name: Upload APK
+    - name: Package
+      if: startsWith(github.ref, 'refs/tags/')
+      run: |
+        mkdir -p dist
+        cp build-tools/android/ymery/app/build/outputs/apk/opengl/release/*.apk dist/ymery-android-opengl-${{ github.ref_name }}.apk || true
+
+    - name: Upload artifact
+      if: startsWith(github.ref, 'refs/tags/')
       uses: actions/upload-artifact@v4
       with:
-        name: ymery-android-opengl-release
-        path: build-tools/android/ymery/app/build/outputs/apk/opengl/release/*.apk
+        name: android-opengl-build
+        path: dist/*.apk
+        if-no-files-found: ignore
 
   # Android WebGPU build
   android-webgpu:
@@ -119,11 +142,19 @@ jobs:
     - name: Test
       run: cd build-android-webgpu-release && ctest --output-on-failure
 
-    - name: Upload APK
+    - name: Package
+      if: startsWith(github.ref, 'refs/tags/')
+      run: |
+        mkdir -p dist
+        cp build-tools/android/ymery/app/build/outputs/apk/webgpu/release/*.apk dist/ymery-android-webgpu-${{ github.ref_name }}.apk || true
+
+    - name: Upload artifact
+      if: startsWith(github.ref, 'refs/tags/')
       uses: actions/upload-artifact@v4
       with:
-        name: ymery-android-webgpu-release
-        path: build-tools/android/ymery/app/build/outputs/apk/webgpu/release/*.apk
+        name: android-webgpu-build
+        path: dist/*.apk
+        if-no-files-found: ignore
 
   # WebAssembly WebGPU build
   webasm-webgpu:
@@ -142,6 +173,19 @@ jobs:
 
     - name: Test
       run: cd build-webasm-webgpu-release && ctest --output-on-failure
+
+    - name: Package
+      if: startsWith(github.ref, 'refs/tags/')
+      run: |
+        chmod +x build-tools/release/package-web.sh
+        build-tools/release/package-web.sh build-webasm-webgpu-release ${{ github.ref_name }}
+
+    - name: Upload artifact
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: actions/upload-artifact@v4
+      with:
+        name: web-build
+        path: dist/*.zip
 
   # Windows WebGPU build
   windows-webgpu:
@@ -164,6 +208,19 @@ jobs:
       working-directory: build
       run: ctest --build-config Release --output-on-failure
 
+    - name: Package
+      if: startsWith(github.ref, 'refs/tags/')
+      shell: pwsh
+      run: |
+        .\build-tools\release\package-windows.ps1 -BuildDir build -Version ${{ github.ref_name }}
+
+    - name: Upload artifact
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-build
+        path: dist/*.zip
+
   # macOS WebGPU build
   macos-webgpu:
     runs-on: macos-latest
@@ -183,3 +240,44 @@ jobs:
     - name: Test
       working-directory: build
       run: ctest --build-config Release --output-on-failure
+
+    - name: Package
+      if: startsWith(github.ref, 'refs/tags/')
+      run: |
+        chmod +x build-tools/release/package-macos.sh
+        build-tools/release/package-macos.sh build ${{ github.ref_name }}
+
+    - name: Upload artifact
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: actions/upload-artifact@v4
+      with:
+        name: macos-build
+        path: dist/*.zip
+
+  # Create GitHub Release (only on tags)
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [linux-opengl, linux-webgpu, android-opengl, android-webgpu, webasm-webgpu, windows-webgpu, macos-webgpu]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+
+    - name: Collect release files
+      run: |
+        mkdir -p release-files
+        find artifacts -type f \( -name "*.zip" -o -name "*.apk" \) -exec cp {} release-files/ \;
+        ls -la release-files/
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: release-files/*
+        generate_release_notes: true
+        draft: false
+        prerelease: ${{ contains(github.ref_name, '-') }}
