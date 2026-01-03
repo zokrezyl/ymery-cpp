@@ -291,6 +291,17 @@ bool EditorApp::init(const EditorConfig& config) {
 
     WGPUSurfaceDescriptor surface_desc = {};
     surface_desc.nextInChain = reinterpret_cast<const WGPUChainedStruct*>(&metal_surface_desc);
+#elif defined(_WIN32)
+    // Windows: create surface from Win32 window
+    HWND hwnd = glfwGetWin32Window(_window);
+
+    WGPUSurfaceSourceWindowsHWND win32_surface_desc = {};
+    win32_surface_desc.chain.sType = WGPUSType_SurfaceSourceWindowsHWND;
+    win32_surface_desc.hinstance = GetModuleHandle(nullptr);
+    win32_surface_desc.hwnd = hwnd;
+
+    WGPUSurfaceDescriptor surface_desc = {};
+    surface_desc.nextInChain = reinterpret_cast<const WGPUChainedStruct*>(&win32_surface_desc);
 #else
     // Linux: create surface from X11 window
     Display* x11_display = glfwGetX11Display();
