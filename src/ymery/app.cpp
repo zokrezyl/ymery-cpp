@@ -45,6 +45,9 @@
 #define GLFW_EXPOSE_NATIVE_COCOA
 #import <Cocoa/Cocoa.h>
 #import <QuartzCore/CAMetalLayer.h>
+#elif defined(_WIN32)
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <windows.h>
 #else
 #define GLFW_EXPOSE_NATIVE_X11
 #endif
@@ -700,6 +703,20 @@ Result<void> App::_init_graphics() {
 
     WGPUSurfaceDescriptor surface_desc = {};
     surface_desc.nextInChain = reinterpret_cast<const WGPUChainedStruct*>(&metal_surface_desc);
+
+    _wgpu_surface = wgpuInstanceCreateSurface(_wgpu_instance, &surface_desc);
+#elif defined(_WIN32)
+    // Windows: create surface from Win32 window
+    HWND hwnd = glfwGetWin32Window(static_cast<GLFWwindow*>(_window));
+    HINSTANCE hinstance = GetModuleHandle(nullptr);
+
+    WGPUSurfaceSourceWindowsHWND win32_surface_desc = {};
+    win32_surface_desc.chain.sType = WGPUSType_SurfaceSourceWindowsHWND;
+    win32_surface_desc.hinstance = hinstance;
+    win32_surface_desc.hwnd = hwnd;
+
+    WGPUSurfaceDescriptor surface_desc = {};
+    surface_desc.nextInChain = reinterpret_cast<const WGPUChainedStruct*>(&win32_surface_desc);
 
     _wgpu_surface = wgpuInstanceCreateSurface(_wgpu_instance, &surface_desc);
 #else
