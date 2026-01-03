@@ -1,6 +1,11 @@
 # Unit tests using boost-ext/ut
 # Tests run from build directory root where plugins/ is located
 
+# Disable C++20 modules for boost.ut on MSVC (causes module errors)
+if(MSVC)
+    add_compile_definitions(BOOST_UT_DISABLE_MODULE)
+endif()
+
 # Kernel plugin tests
 add_executable(kernel_test kernel_test.cpp)
 target_link_libraries(kernel_test PRIVATE ymery_lib ut)
