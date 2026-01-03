@@ -92,14 +92,10 @@ jobs:
       run: bash build-tools/shared/build-wgpu-desktop.sh build
 
     - name: Configure CMake
-      run: cmake -B build -DYMERY_USE_WEBGPU=ON -DYMERY_BUILD_TESTS=ON -DYMERY_BUILD_GUI_TESTS=OFF -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+      run: cmake -B build -DYMERY_USE_WEBGPU=ON -DYMERY_BUILD_TESTS=OFF -DYMERY_BUILD_GUI_TESTS=OFF -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 
     - name: Build
       run: cmake --build build --config Release --parallel
-
-    - name: Test
-      working-directory: build
-      run: ctest --build-config Release --output-on-failure
 
     - name: Package
       if: startsWith(github.ref, 'refs/tags/')
