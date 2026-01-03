@@ -31,7 +31,11 @@ inline std::string ymery_dlerror() {
 }
 #else
 #include <dlfcn.h>
+#ifdef __APPLE__
+#define YMERY_PLUGIN_EXT ".dylib"
+#else
 #define YMERY_PLUGIN_EXT ".so"
+#endif
 #define YMERY_PATH_SEP ':'
 using PluginHandle = void*;
 inline PluginHandle ymery_dlopen(const char* path) { return dlopen(path, RTLD_NOW | RTLD_LOCAL); }
@@ -191,15 +195,47 @@ Result<void> PluginManager::_ensure_plugins_loaded() {
         meta.class_name = plugin_name;
 
         if (plugin_type == "widget") {
-            meta.create_fn = WidgetCreateFn(reinterpret_cast<WidgetCreateFnPtr>(plugin.create));
+            auto raw_fn = reinterpret_cast<WidgetCreateFnPtr>(plugin.create);
+            meta.create_fn = WidgetCreateFn([raw_fn](
+                std::shared_ptr<WidgetFactory> factory,
+                std::shared_ptr<Dispatcher> dispatcher,
+                const std::string& name,
+                std::shared_ptr<DataBag> bag
+            ) -> Result<WidgetPtr> {
+                void* ptr = raw_fn(factory, dispatcher, name, bag);
+                auto* result = static_cast<Result<WidgetPtr>*>(ptr);
+                Result<WidgetPtr> ret = std::move(*result);
+                delete result;
+                return ret;
+            });
             _plugins["widget"][plugin_name] = meta;
         }
         else if (plugin_type == "tree-like") {
-            meta.create_fn = TreeLikeCreateFn(reinterpret_cast<TreeLikeCreateFnPtr>(plugin.create));
+            auto raw_fn = reinterpret_cast<TreeLikeCreateFnPtr>(plugin.create);
+            meta.create_fn = TreeLikeCreateFn([raw_fn](
+                std::shared_ptr<Dispatcher> dispatcher,
+                std::shared_ptr<PluginManager> pm
+            ) -> Result<TreeLikePtr> {
+                void* ptr = raw_fn(dispatcher, pm);
+                auto* result = static_cast<Result<TreeLikePtr>*>(ptr);
+                Result<TreeLikePtr> ret = std::move(*result);
+                delete result;
+                return ret;
+            });
             _plugins["tree-like"][plugin_name] = meta;
         }
         else if (plugin_type == "device-manager") {
-            meta.create_fn = TreeLikeCreateFn(reinterpret_cast<TreeLikeCreateFnPtr>(plugin.create));
+            auto raw_fn = reinterpret_cast<TreeLikeCreateFnPtr>(plugin.create);
+            meta.create_fn = TreeLikeCreateFn([raw_fn](
+                std::shared_ptr<Dispatcher> dispatcher,
+                std::shared_ptr<PluginManager> pm
+            ) -> Result<TreeLikePtr> {
+                void* ptr = raw_fn(dispatcher, pm);
+                auto* result = static_cast<Result<TreeLikePtr>*>(ptr);
+                Result<TreeLikePtr> ret = std::move(*result);
+                delete result;
+                return ret;
+            });
             _plugins["device-manager"][plugin_name] = meta;
         }
         else {
