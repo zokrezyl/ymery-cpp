@@ -7,8 +7,8 @@ on:
     branches: [ "main" ]
 
 jobs:
-  # Desktop OpenGL build (Linux)
-  desktop-opengl:
+  # Linux OpenGL build
+  linux-opengl:
     runs-on: ubuntu-latest
 
     steps:
@@ -32,11 +32,14 @@ jobs:
           pkg-config \
           ninja-build
 
-    - name: Build and Test
-      run: make test-desktop-opengl-release
+    - name: Build
+      run: make desktop-opengl-release
 
-  # Desktop WebGPU build (Linux)
-  desktop-webgpu:
+    - name: Test
+      run: cd build-desktop-opengl-release && ctest --output-on-failure
+
+  # Linux WebGPU build
+  linux-webgpu:
     runs-on: ubuntu-latest
 
     steps:
@@ -60,8 +63,11 @@ jobs:
           pkg-config \
           ninja-build
 
-    - name: Build and Test
-      run: make test-desktop-webgpu-release
+    - name: Build
+      run: make desktop-webgpu-release
+
+    - name: Test
+      run: cd build-desktop-webgpu-release && ctest --output-on-failure
 
   # Android OpenGL build
   android-opengl:
@@ -79,8 +85,11 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
-    - name: Build and Test
-      run: make test-android-opengl-release
+    - name: Build
+      run: make android-opengl-release
+
+    - name: Test
+      run: cd build-android-opengl-release && ctest --output-on-failure
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
@@ -104,8 +113,11 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
-    - name: Build and Test
-      run: make test-android-webgpu-release
+    - name: Build
+      run: make android-webgpu-release
+
+    - name: Test
+      run: cd build-android-webgpu-release && ctest --output-on-failure
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
@@ -125,8 +137,11 @@ jobs:
       with:
         nix_path: nixpkgs=channel:nixos-unstable
 
-    - name: Build and Test
-      run: make test-webasm-webgpu-release
+    - name: Build
+      run: make webasm-webgpu-release
+
+    - name: Test
+      run: cd build-webasm-webgpu-release && ctest --output-on-failure
 
   # Windows WebGPU build
   windows-webgpu:
