@@ -16,8 +16,8 @@
 #define YMERY_PLUGIN_EXT ".dll"
 #define YMERY_PATH_SEP ';'
 using PluginHandle = HMODULE;
-inline PluginHandle ymery_dlopen(const char* path) {
-    return LoadLibraryA(path);
+inline PluginHandle ymery_dlopen(const wchar_t* path) {
+    return LoadLibraryW(path);
 }
 inline void* ymery_dlsym(PluginHandle h, const char* sym) { return (void*)GetProcAddress(h, sym); }
 inline void ymery_dlclose(PluginHandle h) { FreeLibrary(h); }
@@ -310,15 +310,19 @@ Result<void> PluginManager::_ensure_plugins_loaded() {
 Result<void> PluginManager::_load_plugin(const std::string& path) {
     spdlog::debug("Loading plugin: {}", path);
 
-    // Ensure we're using the native path format
     fs::path plugin_path(path);
-    std::string native_path = plugin_path.string();
 
-    PluginHandle handle = ymery_dlopen(native_path.c_str());
+#ifdef _WIN32
+    // Use wide string on Windows for proper Unicode support
+    std::wstring wide_path = plugin_path.wstring();
+    PluginHandle handle = ymery_dlopen(wide_path.c_str());
+#else
+    PluginHandle handle = ymery_dlopen(plugin_path.string().c_str());
+#endif
     if (!handle) {
         std::string error = ymery_dlerror();
-        spdlog::error("LoadLibrary failed for '{}': {}", native_path, error);
-        return Err<void>(std::string("Failed to load plugin '") + native_path + "': " + error);
+        spdlog::error("LoadLibrary failed for '{}': {}", path, error);
+        return Err<void>(std::string("Failed to load plugin '") + path + "': " + error);
     }
 
     auto name_fn = reinterpret_cast<PluginNameFn>(ymery_dlsym(handle, "name"));
