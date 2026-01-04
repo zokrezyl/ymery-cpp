@@ -57,19 +57,36 @@ if (Test-Path $LibPath) {
     }
 }
 
-# Copy plugins (MSVC multi-config puts them in plugins/Release/)
+# Copy plugins
+# Try plugins/Release/ first (MSVC multi-config with RUNTIME_OUTPUT_DIRECTORY)
+# Then plugins/ (single-config with RUNTIME_OUTPUT_DIRECTORY)
+# Finally build root (MSVC without RUNTIME_OUTPUT_DIRECTORY - DLLs go to root)
+$PluginsCopied = $false
+
 $PluginsDir = Join-Path $BuildDir "plugins/Release"
 if (Test-Path $PluginsDir) {
     Get-ChildItem -Path $PluginsDir -Filter "*.dll" | ForEach-Object {
         Copy-Item $_.FullName (Join-Path $PackageDir "plugins")
+        $PluginsCopied = $true
     }
-} else {
-    # Fallback to plugins/ root (single-config generators)
+}
+
+if (-not $PluginsCopied) {
     $PluginsDir = Join-Path $BuildDir "plugins"
     if (Test-Path $PluginsDir) {
         Get-ChildItem -Path $PluginsDir -Filter "*.dll" | ForEach-Object {
             Copy-Item $_.FullName (Join-Path $PackageDir "plugins")
+            $PluginsCopied = $true
         }
+    }
+}
+
+# Fallback: copy plugin DLLs from build root (excluding core DLLs)
+if (-not $PluginsCopied) {
+    Get-ChildItem -Path $BuildDir -Filter "*.dll" | Where-Object {
+        $_.Name -notin @("ymery_lib.dll", "wgpu_native.dll")
+    } | ForEach-Object {
+        Copy-Item $_.FullName (Join-Path $PackageDir "plugins")
     }
 }
 
