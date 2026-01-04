@@ -348,8 +348,9 @@ void NodeGraph::Graph::update()
             node->selected = true;
         }
 
-        // Handle node dragging
-        if ( node->selected && ImGui::IsMouseDragging( 0 ) )
+        // Handle node dragging - only when mouse is inside canvas
+        if ( node->selected && ImGui::IsMouseDragging( 0 ) &&
+             ImGui::IsMouseHoveringRect( canvasPos, canvasEnd ) )
         {
             node->position += ImGui::GetIO().MouseDelta;
         }
@@ -418,7 +419,15 @@ protected:
             graph->nodes.push_back(std::move(outputNode));
         }
 
-        ImGui::BeginChild(("NodeGraph_" + _uid).c_str(), ImVec2(-1, -1), true);
+        ImGui::BeginChild(("NodeGraph_" + _uid).c_str(), ImVec2(-1, -1), true,
+            ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollWithMouse);
+        
+        // Capture mouse to prevent parent window movement
+        ImVec2 canvasSize = ImGui::GetContentRegionAvail();
+        ImGui::SetNextItemAllowOverlap();
+        ImGui::InvisibleButton("##NodeGraphCanvas", canvasSize);
+        ImGui::SetCursorPos(ImVec2(0, 0));
+        
         graph->update();
         ImGui::EndChild();
 

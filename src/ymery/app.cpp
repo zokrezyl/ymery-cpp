@@ -917,6 +917,11 @@ Result<void> App::_begin_frame() {
 
     ImGui_ImplWGPU_NewFrame();
     ImGui_ImplGlfw_NewFrame();
+    
+    // Force DisplaySize to match the configured surface size to prevent scissor rect mismatch
+    ImGui::GetIO().DisplaySize = ImVec2(static_cast<float>(_wgpu_surface_width), 
+                                        static_cast<float>(_wgpu_surface_height));
+    
     ImGui::NewFrame();
 
     return Ok();

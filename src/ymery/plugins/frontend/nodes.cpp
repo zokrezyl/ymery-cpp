@@ -1244,6 +1244,11 @@ void ImGuiNodes::Update() {
           element_input_->output_->connections_ > 0)
         return;
 
+      // Only drag nodes when mouse is inside canvas
+      ImRect canvas(pos_, pos_ + size_);
+      if (false == canvas.Contains(mouse_))
+        return;
+
       if (false == (element_node_->state_ & ImGuiNodesNodeStateFlag_Selected))
         element_node_->TranslateNode(io.MouseDelta / scale_, false);
       else
@@ -1568,7 +1573,8 @@ public:
 protected:
     Result<void> _begin_container() override {
         ImVec2 avail = ImGui::GetContentRegionAvail();
-        ImGui::BeginChild("##NodesCanvas", avail, true, ImGuiWindowFlags_NoScrollbar);
+        ImGui::BeginChild("##NodesCanvas", avail, true, 
+            ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollWithMouse);
         _container_open = true;
         return Ok();
     }
@@ -1622,6 +1628,16 @@ protected:
         editor_.Update();
         editor_.ProcessNodes();
         editor_.ProcessContextMenu();
+        
+        // Capture mouse events to prevent parent window from moving
+        ImVec2 canvasMin = ImGui::GetWindowContentRegionMin() + ImGui::GetWindowPos();
+        ImVec2 canvasMax = ImGui::GetWindowContentRegionMax() + ImGui::GetWindowPos();
+        if (ImGui::IsMouseHoveringRect(canvasMin, canvasMax)) {
+            if (ImGui::IsMouseDragging(0) || ImGui::IsMouseDragging(1) || ImGui::IsMouseDragging(2)) {
+                ImGui::SetWindowFocus();
+            }
+        }
+        
         return Ok();
     }
 
