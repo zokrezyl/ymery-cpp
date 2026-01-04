@@ -45,6 +45,18 @@ if (Test-Path $ExePath) {
     }
 }
 
+# Copy ymery_lib shared library (MSVC multi-config puts it in Release/)
+$LibPath = Join-Path $BuildDir "Release/ymery_lib.dll"
+if (Test-Path $LibPath) {
+    Copy-Item $LibPath $PackageDir
+} else {
+    # Fallback to root (single-config generators)
+    $LibPath = Join-Path $BuildDir "ymery_lib.dll"
+    if (Test-Path $LibPath) {
+        Copy-Item $LibPath $PackageDir
+    }
+}
+
 # Copy plugins (MSVC multi-config puts them in plugins/Release/)
 $PluginsDir = Join-Path $BuildDir "plugins/Release"
 if (Test-Path $PluginsDir) {
