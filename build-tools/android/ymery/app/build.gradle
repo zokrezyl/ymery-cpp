@@ -75,3 +75,25 @@ android {
 
 dependencies {
 }
+
+// Copy APK to build-android-{flavor}-{buildType} at repo root
+def repoRoot = rootProject.projectDir.parentFile.parentFile.parentFile
+android.applicationVariants.all { variant ->
+    variant.outputs.all { output ->
+        def flavorName = variant.flavorName
+        def buildType = variant.buildType.name
+        def outputDir = new File(repoRoot, "build-android-${flavorName}-${buildType}")
+
+        variant.assembleProvider.get().doLast {
+            outputDir.mkdirs()
+            def apkFile = output.outputFile
+            if (apkFile.exists()) {
+                copy {
+                    from apkFile
+                    into outputDir
+                }
+                println "APK copied to: ${outputDir}/${apkFile.name}"
+            }
+        }
+    }
+}

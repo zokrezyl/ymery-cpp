@@ -167,7 +167,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: android-opengl
-        path: build-android/app/outputs/apk/opengl/debug/*.apk
+        path: build-android-opengl-debug/*.apk
 
   # Android WebGPU build
   android-webgpu:
@@ -193,7 +193,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: android-webgpu
-        path: build-android/app/outputs/apk/webgpu/debug/*.apk
+        path: build-android-webgpu-debug/*.apk
 
   # Create GitHub Release (only on tags)
   release:
@@ -212,7 +212,7 @@ jobs:
     - name: Collect release files
       run: |
         mkdir -p release-files
-        find artifacts -type f -name "*.zip" -exec cp {} release-files/ \;
+        find artifacts -type f \( -name "*.zip" -o -name "*.apk" \) -exec cp {} release-files/ \;
         ls -la release-files/
 
     - name: Create Release
