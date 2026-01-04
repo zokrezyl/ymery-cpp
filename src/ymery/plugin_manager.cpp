@@ -16,7 +16,10 @@
 #define YMERY_PLUGIN_EXT ".dll"
 #define YMERY_PATH_SEP ';'
 using PluginHandle = HMODULE;
-inline PluginHandle ymery_dlopen(const char* path) { return LoadLibraryA(path); }
+inline PluginHandle ymery_dlopen(const char* path) {
+    // Use LOAD_WITH_ALTERED_SEARCH_PATH to search for dependencies in the DLL's directory
+    return LoadLibraryExA(path, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+}
 inline void* ymery_dlsym(PluginHandle h, const char* sym) { return (void*)GetProcAddress(h, sym); }
 inline void ymery_dlclose(PluginHandle h) { FreeLibrary(h); }
 inline std::string ymery_dlerror() {
@@ -259,13 +262,22 @@ Result<void> PluginManager::_ensure_plugins_loaded() {
 
 #ifdef _WIN32
     // On Windows, add the exe directory to DLL search path so plugins can find ymery_lib.dll
-    if (!plugin_dirs.empty()) {
-        fs::path first_dir = plugin_dirs[0];
-        fs::path exe_dir = first_dir.parent_path();  // plugins dir is typically exe_dir/plugins
+    // Use GetModuleFileName to get the actual exe directory reliably
+    char exe_path[MAX_PATH];
+    if (GetModuleFileNameA(NULL, exe_path, MAX_PATH) > 0) {
+        fs::path exe_dir = fs::path(exe_path).parent_path();
+        spdlog::debug("Exe directory: {}", exe_dir.string());
         if (fs::exists(exe_dir / "ymery_lib.dll")) {
-            SetDllDirectoryA(exe_dir.string().c_str());
-            spdlog::debug("Set DLL search directory to: {}", exe_dir.string());
+            if (SetDllDirectoryA(exe_dir.string().c_str())) {
+                spdlog::debug("Set DLL search directory to: {}", exe_dir.string());
+            } else {
+                spdlog::warn("Failed to set DLL directory: error {}", GetLastError());
+            }
+        } else {
+            spdlog::warn("ymery_lib.dll not found in exe directory: {}", exe_dir.string());
         }
+    } else {
+        spdlog::warn("Failed to get module filename: error {}", GetLastError());
     }
 #endif
 
@@ -299,9 +311,15 @@ Result<void> PluginManager::_ensure_plugins_loaded() {
 Result<void> PluginManager::_load_plugin(const std::string& path) {
     spdlog::debug("Loading plugin: {}", path);
 
-    PluginHandle handle = ymery_dlopen(path.c_str());
+    // Ensure we're using the native path format
+    fs::path plugin_path(path);
+    std::string native_path = plugin_path.string();
+
+    PluginHandle handle = ymery_dlopen(native_path.c_str());
     if (!handle) {
-        return Err<void>(std::string("Failed to load plugin: ") + ymery_dlerror());
+        std::string error = ymery_dlerror();
+        spdlog::error("LoadLibrary failed for '{}': {}", native_path, error);
+        return Err<void>(std::string("Failed to load plugin '") + native_path + "': " + error);
     }
 
     auto name_fn = reinterpret_cast<PluginNameFn>(ymery_dlsym(handle, "name"));
