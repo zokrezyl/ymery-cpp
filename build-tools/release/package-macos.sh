@@ -34,6 +34,11 @@ if [ -f "$BUILD_DIR/ymery" ]; then
     cp "$BUILD_DIR/ymery" "$PACKAGE_DIR/"
 fi
 
+# Copy ymery_lib shared library
+if [ -f "$BUILD_DIR/libymery_lib.dylib" ]; then
+    cp "$BUILD_DIR/libymery_lib.dylib" "$PACKAGE_DIR/"
+fi
+
 # Copy plugins
 if [ -d "$BUILD_DIR/plugins" ]; then
     cp "$BUILD_DIR/plugins"/*.dylib "$PACKAGE_DIR/plugins/" 2>/dev/null || true
