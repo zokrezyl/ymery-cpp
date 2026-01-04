@@ -257,6 +257,18 @@ Result<void> PluginManager::_ensure_plugins_loaded() {
         }
     }
 
+#ifdef _WIN32
+    // On Windows, add the exe directory to DLL search path so plugins can find ymery_lib.dll
+    if (!plugin_dirs.empty()) {
+        fs::path first_dir = plugin_dirs[0];
+        fs::path exe_dir = first_dir.parent_path();  // plugins dir is typically exe_dir/plugins
+        if (fs::exists(exe_dir / "ymery_lib.dll")) {
+            SetDllDirectoryA(exe_dir.string().c_str());
+            spdlog::debug("Set DLL search directory to: {}", exe_dir.string());
+        }
+    }
+#endif
+
     // Scan each directory
     for (const auto& dir : plugin_dirs) {
         if (!fs::exists(dir)) {
