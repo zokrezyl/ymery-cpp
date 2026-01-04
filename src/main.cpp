@@ -3,6 +3,11 @@
 #include <iostream>
 #include <filesystem>
 #include <spdlog/spdlog.h>
+#ifdef _WIN32
+#include <windows.h>
+#elif defined(__APPLE__)
+#include <mach-o/dyld.h>
+#endif
 
 int main(int argc, char* argv[]) {
     spdlog::set_level(spdlog::level::info);
@@ -107,12 +112,31 @@ int main(int argc, char* argv[]) {
     }
 
 #ifndef YMERY_WEB
-    // Default plugin path - look for plugins directory next to executable (Linux only)
+    // Default plugin path - look for plugins directory next to executable
     if (plugin_paths.empty()) {
+        std::filesystem::path exe_dir;
+#ifdef _WIN32
+        // Windows: use GetModuleFileName
+        wchar_t exe_path_buf[MAX_PATH];
+        if (GetModuleFileNameW(NULL, exe_path_buf, MAX_PATH) > 0) {
+            exe_dir = std::filesystem::path(exe_path_buf).parent_path();
+        }
+#elif defined(__APPLE__)
+        // macOS: use _NSGetExecutablePath
+        char exe_path_buf[PATH_MAX];
+        uint32_t size = sizeof(exe_path_buf);
+        if (_NSGetExecutablePath(exe_path_buf, &size) == 0) {
+            std::error_code ec;
+            exe_dir = std::filesystem::canonical(exe_path_buf, ec).parent_path();
+        }
+#else
+        // Linux: use /proc/self/exe
         std::error_code ec;
-        auto exe_path = std::filesystem::canonical("/proc/self/exe", ec);
-        if (!ec) {
-            plugin_paths.push_back(exe_path.parent_path() / "plugins");
+        exe_dir = std::filesystem::canonical("/proc/self/exe", ec).parent_path();
+#endif
+        if (!exe_dir.empty()) {
+            plugin_paths.push_back(exe_dir / "plugins");
+            spdlog::debug("Default plugin path: {}", (exe_dir / "plugins").string());
         }
     }
 #endif
