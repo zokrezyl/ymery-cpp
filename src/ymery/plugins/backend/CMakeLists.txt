@@ -9,7 +9,8 @@ endif()
 
 # For Emscripten: compile plugins as side modules for dynamic linking
 if(YMERY_WEB)
-    set(EMSCRIPTEN_SIDE_MODULE_FLAGS "-sSIDE_MODULE=1 -sEXPORTED_FUNCTIONS=['_name','_type','_create'] -sEXPORT_ALL=1")
+    # SIDE_MODULE=1 exports all functions (needed for plugins)
+    set(EMSCRIPTEN_SIDE_MODULE_FLAGS "-sSIDE_MODULE=1")
 endif()
 
 # Helper macro to configure a plugin target (handles Emscripten side module flags)
@@ -19,6 +20,13 @@ macro(configure_plugin target)
             SUFFIX ".wasm"
             LINK_FLAGS "${EMSCRIPTEN_SIDE_MODULE_FLAGS}"
         )
+        # Add include paths explicitly (needed since we clear LINK_LIBRARIES)
+        target_include_directories(${target} PRIVATE
+            ${yaml-cpp_SOURCE_DIR}/include
+            ${spdlog_SOURCE_DIR}/include
+        )
+        # Clear link libraries - SIDE_MODULE imports symbols from MAIN_MODULE at runtime
+        set_target_properties(${target} PROPERTIES LINK_LIBRARIES "")
     endif()
 endmacro()
 

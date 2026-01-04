@@ -9,8 +9,7 @@
 #include <fstream>
 #include <yaml-cpp/yaml.h>
 
-// Platform-specific dynamic loading (not used on web - uses static plugins)
-#ifndef YMERY_WEB
+// Platform-specific dynamic loading
 #ifdef _WIN32
 #include <windows.h>
 #define YMERY_PLUGIN_EXT ".dll"
@@ -32,9 +31,12 @@ inline std::string ymery_dlerror() {
     return result;
 }
 #else
+// Unix-like systems (Linux, macOS, Emscripten)
 #include <dlfcn.h>
 #ifdef __APPLE__
 #define YMERY_PLUGIN_EXT ".dylib"
+#elif defined(__EMSCRIPTEN__)
+#define YMERY_PLUGIN_EXT ".wasm"
 #else
 #define YMERY_PLUGIN_EXT ".so"
 #endif
@@ -45,7 +47,6 @@ inline void* ymery_dlsym(PluginHandle h, const char* sym) { return dlsym(h, sym)
 inline void ymery_dlclose(PluginHandle h) { dlclose(h); }
 inline std::string ymery_dlerror() { const char* e = dlerror(); return e ? e : ""; }
 #endif
-#endif // !YMERY_WEB
 
 namespace fs = std::filesystem;
 
@@ -98,8 +99,7 @@ static Value yaml_to_value(const YAML::Node& node) {
     return Value();
 }
 
-#ifndef YMERY_WEB
-// Load meta.yaml file for a plugin (native only)
+// Load meta.yaml file for a plugin
 static Dict load_plugin_meta(const std::string& plugin_path) {
     // Replace plugin extension with .meta.yaml
     std::string meta_path = plugin_path;
@@ -130,7 +130,7 @@ static Dict load_plugin_meta(const std::string& plugin_path) {
     return result;
 }
 
-// Plugin function types (from .so files - native only)
+// Plugin function types (from dynamic libraries)
 // Returns void* pointing to heap-allocated Result - caller takes ownership
 using PluginNameFn = const char*(*)();
 using PluginTypeFn = const char*(*)();
@@ -141,7 +141,6 @@ using PluginWidgetCreateFn = void*(*)(
     std::shared_ptr<DataBag>
 );
 using PluginTreeCreateFn = void*(*)(std::shared_ptr<Dispatcher>, std::shared_ptr<PluginManager>);
-#endif // !YMERY_WEB
 
 Result<std::shared_ptr<PluginManager>> PluginManager::create(const std::string& plugins_path) {
     auto manager = std::shared_ptr<PluginManager>(new PluginManager());
@@ -163,14 +162,12 @@ Result<void> PluginManager::init() {
 }
 
 Result<void> PluginManager::dispose() {
-#ifndef YMERY_WEB
     for (auto handle : _handles) {
         if (handle) {
             ymery_dlclose(static_cast<PluginHandle>(handle));
         }
     }
     _handles.clear();
-#endif
     _plugins.clear();
     _plugins_loaded = false;
     return Ok();
@@ -181,75 +178,10 @@ Result<void> PluginManager::_ensure_plugins_loaded() {
         return Ok();
     }
 
-#ifdef YMERY_WEB
-    // Web builds use static plugins (no dlopen available)
-    spdlog::debug("PluginManager: loading static plugins (web build)");
-
-    const auto& static_plugins = get_static_plugins();
-    for (const auto& plugin : static_plugins) {
-        std::string plugin_name = plugin.name();
-        std::string plugin_type = plugin.type();
-
-        spdlog::debug("Loaded static plugin: {} (type: {})", plugin_name, plugin_type);
-
-        PluginMeta meta;
-        meta.registered_name = plugin_name;
-        meta.class_name = plugin_name;
-
-        if (plugin_type == "widget") {
-            auto raw_fn = reinterpret_cast<WidgetCreateFnPtr>(plugin.create);
-            meta.create_fn = WidgetCreateFn([raw_fn](
-                std::shared_ptr<WidgetFactory> factory,
-                std::shared_ptr<Dispatcher> dispatcher,
-                const std::string& name,
-                std::shared_ptr<DataBag> bag
-            ) -> Result<WidgetPtr> {
-                void* ptr = raw_fn(factory, dispatcher, name, bag);
-                auto* result = static_cast<Result<WidgetPtr>*>(ptr);
-                Result<WidgetPtr> ret = std::move(*result);
-                delete result;
-                return ret;
-            });
-            _plugins["widget"][plugin_name] = meta;
-        }
-        else if (plugin_type == "tree-like") {
-            auto raw_fn = reinterpret_cast<TreeLikeCreateFnPtr>(plugin.create);
-            meta.create_fn = TreeLikeCreateFn([raw_fn](
-                std::shared_ptr<Dispatcher> dispatcher,
-                std::shared_ptr<PluginManager> pm
-            ) -> Result<TreeLikePtr> {
-                void* ptr = raw_fn(dispatcher, pm);
-                auto* result = static_cast<Result<TreeLikePtr>*>(ptr);
-                Result<TreeLikePtr> ret = std::move(*result);
-                delete result;
-                return ret;
-            });
-            _plugins["tree-like"][plugin_name] = meta;
-        }
-        else if (plugin_type == "device-manager") {
-            auto raw_fn = reinterpret_cast<TreeLikeCreateFnPtr>(plugin.create);
-            meta.create_fn = TreeLikeCreateFn([raw_fn](
-                std::shared_ptr<Dispatcher> dispatcher,
-                std::shared_ptr<PluginManager> pm
-            ) -> Result<TreeLikePtr> {
-                void* ptr = raw_fn(dispatcher, pm);
-                auto* result = static_cast<Result<TreeLikePtr>*>(ptr);
-                Result<TreeLikePtr> ret = std::move(*result);
-                delete result;
-                return ret;
-            });
-            _plugins["device-manager"][plugin_name] = meta;
-        }
-        else {
-            spdlog::warn("Unknown plugin type '{}' for {}", plugin_type, plugin_name);
-        }
-    }
-
-#else
-    // Native builds use dynamic loading
+    // Dynamic loading on all platforms (including web via dlopen)
     spdlog::debug("PluginManager: loading plugins from {}", _plugins_path);
 
-    // Parse path-separated paths (: on Unix, ; on Windows)
+    // Parse path-separated paths (: on Unix/web, ; on Windows)
     std::vector<std::string> plugin_dirs;
     std::stringstream ss(_plugins_path);
     std::string path_str;
@@ -261,7 +193,6 @@ Result<void> PluginManager::_ensure_plugins_loaded() {
 
 #ifdef _WIN32
     // On Windows, add the exe directory to DLL search path so plugins can find ymery_lib.dll
-    // Use GetModuleFileName to get the actual exe directory reliably
     char exe_path[MAX_PATH];
     if (GetModuleFileNameA(NULL, exe_path, MAX_PATH) > 0) {
         fs::path exe_dir = fs::path(exe_path).parent_path();
@@ -287,7 +218,7 @@ Result<void> PluginManager::_ensure_plugins_loaded() {
             continue;
         }
 
-        // Recursively find all plugin files (.so on Unix, .dll on Windows)
+        // Recursively find all plugin files
         for (const auto& entry : fs::recursive_directory_iterator(dir)) {
             if (entry.is_regular_file() && entry.path().extension() == YMERY_PLUGIN_EXT) {
                 std::string path = entry.path().string();
@@ -297,7 +228,6 @@ Result<void> PluginManager::_ensure_plugins_loaded() {
             }
         }
     }
-#endif // YMERY_WEB
 
     _plugins_loaded = true;
     spdlog::info("PluginManager: loaded plugins - widget: {}, tree-like: {}, device-manager: {}",
@@ -306,7 +236,6 @@ Result<void> PluginManager::_ensure_plugins_loaded() {
     return Ok();
 }
 
-#ifndef YMERY_WEB
 Result<void> PluginManager::_load_plugin(const std::string& path) {
     spdlog::debug("Loading plugin: {}", path);
 
@@ -317,11 +246,12 @@ Result<void> PluginManager::_load_plugin(const std::string& path) {
     std::wstring wide_path = plugin_path.wstring();
     PluginHandle handle = ymery_dlopen(wide_path.c_str());
 #else
+    // Unix-like systems (Linux, macOS) and Emscripten (via dlopen with SIDE_MODULE)
     PluginHandle handle = ymery_dlopen(plugin_path.string().c_str());
 #endif
     if (!handle) {
         std::string error = ymery_dlerror();
-        spdlog::error("LoadLibrary failed for '{}': {}", path, error);
+        spdlog::error("dlopen failed for '{}': {}", path, error);
         return Err<void>(std::string("Failed to load plugin '") + path + "': " + error);
     }
 
@@ -423,12 +353,6 @@ Result<void> PluginManager::_load_plugin(const std::string& path) {
     _handles.push_back(handle);
     return Ok();
 }
-#else // YMERY_WEB
-Result<void> PluginManager::_load_plugin(const std::string& path) {
-    // Web builds use static plugins, dynamic loading not available
-    return Err<void>("Dynamic plugin loading not available in web build");
-}
-#endif // !YMERY_WEB
 
 // TreeLike interface implementation
 

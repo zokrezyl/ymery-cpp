@@ -628,13 +628,12 @@ if(NOT YMERY_ANDROID)
 
     if(YMERY_WEB)
         # Emscripten linker flags (emscripten 4.x+ uses ports)
-        # Plugins are compiled statically (no dlopen) - see static_plugins.cpp
-        # Preload demo directory into virtual filesystem for builtin browser
+        # MAIN_MODULE=2 enables dlopen for loading plugin .wasm side modules
+        # Preload demo directory and plugins into virtual filesystem
         set_target_properties(ymery PROPERTIES
             SUFFIX ".html"
-            LINK_FLAGS "--use-port=contrib.glfw3 --use-port=emdawnwebgpu -sWASM=1 -sALLOW_MEMORY_GROWTH=1 -sNO_EXIT_RUNTIME=0 -sASSERTIONS=1 -sASYNCIFY -fexceptions --preload-file ${CMAKE_SOURCE_DIR}/demo@/demo"
+            LINK_FLAGS "--use-port=contrib.glfw3 --use-port=emdawnwebgpu -sWASM=1 -sALLOW_MEMORY_GROWTH=1 -sNO_EXIT_RUNTIME=0 -sASSERTIONS=1 -sASYNCIFY -fexceptions -sMAIN_MODULE=2 --preload-file ${CMAKE_SOURCE_DIR}/demo@/demo --preload-file ${CMAKE_BINARY_DIR}/plugins@/plugins"
         )
-        # Define YMERY_WEB for conditional code
         target_compile_definitions(ymery PRIVATE YMERY_WEB=1)
     else()
         # Native: enable symbol exports for plugins
@@ -687,60 +686,8 @@ if(NOT YMERY_WEB AND NOT YMERY_ANDROID)
     endif()
 endif()
 
-# Plugins
-# For web builds, plugins are compiled statically with unique symbol names
-# For native builds, plugins are compiled as shared libraries for dynamic loading
-if(YMERY_WEB)
-    # Macro to add a static plugin for web builds
-    macro(add_web_plugin plugin_name source_file)
-        set(target_name ${plugin_name}_web_plugin)
-        add_library(${target_name} OBJECT ${source_file})
-        target_link_libraries(${target_name} PRIVATE ymery_lib imgui)
-        target_include_directories(${target_name} PRIVATE ${CMAKE_SOURCE_DIR}/src)
-        # Set plugin name prefix for unique export symbols
-        target_compile_definitions(${target_name} PRIVATE
-            YMERY_PLUGIN_NAME_PREFIX=${plugin_name}_plugin_
-        )
-        target_sources(ymery PRIVATE $<TARGET_OBJECTS:${target_name}>)
-    endmacro()
-
-    # Add minimal set of widget plugins for web demos
-    add_web_plugin(text src/ymery/plugins/frontend/text.cpp)
-    add_web_plugin(button src/ymery/plugins/frontend/button.cpp)
-    add_web_plugin(window src/ymery/plugins/frontend/window.cpp)
-    add_web_plugin(column src/ymery/plugins/frontend/column.cpp)
-    add_web_plugin(row src/ymery/plugins/frontend/row.cpp)
-    add_web_plugin(imgui_main_window src/ymery/plugins/frontend/imgui-main-window.cpp)
-    add_web_plugin(slider_int src/ymery/plugins/frontend/slider-int.cpp)
-    add_web_plugin(slider_float src/ymery/plugins/frontend/slider-float.cpp)
-    add_web_plugin(checkbox src/ymery/plugins/frontend/checkbox.cpp)
-    add_web_plugin(input_text src/ymery/plugins/frontend/input-text.cpp)
-    add_web_plugin(combo src/ymery/plugins/frontend/combo.cpp)
-    add_web_plugin(separator src/ymery/plugins/frontend/separator.cpp)
-    add_web_plugin(spacing src/ymery/plugins/frontend/spacing.cpp)
-    add_web_plugin(tree_node src/ymery/plugins/frontend/tree-node.cpp)
-    add_web_plugin(group src/ymery/plugins/frontend/group.cpp)
-    add_web_plugin(child src/ymery/plugins/frontend/child.cpp)
-    add_web_plugin(collapsing_header src/ymery/plugins/frontend/collapsing-header.cpp)
-
-    # Add backend plugins
-    add_web_plugin(simple_data_tree src/ymery/plugins/backend/simple-data-tree.cpp)
-    add_web_plugin(data_tree src/ymery/plugins/backend/data-tree.cpp)
-
-    # Filesystem plugin (multi-file plugin - compile as object library)
-    add_library(filesystem_web_plugin OBJECT
-        src/ymery/plugins/backend/filesystem/common.cpp
-        src/ymery/plugins/backend/filesystem/tree.cpp
-    )
-    target_link_libraries(filesystem_web_plugin PRIVATE ymery_lib)
-    target_include_directories(filesystem_web_plugin PRIVATE ${CMAKE_SOURCE_DIR}/src)
-    target_compile_definitions(filesystem_web_plugin PRIVATE
-        YMERY_PLUGIN_NAME_PREFIX=filesystem_plugin_
-    )
-    target_sources(ymery PRIVATE $<TARGET_OBJECTS:filesystem_web_plugin>)
-else()
-    add_subdirectory(src/ymery/plugins)
-endif()
+# Plugins - always use dynamic loading (shared libs on native, side modules on web)
+add_subdirectory(src/ymery/plugins)
 
 # C++ Examples (not for Android)
 if(NOT YMERY_ANDROID)

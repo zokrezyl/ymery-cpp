@@ -9,19 +9,36 @@ endif()
 
 # For Emscripten: compile plugins as side modules for dynamic linking
 if(YMERY_WEB)
-    set(EMSCRIPTEN_SIDE_MODULE_FLAGS "-sSIDE_MODULE=2")
+    # SIDE_MODULE=1 exports all functions (needed for plugins)
+    set(EMSCRIPTEN_SIDE_MODULE_FLAGS "-sSIDE_MODULE=1")
 endif()
 
 # Helper macro to configure a plugin target (handles Emscripten side module flags)
 macro(configure_plugin target)
     if(YMERY_WEB)
-        # Side modules don't link libraries - they import from main module
+        # Side modules import symbols from main module at runtime
+        # But they still need include paths for compilation
         set_target_properties(${target} PROPERTIES
             SUFFIX ".wasm"
             LINK_FLAGS "${EMSCRIPTEN_SIDE_MODULE_FLAGS}"
         )
-        # Remove library dependencies for web - main module provides them
-        get_target_property(_libs ${target} LINK_LIBRARIES)
+        # Add include paths explicitly (needed since we clear LINK_LIBRARIES)
+        target_include_directories(${target} PRIVATE
+            ${yaml-cpp_SOURCE_DIR}/include
+            ${imgui_SOURCE_DIR}
+            ${imgui_SOURCE_DIR}/backends
+            ${implot_SOURCE_DIR}
+            ${spdlog_SOURCE_DIR}/include
+            ${imgui_markdown_SOURCE_DIR}
+            ${imgui_knobs_SOURCE_DIR}
+            ${imspinner_SOURCE_DIR}
+            ${imgui_toggle_SOURCE_DIR}
+            ${imcoolbar_SOURCE_DIR}
+            ${imguizmo_SOURCE_DIR}
+            ${implot3d_SOURCE_DIR}
+            ${imgui_color_text_edit_SOURCE_DIR}
+        )
+        # Clear link libraries - SIDE_MODULE imports symbols from MAIN_MODULE at runtime
         set_target_properties(${target} PROPERTIES LINK_LIBRARIES "")
     endif()
 endmacro()
