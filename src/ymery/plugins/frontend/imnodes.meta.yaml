@@ -1,0 +1,15 @@
+name: imnodes
+category: Visualization
+properties:
+  - name: label
+    type: string
+    description: Node editor label
+  - name: width
+    type: number
+    description: Editor width (0 for auto)
+  - name: height
+    type: number
+    description: Editor height (0 for auto)
+events:
+  - on-link-created
+  - on-link-destroyed

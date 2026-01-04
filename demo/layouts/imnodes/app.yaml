@@ -1,0 +1,334 @@
+app:
+  # Local data tree for this app - demonstrates node graph data binding
+  data:
+    nodes:
+      type: simple-data-tree
+      initial:
+        node-1:
+          id: 1
+          title: Input Value
+          type: input
+          x: 0
+          y: 0
+        node-2:
+          id: 2
+          title: Add
+          type: process
+          x: 250
+          y: 0
+        node-3:
+          id: 3
+          title: Multiply
+          type: process
+          x: 500
+          y: 0
+        node-4:
+          id: 4
+          title: Output
+          type: output
+          x: 750
+          y: 0
+        node-5:
+          id: 5
+          title: Input Value 2
+          type: input
+          x: 250
+          y: 150
+        node-6:
+          id: 6
+          title: Filter
+          type: process
+          x: 500
+          y: 150
+
+    links:
+      type: data-tree
+      initial:
+        children:
+          link-1:
+            metadata:
+              id: 1
+              start-attr: 2
+              end-attr: 11
+          link-2:
+            metadata:
+              id: 2
+              start-attr: 22
+              end-attr: 31
+          link-3:
+            metadata:
+              id: 3
+              start-attr: 32
+              end-attr: 41
+          link-4:
+            metadata:
+              id: 4
+              start-attr: 52
+              end-attr: 61
+
+    graph-info:
+      type: simple-data-tree
+      initial:
+        node-count: 6
+        link-count: 4
+        selected-node: null
+        zoom: 1.0
+
+  body:
+    window:
+      title: ImNodes Graph Editor Demo
+      body:
+        - tab-bar:
+            body:
+              # Tab 1: Interactive Node Editor
+              - tab-item:
+                  label: Node Editor
+                  body:
+                    - text:
+                        content: "ImNodes Graph Editor - Interactive Node Graph"
+                        tooltip: "Create and manage node graphs interactively"
+                    - separator
+                    - text:
+                        content: "Click and drag to move nodes. Connect pins by dragging between them."
+                    - separator
+                    - imnodes:
+                        label: Main Graph Editor
+                        width: 800
+                        height: 600
+                        nodes:
+                          node-1:
+                            id: 1
+                            title: Input Value
+                            x: 50
+                            y: 100
+                          node-2:
+                            id: 2
+                            title: Add
+                            x: 300
+                            y: 50
+                          node-3:
+                            id: 3
+                            title: Multiply
+                            x: 550
+                            y: 50
+                          node-4:
+                            id: 4
+                            title: Output
+                            x: 800
+                            y: 100
+                          node-5:
+                            id: 5
+                            title: Input Value 2
+                            x: 50
+                            y: 250
+                          node-6:
+                            id: 6
+                            title: Filter
+                            x: 550
+                            y: 200
+                        links:
+                          children:
+                            link-1:
+                              metadata:
+                                id: 1
+                                start-attr: 12
+                                end-attr: 21
+                            link-2:
+                              metadata:
+                                id: 2
+                                start-attr: 22
+                                end-attr: 31
+                            link-3:
+                              metadata:
+                                id: 3
+                                start-attr: 32
+                                end-attr: 41
+                            link-4:
+                              metadata:
+                                id: 4
+                                start-attr: 52
+                                end-attr: 61
+                    - separator
+                    - row:
+                        body:
+                          - button:
+                              label: Add Input Node
+                              tooltip: Add a new input node to the graph
+                          - button:
+                              label: Add Process Node
+                              tooltip: Add a processing node
+                          - button:
+                              label: Add Output Node
+                              tooltip: Add an output node
+                          - button:
+                              label: Clear Graph
+                              tooltip: Remove all nodes and links
+
+              # Tab 2: Node Data Inspector
+              - tab-item:
+                  label: Node Data
+                  body:
+                    - text:
+                        content: "Node Configuration (Data-Bag Bound)"
+                    - separator
+                    - collapsing-header:
+                        label: All Nodes
+                        body:
+                          - tree-node:
+                              label: Nodes
+                              data-path: $nodes@/
+                              body:
+                                - row:
+                                    body:
+                                      - text:
+                                          content: "ID:"
+                                      - text:
+                                          content: "@id"
+                                - row:
+                                    body:
+                                      - text:
+                                          content: "Title:"
+                                      - text:
+                                          content: "@title"
+                                - row:
+                                    body:
+                                      - text:
+                                          content: "Type:"
+                                      - text:
+                                          content: "@type"
+                                - row:
+                                    body:
+                                      - text:
+                                          content: "Position:"
+                                      - text:
+                                          content: "(@x, @y)"
+                                - separator
+
+                    - collapsing-header:
+                        label: All Links
+                        body:
+                          - tree-node:
+                              label: Links
+                              data-path: $links@/
+                              body:
+                                - row:
+                                    body:
+                                      - text:
+                                          content: "ID:"
+                                      - text:
+                                          content: "@id"
+                                - row:
+                                    body:
+                                      - text:
+                                          content: "From:"
+                                      - text:
+                                          content: "@start-attr"
+                                - row:
+                                    body:
+                                      - text:
+                                          content: "To:"
+                                      - text:
+                                          content: "@end-attr"
+                                - separator
+
+                    - collapsing-header:
+                        label: Graph Statistics
+                        body:
+                          - row:
+                              body:
+                                - text:
+                                    content: "Total Nodes:"
+                                - text:
+                                    content: $graph-info@/node-count
+                          - row:
+                              body:
+                                - text:
+                                    content: "Total Links:"
+                                - text:
+                                    content: $graph-info@/link-count
+                          - row:
+                              body:
+                                - text:
+                                    content: "Zoom Level:"
+                                - text:
+                                    content: $graph-info@/zoom
+                          - row:
+                              body:
+                                - text:
+                                    content: "Selected Node:"
+                                - text:
+                                    content: $graph-info@/selected-node
+
+              # Tab 3: Graph Properties
+              - tab-item:
+                  label: Graph Settings
+                  body:
+                    - text:
+                        content: "Graph Configuration & Properties"
+                    - separator
+                    - collapsing-header:
+                        label: Display Options
+                        body:
+                          - checkbox:
+                              label: Show Grid
+                              tooltip: Display background grid in the editor
+                          - checkbox:
+                              label: Show MiniMap
+                              tooltip: Display minimap in the corner
+                          - checkbox:
+                              label: Snap to Grid
+                              tooltip: Snap node positions to grid
+                          - separator
+                          - slider-float:
+                              label: Grid Size
+                              min: 5.0
+                              max: 50.0
+                              tooltip: Size of the grid cells
+                          - slider-float:
+                              label: Node Width
+                              min: 50.0
+                              max: 300.0
+                              tooltip: Default node width
+
+                    - collapsing-header:
+                        label: Node Templates
+                        body:
+                          - text:
+                              content: "Pre-defined node types for quick insertion"
+                          - separator
+                          - row:
+                              body:
+                                - button:
+                                    label: Input Template
+                                    tooltip: Insert an input node template
+                                - button:
+                                    label: Math Template
+                                    tooltip: Insert a math operation node
+                                - button:
+                                    label: Compare Template
+                                    tooltip: Insert a comparison node
+                          - row:
+                              body:
+                                - button:
+                                    label: Logic Template
+                                    tooltip: Insert a logic operation node
+                                - button:
+                                    label: Output Template
+                                    tooltip: Insert an output node
+
+                    - separator
+                    - collapsing-header:
+                        label: Export / Import
+                        body:
+                          - button:
+                              label: Export Graph JSON
+                              tooltip: Export the current graph to JSON format
+                          - button:
+                              label: Import Graph JSON
+                              tooltip: Import a graph from JSON format
+                          - button:
+                              label: Save to File
+                              tooltip: Save the graph to a file
+                          - button:
+                              label: Load from File
+                              tooltip: Load a graph from a file

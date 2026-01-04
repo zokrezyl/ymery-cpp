@@ -1,0 +1,300 @@
+app:
+  # Local data tree for this app - demonstrates node graph data binding
+  data:
+    graph-nodes:
+      type: simple-data-tree
+      initial:
+        node-input:
+          id: 1
+          type: Input
+          position-x: 0
+          position-y: 0
+          outputs: 1
+        node-process-1:
+          id: 2
+          type: Process
+          position-x: 250
+          position-y: 0
+          inputs: 1
+          outputs: 1
+        node-process-2:
+          id: 3
+          type: Process
+          position-x: 250
+          position-y: 120
+          inputs: 1
+          outputs: 1
+        node-branch-true:
+          id: 4
+          type: Process
+          position-x: 500
+          position-y: 0
+          inputs: 1
+          outputs: 1
+        node-branch-false:
+          id: 5
+          type: Process
+          position-x: 500
+          position-y: 150
+          inputs: 1
+          outputs: 1
+        node-merge:
+          id: 6
+          type: Process
+          position-x: 750
+          position-y: 75
+          inputs: 2
+          outputs: 1
+        node-output:
+          id: 7
+          type: Output
+          position-x: 1000
+          position-y: 75
+          inputs: 1
+
+    graph-connections:
+      type: simple-data-tree
+      initial:
+        conn-1:
+          from-node: 1
+          from-slot: 0
+          to-node: 2
+          to-slot: 0
+        conn-2:
+          from-node: 2
+          from-slot: 0
+          to-node: 3
+          to-slot: 0
+        conn-3:
+          from-node: 3
+          from-slot: 0
+          to-node: 4
+          to-slot: 0
+        conn-4:
+          from-node: 3
+          from-slot: 0
+          to-node: 5
+          to-slot: 0
+        conn-5:
+          from-node: 4
+          from-slot: 0
+          to-node: 6
+          to-slot: 0
+        conn-6:
+          from-node: 5
+          from-slot: 0
+          to-node: 6
+          to-slot: 1
+        conn-7:
+          from-node: 6
+          from-slot: 0
+          to-node: 7
+          to-slot: 0
+
+    graph-stats:
+      type: simple-data-tree
+      initial:
+        total-nodes: 7
+        total-connections: 7
+        grid-size: 64
+        grid-visible: true
+
+  body:
+    window:
+      title: Node Graph Editor Demo
+      body:
+        - tab-bar:
+            body:
+              # Tab 1: Interactive Node Graph
+              - tab-item:
+                  label: Node Graph
+                  body:
+                    - text:
+                        content: "Interactive Node Graph Editor"
+                        tooltip: "Visual node-based programming interface"
+                    - separator
+                    - text:
+                        content: "Drag nodes to move them, use scroll wheel to pan."
+                    - separator
+                    - node-graph:
+                        label: Main Graph
+                        grid-size: 64
+                        show-grid: true
+                        nodes:
+                          - id: 1
+                            type: Input
+                            title: "Start"
+                            x: 50
+                            y: 100
+                            outputs: 1
+                          - id: 2
+                            type: Process
+                            title: "Transform A"
+                            x: 250
+                            y: 50
+                            inputs: 1
+                            outputs: 1
+                          - id: 3
+                            type: Process
+                            title: "Transform B"
+                            x: 250
+                            y: 180
+                            inputs: 1
+                            outputs: 1
+                          - id: 4
+                            type: Process
+                            title: "Branch True"
+                            x: 450
+                            y: 50
+                            inputs: 1
+                            outputs: 1
+                          - id: 5
+                            type: Process
+                            title: "Branch False"
+                            x: 450
+                            y: 200
+                            inputs: 1
+                            outputs: 1
+                          - id: 6
+                            type: Process
+                            title: "Merge"
+                            x: 650
+                            y: 120
+                            inputs: 2
+                            outputs: 1
+                          - id: 7
+                            type: Output
+                            title: "End"
+                            x: 850
+                            y: 120
+                            inputs: 1
+                        connections:
+                          - from: 1
+                            to: 2
+                          - from: 1
+                            to: 3
+                          - from: 2
+                            to: 4
+                          - from: 3
+                            to: 5
+                          - from: 4
+                            to: 6
+                          - from: 5
+                            to: 6
+                          - from: 6
+                            to: 7
+                    - separator
+                    - row:
+                        body:
+                          - button:
+                              label: Add Input Node
+                              tooltip: Add a new input node
+                          - button:
+                              label: Add Process Node
+                              tooltip: Add a processing node
+                          - button:
+                              label: Add Output Node
+                              tooltip: Add an output node
+                          - button:
+                              label: Delete Selected
+                              tooltip: Delete selected node
+
+              # Tab 2: Graph Inspector
+              - tab-item:
+                  label: Inspector
+                  body:
+                    - text:
+                        content: "Node Graph Inspector (Data-Bag Bound)"
+                    - separator
+                    - collapsing-header:
+                        label: Nodes
+                        body:
+                          - tree-node:
+                              label: All Nodes
+                              data-path: $graph-nodes@/
+                              body:
+                                - row:
+                                    body:
+                                      - text:
+                                          content: "Type:"
+                                      - text:
+                                          content: "@type"
+                                - row:
+                                    body:
+                                      - text:
+                                          content: "Position:"
+                                      - text:
+                                          content: "(@position-x, @position-y)"
+                                - separator
+
+                    - collapsing-header:
+                        label: Graph Settings
+                        body:
+                          - row:
+                              body:
+                                - text:
+                                    content: "Total Nodes:"
+                                - text:
+                                    content: $graph-stats@/total-nodes
+                          - row:
+                              body:
+                                - text:
+                                    content: "Grid Size:"
+                                - text:
+                                    content: $graph-stats@/grid-size
+                          - row:
+                              body:
+                                - text:
+                                    content: "Grid Visible:"
+                                - text:
+                                    content: $graph-stats@/grid-visible
+
+              # Tab 3: Settings
+              - tab-item:
+                  label: Settings
+                  body:
+                    - text:
+                        content: "Node Graph Settings"
+                    - separator
+                    - collapsing-header:
+                        label: Appearance
+                        body:
+                          - slider-float:
+                              label: Grid Size
+                              min: 16.0
+                              max: 128.0
+                              value: $graph-stats@/grid-size
+                              tooltip: Adjust the grid cell size
+                          - checkbox:
+                              label: Show Grid
+                              value: $graph-stats@/grid-visible
+                              tooltip: Toggle grid visibility
+
+                    - collapsing-header:
+                        label: Node Library
+                        body:
+                          - text:
+                              content: "Predefined node types:"
+                          - separator
+                          - row:
+                              body:
+                                - button:
+                                    label: Input
+                                    tooltip: Input node
+                                - button:
+                                    label: Process
+                                    tooltip: Processing node
+                                - button:
+                                    label: Output
+                                    tooltip: Output node
+                          - row:
+                              body:
+                                - button:
+                                    label: Math Op
+                                    tooltip: Mathematical operation
+                                - button:
+                                    label: Condition
+                                    tooltip: Conditional logic
+                                - button:
+                                    label: Loop
+                                    tooltip: Loop control

@@ -1,0 +1,16 @@
+name: node-graph
+category: Visualization
+properties:
+  - name: label
+    type: string
+    description: Node graph editor label
+  - name: grid-size
+    type: number
+    description: Size of grid cells
+  - name: show-grid
+    type: boolean
+    description: Display grid background
+events:
+  - on-change
+  - on-node-selected
+  - on-node-moved

@@ -440,6 +440,21 @@ if(implot3d_ADDED)
     target_link_libraries(implot3d PUBLIC imgui)
 endif()
 
+# imnodes - Node editor / node graph
+CPMAddPackage(
+    NAME imnodes
+    GITHUB_REPOSITORY Nelarius/imnodes
+    GIT_TAG master
+    DOWNLOAD_ONLY YES
+)
+
+if(imnodes_ADDED)
+    add_library(imnodes STATIC ${imnodes_SOURCE_DIR}/imnodes.cpp)
+    target_include_directories(imnodes PUBLIC ${imnodes_SOURCE_DIR})
+    target_link_libraries(imnodes PUBLIC imgui)
+endif()
+
+
 # nanovg - Vector graphics (requires OpenGL, desktop only)
 if(NOT YMERY_WEB AND NOT YMERY_ANDROID)
     CPMAddPackage(

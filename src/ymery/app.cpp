@@ -546,6 +546,12 @@ Result<void> App::_begin_frame() {
         return Err<void>("Failed to create texture view");
     }
 
+    // Update ImGui display size to match the actual surface texture dimensions
+    WGPUTextureDescriptor texture_desc = {};
+    wgpuTextureGetDescriptor(surface_texture.texture, &texture_desc);
+    ImGui::GetIO().DisplaySize = ImVec2(static_cast<float>(texture_desc.size.width), 
+                                        static_cast<float>(texture_desc.size.height));
+
     // Begin ImGui frame
     ImGui_ImplWGPU_NewFrame();
     ImGui_ImplAndroid_NewFrame();

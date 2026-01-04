@@ -215,6 +215,52 @@ target_include_directories(plot3d PRIVATE ${CMAKE_SOURCE_DIR}/src)
 set_target_properties(plot3d PROPERTIES PREFIX "" OUTPUT_NAME "plot3d")
 set_plugin_output_dirs(plot3d)
 
+# Imnodes widget (requires imnodes - use _plugin suffix to avoid target name conflict)
+add_library(imnodes_plugin SHARED imnodes.cpp)
+target_link_libraries(imnodes_plugin PRIVATE ymery_lib imgui imnodes)
+target_include_directories(imnodes_plugin PRIVATE ${CMAKE_SOURCE_DIR}/src)
+set_target_properties(imnodes_plugin PROPERTIES
+    PREFIX ""
+    OUTPUT_NAME "imnodes"
+    ARCHIVE_OUTPUT_DIRECTORY "${PLUGIN_OUTPUT_DIR}"
+    ARCHIVE_OUTPUT_DIRECTORY_DEBUG "${PLUGIN_OUTPUT_DIR}"
+    ARCHIVE_OUTPUT_DIRECTORY_RELEASE "${PLUGIN_OUTPUT_DIR}"
+    ARCHIVE_OUTPUT_DIRECTORY_RELWITHDEBINFO "${PLUGIN_OUTPUT_DIR}"
+    ARCHIVE_OUTPUT_DIRECTORY_MINSIZEREL "${PLUGIN_OUTPUT_DIR}"
+)
+set_plugin_output_dirs(imnodes_plugin)
+
+
+# NodeGraph widget (from gist)
+add_library(node_graph_plugin SHARED node-graph.cpp)
+target_link_libraries(node_graph_plugin PRIVATE ymery_lib imgui)
+target_include_directories(node_graph_plugin PRIVATE ${CMAKE_SOURCE_DIR}/src)
+set_target_properties(node_graph_plugin PROPERTIES
+    PREFIX ""
+    OUTPUT_NAME "node-graph"
+    ARCHIVE_OUTPUT_DIRECTORY "${PLUGIN_OUTPUT_DIR}"
+    ARCHIVE_OUTPUT_DIRECTORY_DEBUG "${PLUGIN_OUTPUT_DIR}"
+    ARCHIVE_OUTPUT_DIRECTORY_RELEASE "${PLUGIN_OUTPUT_DIR}"
+    ARCHIVE_OUTPUT_DIRECTORY_RELWITHDEBINFO "${PLUGIN_OUTPUT_DIR}"
+    ARCHIVE_OUTPUT_DIRECTORY_MINSIZEREL "${PLUGIN_OUTPUT_DIR}"
+)
+set_plugin_output_dirs(node_graph_plugin)
+
+# Nodes widget (from gist)
+add_library(nodes_plugin SHARED nodes.cpp)
+target_link_libraries(nodes_plugin PRIVATE ymery_lib imgui)
+target_include_directories(nodes_plugin PRIVATE ${CMAKE_SOURCE_DIR}/src)
+set_target_properties(nodes_plugin PROPERTIES
+    PREFIX ""
+    OUTPUT_NAME "nodes"
+    ARCHIVE_OUTPUT_DIRECTORY "${PLUGIN_OUTPUT_DIR}"
+    ARCHIVE_OUTPUT_DIRECTORY_DEBUG "${PLUGIN_OUTPUT_DIR}"
+    ARCHIVE_OUTPUT_DIRECTORY_RELEASE "${PLUGIN_OUTPUT_DIR}"
+    ARCHIVE_OUTPUT_DIRECTORY_RELWITHDEBINFO "${PLUGIN_OUTPUT_DIR}"
+    ARCHIVE_OUTPUT_DIRECTORY_MINSIZEREL "${PLUGIN_OUTPUT_DIR}"
+)
+set_plugin_output_dirs(nodes_plugin)
+
 # Editor widget plugins
 add_library(editor-widget-tree SHARED editor/widget-tree.cpp)
 target_link_libraries(editor-widget-tree PRIVATE ymery_lib imgui spdlog::spdlog)
