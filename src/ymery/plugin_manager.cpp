@@ -17,8 +17,7 @@
 #define YMERY_PATH_SEP ';'
 using PluginHandle = HMODULE;
 inline PluginHandle ymery_dlopen(const char* path) {
-    // Use LOAD_WITH_ALTERED_SEARCH_PATH to search for dependencies in the DLL's directory
-    return LoadLibraryExA(path, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+    return LoadLibraryA(path);
 }
 inline void* ymery_dlsym(PluginHandle h, const char* sym) { return (void*)GetProcAddress(h, sym); }
 inline void ymery_dlclose(PluginHandle h) { FreeLibrary(h); }
