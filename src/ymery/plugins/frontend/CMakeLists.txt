@@ -37,6 +37,7 @@ macro(configure_plugin target)
             ${imguizmo_SOURCE_DIR}
             ${implot3d_SOURCE_DIR}
             ${imgui_color_text_edit_SOURCE_DIR}
+            ${imnodes_SOURCE_DIR}
         )
         # Clear link libraries - SIDE_MODULE imports symbols from MAIN_MODULE at runtime
         set_target_properties(${target} PROPERTIES LINK_LIBRARIES "")
