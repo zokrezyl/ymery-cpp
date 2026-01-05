@@ -1,0 +1,67 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:  # Allow manual trigger
+
+# Sets permissions for GITHUB_TOKEN for Pages deployment
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Nix
+      uses: cachix/install-nix-action@v27
+      with:
+        nix_path: nixpkgs=channel:nixos-unstable
+
+    - name: Build WebAssembly
+      run: make build-webasm-webgpu-release
+
+    - name: Prepare Pages content
+      run: |
+        mkdir -p _site
+        cp build-webasm-webgpu-release/ymery.html _site/index.html
+        cp build-webasm-webgpu-release/ymery.js _site/
+        cp build-webasm-webgpu-release/ymery.wasm _site/
+        cp build-webasm-webgpu-release/ymery.data _site/
+        # Copy plugin wasm files
+        mkdir -p _site/plugins
+        cp build-webasm-webgpu-release/plugins/*.wasm _site/plugins/
+        cp build-webasm-webgpu-release/plugins/*.meta.yaml _site/plugins/ 2>/dev/null || true
+        # List contents for debugging
+        echo "=== Site contents ==="
+        find _site -type f | head -50
+
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
+
+    - name: Upload Pages artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
