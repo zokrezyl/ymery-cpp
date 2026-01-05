@@ -9,6 +9,11 @@
 #include <fstream>
 #include <yaml-cpp/yaml.h>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#include <dirent.h>
+#endif
+
 // Platform-specific dynamic loading
 #ifdef _WIN32
 #include <windows.h>
@@ -213,12 +218,43 @@ Result<void> PluginManager::_ensure_plugins_loaded() {
 
     // Scan each directory
     for (const auto& dir : plugin_dirs) {
+        spdlog::info("PluginManager: checking directory: {}", dir);
         if (!fs::exists(dir)) {
             spdlog::warn("Plugin directory does not exist: {}", dir);
             continue;
         }
+        spdlog::info("PluginManager: directory exists: {}", dir);
 
-        // Recursively find all plugin files
+#ifdef __EMSCRIPTEN__
+        // Emscripten: use POSIX opendir/readdir (more reliable with VFS than std::filesystem)
+        DIR* d = opendir(dir.c_str());
+        if (!d) {
+            spdlog::warn("PluginManager: opendir failed for {}", dir);
+            continue;
+        }
+        spdlog::info("PluginManager: opendir succeeded for {}", dir);
+        struct dirent* entry;
+        int file_count = 0;
+        while ((entry = readdir(d)) != nullptr) {
+            std::string name = entry->d_name;
+            if (name == "." || name == "..") continue;
+            file_count++;
+
+            std::string full_path = dir + "/" + name;
+            spdlog::info("PluginManager: found entry: {}", full_path);
+
+            // Check if it's a .wasm file
+            if (name.size() > 5 && name.substr(name.size() - 5) == ".wasm") {
+                spdlog::info("PluginManager: loading .wasm: {}", full_path);
+                if (auto res = _load_plugin(full_path); !res) {
+                    spdlog::warn("Failed to load plugin {}: {}", full_path, error_msg(res));
+                }
+            }
+        }
+        closedir(d);
+        spdlog::info("PluginManager: found {} files in {}", file_count, dir);
+#else
+        // Native: use recursive_directory_iterator
         for (const auto& entry : fs::recursive_directory_iterator(dir)) {
             if (entry.is_regular_file() && entry.path().extension() == YMERY_PLUGIN_EXT) {
                 std::string path = entry.path().string();
@@ -227,6 +263,7 @@ Result<void> PluginManager::_ensure_plugins_loaded() {
                 }
             }
         }
+#endif
     }
 
     _plugins_loaded = true;
@@ -237,7 +274,7 @@ Result<void> PluginManager::_ensure_plugins_loaded() {
 }
 
 Result<void> PluginManager::_load_plugin(const std::string& path) {
-    spdlog::debug("Loading plugin: {}", path);
+    spdlog::info("Loading plugin: {}", path);
 
     fs::path plugin_path(path);
 
@@ -247,7 +284,9 @@ Result<void> PluginManager::_load_plugin(const std::string& path) {
     PluginHandle handle = ymery_dlopen(wide_path.c_str());
 #else
     // Unix-like systems (Linux, macOS) and Emscripten (via dlopen with SIDE_MODULE)
+    spdlog::info("Calling dlopen for: {}", plugin_path.string());
     PluginHandle handle = ymery_dlopen(plugin_path.string().c_str());
+    spdlog::info("dlopen returned: {}", handle ? "success" : "null");
 #endif
     if (!handle) {
         std::string error = ymery_dlerror();
