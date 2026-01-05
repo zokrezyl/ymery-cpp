@@ -636,6 +636,7 @@ if(NOT YMERY_ANDROID)
             LINK_FLAGS "--use-port=contrib.glfw3 --use-port=emdawnwebgpu -sWASM=1 -sALLOW_MEMORY_GROWTH=1 -sNO_EXIT_RUNTIME=0 -sASSERTIONS=1 -sASYNCIFY -fexceptions -sMAIN_MODULE=2 --preload-file ${CMAKE_SOURCE_DIR}/demo@/demo --preload-file ${CMAKE_BINARY_DIR}/plugins@/plugins --shell-file ${CMAKE_SOURCE_DIR}/build-tools/web/shell.html"
         )
         target_compile_definitions(ymery PRIVATE YMERY_WEB=1)
+        # Delay linking until after plugins are built (see add_dependencies below after plugin subdirectory)
     else()
         # Native: enable symbol exports for plugins
         set_target_properties(ymery PROPERTIES ENABLE_EXPORTS ON)
@@ -689,6 +690,32 @@ endif()
 
 # Plugins - always use dynamic loading (shared libs on native, side modules on web)
 add_subdirectory(src/ymery/plugins)
+
+# For web builds: ensure ymery.html is linked AFTER all plugins are built
+# This is critical because --preload-file captures the plugins directory at link time
+if(YMERY_WEB AND NOT YMERY_ANDROID)
+    # List of all plugin targets (must be kept in sync with plugins/frontend/CMakeLists.txt and plugins/backend/CMakeLists.txt)
+    set(ALL_PLUGIN_TARGETS
+        # Frontend widget plugins
+        text button popup popup-modal tooltip input-text input-int input-float
+        slider-int slider-float drag-int drag-float checkbox combo color-edit
+        color-button separator separator-text spacing bullet-text window column
+        row group tree-node collapsing-header tab-bar tab-item child menu-bar
+        main-menu-bar menu menu-item same-line listbox selectable radio-button
+        indent table table-row table-column imgui-main-window hello-imgui-main-window
+        hello-imgui-menu hello-imgui-app-menu-items
+        markdown implot_plugin implot-group_plugin implot-layer_plugin
+        knob knob-int spinner spinners_demo toggle coolbar gizmo plot3d
+        imnodes_plugin node_graph_plugin nodes_plugin
+        editor-widget-tree editor code-preview editor-properties preview data-editor
+        docking-main-window docking-split dockable-window
+        piano hex-editor logs-view errors-view shader-toy
+        # Backend plugins
+        simple-data-tree data-tree kernel waveform
+        filesystem filesystem-provider
+    )
+    add_dependencies(ymery ${ALL_PLUGIN_TARGETS})
+endif()
 
 # C++ Examples (not for Android)
 if(NOT YMERY_ANDROID)
