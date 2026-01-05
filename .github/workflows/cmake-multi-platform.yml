@@ -80,6 +80,24 @@ jobs:
         name: webasm-webgpu
         path: dist/*.zip
 
+    - name: Prepare Pages content
+      if: startsWith(github.ref, 'refs/tags/')
+      run: |
+        mkdir -p _site
+        cp build-webasm-webgpu-release/ymery.html _site/index.html
+        cp build-webasm-webgpu-release/ymery.js _site/
+        cp build-webasm-webgpu-release/ymery.wasm _site/
+        cp build-webasm-webgpu-release/ymery.data _site/
+        mkdir -p _site/plugins
+        cp build-webasm-webgpu-release/plugins/*.wasm _site/plugins/
+        cp build-webasm-webgpu-release/plugins/*.meta.yaml _site/plugins/ 2>/dev/null || true
+
+    - name: Upload Pages artifact
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: _site
+
   # Windows WebGPU build
   windows-webgpu:
     runs-on: windows-latest
@@ -222,3 +240,20 @@ jobs:
         generate_release_notes: true
         draft: false
         prerelease: ${{ contains(github.ref_name, '-') }}
+
+  # Deploy WebAssembly to GitHub Pages (only on tags)
+  deploy-pages:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [webasm-webgpu]
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
