@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="en-us">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ymery - WebGPU ImGui Demo</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, #16213e 0%, #1a1a2e 100%);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #333;
+      flex-shrink: 0;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+      color: #0f4c75;
+      text-decoration: none;
+    }
+
+    .logo span {
+      color: #3282b8;
+    }
+
+    .tagline {
+      font-size: 12px;
+      color: #888;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .demo-selector {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .demo-selector label {
+      font-size: 14px;
+      color: #aaa;
+    }
+
+    .demo-selector select {
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid #444;
+      background: #2d2d44;
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+      min-width: 180px;
+    }
+
+    .demo-selector select:focus {
+      outline: none;
+      border-color: #3282b8;
+    }
+
+    .github-link {
+      color: #aaa;
+      text-decoration: none;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .github-link:hover {
+      color: #fff;
+    }
+
+    /* Main content */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* Canvas container */
+    .canvas-container {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    canvas.emscripten {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background-color: #1a1a2e;
+    }
+
+    /* Loading overlay */
+    .loading-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(26, 26, 46, 0.95);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    .loading-overlay.hidden {
+      display: none;
+    }
+
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid #333;
+      border-top-color: #3282b8;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      margin-top: 16px;
+      font-size: 14px;
+      color: #888;
+    }
+
+    .progress-container {
+      width: 300px;
+      margin-top: 12px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background: #333;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #0f4c75, #3282b8);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    /* Console toggle and output */
+    .console-toggle {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #aaa;
+      border: 1px solid #444;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      z-index: 50;
+    }
+
+    .console-toggle:hover {
+      background: rgba(0, 0, 0, 0.9);
+      color: #fff;
+    }
+
+    .console-output {
+      position: absolute;
+      bottom: 50px;
+      left: 10px;
+      right: 10px;
+      height: 200px;
+      background: rgba(0, 0, 0, 0.85);
+      border: 1px solid #444;
+      border-radius: 6px;
+      overflow: hidden;
+      display: none;
+      z-index: 50;
+    }
+
+    .console-output.visible {
+      display: block;
+    }
+
+    .console-output textarea {
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      color: #0f0;
+      border: none;
+      padding: 10px;
+      font-family: "Consolas", "Monaco", monospace;
+      font-size: 12px;
+      resize: none;
+      outline: none;
+    }
+
+    /* Controls */
+    .controls {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      gap: 8px;
+      z-index: 50;
+    }
+
+    .control-btn {
+      background: rgba(0, 0, 0, 0.7);
+      color: #aaa;
+      border: 1px solid #444;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .control-btn:hover {
+      background: rgba(0, 0, 0, 0.9);
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-left">
+      <a href="https://github.com/zokrezyl/ymery-cpp" class="logo">Y<span>mery</span></a>
+      <span class="tagline">Declarative ImGui UIs with YAML</span>
+    </div>
+    <div class="header-right">
+      <div class="demo-selector">
+        <label for="demo-select">Demo:</label>
+        <select id="demo-select">
+          <option value="">-- Select Demo --</option>
+        </select>
+      </div>
+      <a href="https://github.com/zokrezyl/ymery-cpp" class="github-link" target="_blank">
+        <svg height="20" viewBox="0 0 16 16" width="20" fill="currentColor">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+        </svg>
+        GitHub
+      </a>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="canvas-container">
+      <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
+
+      <div class="controls">
+        <button class="control-btn" onclick="toggleFullscreen()">Fullscreen</button>
+      </div>
+
+      <button class="console-toggle" onclick="toggleConsole()">Console</button>
+      <div class="console-output" id="console-output">
+        <textarea id="output" readonly></textarea>
+      </div>
+    </div>
+
+    <div class="loading-overlay" id="loading-overlay">
+      <div class="spinner"></div>
+      <div class="loading-text" id="status">Initializing...</div>
+      <div class="progress-container">
+        <div class="progress-bar">
+          <div class="progress-bar-fill" id="progress-fill"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script type='text/javascript'>
+    // Demo configuration - populated from demos.json
+    var demos = [];
+    var currentDemo = '';
+
+    // Load demos list
+    async function loadDemos() {
+      try {
+        const response = await fetch('demos.json');
+        if (response.ok) {
+          demos = await response.json();
+          populateDemoSelector();
+        }
+      } catch (e) {
+        console.log('No demos.json found, using default');
+      }
+    }
+
+    function populateDemoSelector() {
+      const select = document.getElementById('demo-select');
+      demos.forEach(demo => {
+        const option = document.createElement('option');
+        option.value = demo.path;
+        option.textContent = demo.name;
+        if (demo.description) {
+          option.title = demo.description;
+        }
+        select.appendChild(option);
+      });
+
+      // Set first demo as selected
+      if (demos.length > 0) {
+        select.value = demos[0].path;
+        currentDemo = demos[0].path;
+      }
+    }
+
+    document.getElementById('demo-select').addEventListener('change', function(e) {
+      if (e.target.value && e.target.value !== currentDemo) {
+        currentDemo = e.target.value;
+        // Reload the page with the new demo
+        const url = new URL(window.location);
+        url.searchParams.set('demo', currentDemo);
+        window.location.href = url.toString();
+      }
+    });
+
+    // Get demo from URL parameter
+    function getDemoFromURL() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('demo') || '';
+    }
+
+    // Console toggle
+    function toggleConsole() {
+      const consoleOutput = document.getElementById('console-output');
+      consoleOutput.classList.toggle('visible');
+    }
+
+    // Fullscreen
+    function toggleFullscreen() {
+      const canvas = document.getElementById('canvas');
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      } else {
+        canvas.requestFullscreen();
+      }
+    }
+
+    // Canvas context lost handler
+    var canvasElement = document.getElementById('canvas');
+    canvasElement.addEventListener('webglcontextlost', (e) => {
+      alert('WebGL context lost. You will need to reload the page.');
+      e.preventDefault();
+    }, false);
+
+    var statusElement = document.getElementById('status');
+    var progressFill = document.getElementById('progress-fill');
+    var loadingOverlay = document.getElementById('loading-overlay');
+    var outputElement = document.getElementById('output');
+    if (outputElement) outputElement.value = '';
+
+    var Module = {
+      print: function(...args) {
+        var text = args.join(' ');
+        console.log(text);
+        if (outputElement) {
+          outputElement.value += text + "\n";
+          outputElement.scrollTop = outputElement.scrollHeight;
+        }
+      },
+      printErr: function(...args) {
+        var text = args.join(' ');
+        console.error(text);
+        if (outputElement) {
+          outputElement.value += "[ERROR] " + text + "\n";
+          outputElement.scrollTop = outputElement.scrollHeight;
+        }
+      },
+      canvas: canvasElement,
+      setStatus: function(text) {
+        if (!Module.setStatus.last) Module.setStatus.last = { time: Date.now(), text: '' };
+        if (text === Module.setStatus.last.text) return;
+        var m = text.match(/([^(]+)\((\d+(\.\d+)?)\/(\d+)\)/);
+        var now = Date.now();
+        if (m && now - Module.setStatus.last.time < 30) return;
+        Module.setStatus.last.time = now;
+        Module.setStatus.last.text = text;
+        if (m) {
+          statusElement.innerHTML = m[1];
+          var percent = (parseInt(m[2]) / parseInt(m[4])) * 100;
+          progressFill.style.width = percent + '%';
+        } else {
+          statusElement.innerHTML = text;
+          if (!text) {
+            loadingOverlay.classList.add('hidden');
+          }
+        }
+      },
+      totalDependencies: 0,
+      monitorRunDependencies: function(left) {
+        this.totalDependencies = Math.max(this.totalDependencies, left);
+        Module.setStatus(left ? 'Loading... (' + (this.totalDependencies-left) + '/' + this.totalDependencies + ')' : 'All downloads complete.');
+      },
+      // Pass demo argument if specified
+      arguments: (function() {
+        var demo = getDemoFromURL();
+        if (demo) {
+          return ['-m', '/demo/layouts/' + demo + '/app.yaml'];
+        }
+        return [];
+      })()
+    };
+
+    Module.setStatus('Downloading...');
+
+    window.onerror = function(event) {
+      Module.setStatus('Exception thrown, see JavaScript console');
+      loadingOverlay.classList.remove('hidden');
+      statusElement.style.color = '#f44';
+      Module.setStatus = function(text) {
+        if (text) console.error('[post-exception status] ' + text);
+      };
+    };
+
+    // Load demos list on page load
+    loadDemos().then(() => {
+      // Set selector to current demo from URL
+      var demo = getDemoFromURL();
+      if (demo) {
+        document.getElementById('demo-select').value = demo;
+        currentDemo = demo;
+      }
+    });
+  </script>
+  {{{ SCRIPT }}}
+</body>
+</html>
