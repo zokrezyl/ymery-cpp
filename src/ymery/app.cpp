@@ -547,10 +547,10 @@ Result<void> App::_begin_frame() {
     }
 
     // Update ImGui display size to match the actual surface texture dimensions
-    WGPUTextureDescriptor texture_desc = {};
-    wgpuTextureGetDescriptor(surface_texture.texture, &texture_desc);
-    ImGui::GetIO().DisplaySize = ImVec2(static_cast<float>(texture_desc.size.width), 
-                                        static_cast<float>(texture_desc.size.height));
+    uint32_t tex_width = wgpuTextureGetWidth(surface_texture.texture);
+    uint32_t tex_height = wgpuTextureGetHeight(surface_texture.texture);
+    ImGui::GetIO().DisplaySize = ImVec2(static_cast<float>(tex_width),
+                                        static_cast<float>(tex_height));
 
     // Begin ImGui frame
     ImGui_ImplWGPU_NewFrame();
