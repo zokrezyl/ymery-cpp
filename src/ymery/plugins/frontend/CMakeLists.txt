@@ -10,7 +10,8 @@ endif()
 # For Emscripten: compile plugins as side modules for dynamic linking
 if(YMERY_WEB)
     # SIDE_MODULE=1 exports all functions (needed for plugins)
-    set(EMSCRIPTEN_SIDE_MODULE_FLAGS "-sSIDE_MODULE=1")
+    # -fexceptions must match main module for exception handling to work
+    set(EMSCRIPTEN_SIDE_MODULE_FLAGS "-sSIDE_MODULE=1 -fexceptions")
 endif()
 
 # Helper macro to configure a plugin target (handles Emscripten side module flags)
