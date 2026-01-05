@@ -630,9 +630,10 @@ if(NOT YMERY_ANDROID)
         # Emscripten linker flags (emscripten 4.x+ uses ports)
         # MAIN_MODULE=2 enables dlopen for loading plugin .wasm side modules
         # Preload demo directory and plugins into virtual filesystem
+        # Use custom shell template with demo selector
         set_target_properties(ymery PROPERTIES
             SUFFIX ".html"
-            LINK_FLAGS "--use-port=contrib.glfw3 --use-port=emdawnwebgpu -sWASM=1 -sALLOW_MEMORY_GROWTH=1 -sNO_EXIT_RUNTIME=0 -sASSERTIONS=1 -sASYNCIFY -fexceptions -sMAIN_MODULE=2 --preload-file ${CMAKE_SOURCE_DIR}/demo@/demo --preload-file ${CMAKE_BINARY_DIR}/plugins@/plugins"
+            LINK_FLAGS "--use-port=contrib.glfw3 --use-port=emdawnwebgpu -sWASM=1 -sALLOW_MEMORY_GROWTH=1 -sNO_EXIT_RUNTIME=0 -sASSERTIONS=1 -sASYNCIFY -fexceptions -sMAIN_MODULE=2 --preload-file ${CMAKE_SOURCE_DIR}/demo@/demo --preload-file ${CMAKE_BINARY_DIR}/plugins@/plugins --shell-file ${CMAKE_SOURCE_DIR}/build-tools/web/shell.html"
         )
         target_compile_definitions(ymery PRIVATE YMERY_WEB=1)
     else()

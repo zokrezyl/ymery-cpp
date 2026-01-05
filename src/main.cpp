@@ -111,7 +111,13 @@ int main(int argc, char* argv[]) {
         spdlog::debug("Layout path: {}", p.string());
     }
 
-#ifndef YMERY_WEB
+#ifdef YMERY_WEB
+    // Web build: plugins are preloaded at /plugins in the virtual filesystem
+    if (plugin_paths.empty()) {
+        plugin_paths.push_back("/plugins");
+        spdlog::debug("Web build: using /plugins from virtual filesystem");
+    }
+#else
     // Default plugin path - look for plugins directory next to executable
     if (plugin_paths.empty()) {
         std::filesystem::path exe_dir;

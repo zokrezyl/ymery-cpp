@@ -91,6 +91,8 @@ jobs:
         mkdir -p _site/plugins
         cp build-webasm-webgpu-release/plugins/*.wasm _site/plugins/
         cp build-webasm-webgpu-release/plugins/*.meta.yaml _site/plugins/ 2>/dev/null || true
+        # Generate demos.json for the demo selector dropdown
+        bash build-tools/web/generate-demos-json.sh demo/layouts _site/demos.json
 
     - name: Upload Pages artifact
       if: startsWith(github.ref, 'refs/tags/')
