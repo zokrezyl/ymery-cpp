@@ -630,11 +630,12 @@ if(NOT YMERY_ANDROID)
         # Emscripten linker flags (emscripten 4.x+ uses ports)
         # MAIN_MODULE=1 enables dlopen for loading plugin .wasm side modules
         # (MAIN_MODULE=1 exports all symbols including C++ exception handling needed by side modules)
+        # ALLOW_TABLE_GROWTH allows function pointer tables to grow for side module function pointers
         # Preload demo directory and plugins into virtual filesystem
         # Use custom shell template with demo selector
         set_target_properties(ymery PROPERTIES
             SUFFIX ".html"
-            LINK_FLAGS "--use-port=contrib.glfw3 --use-port=emdawnwebgpu -sWASM=1 -sALLOW_MEMORY_GROWTH=1 -sNO_EXIT_RUNTIME=0 -sASSERTIONS=1 -sASYNCIFY -fexceptions -sMAIN_MODULE=1 --preload-file ${CMAKE_SOURCE_DIR}/demo@/demo --preload-file ${CMAKE_BINARY_DIR}/plugins@/plugins --shell-file ${CMAKE_SOURCE_DIR}/build-tools/web/shell.html"
+            LINK_FLAGS "--use-port=contrib.glfw3 --use-port=emdawnwebgpu -sWASM=1 -sALLOW_MEMORY_GROWTH=1 -sALLOW_TABLE_GROWTH -sNO_EXIT_RUNTIME=0 -sASSERTIONS=1 -sASYNCIFY -fexceptions -sMAIN_MODULE=1 --preload-file ${CMAKE_SOURCE_DIR}/demo@/demo --preload-file ${CMAKE_BINARY_DIR}/plugins@/plugins --shell-file ${CMAKE_SOURCE_DIR}/build-tools/web/shell.html"
         )
         target_compile_definitions(ymery PRIVATE YMERY_WEB=1)
         # Delay linking until after plugins are built (see add_dependencies below after plugin subdirectory)

@@ -1,7 +1,10 @@
 # Build each tree-like backend as a shared library plugin
 
-# On Android, output to the default location so Gradle bundles them in APK
-if(YMERY_ANDROID)
+# Plugin output directory - can be overridden by parent project via YMERY_PLUGIN_DIR
+if(DEFINED YMERY_PLUGIN_DIR)
+    set(PLUGIN_OUTPUT_DIR "${YMERY_PLUGIN_DIR}")
+elseif(YMERY_ANDROID)
+    # On Android, output to the default location so Gradle bundles them in APK
     set(PLUGIN_OUTPUT_DIR "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
 else()
     set(PLUGIN_OUTPUT_DIR "${CMAKE_BINARY_DIR}/plugins")

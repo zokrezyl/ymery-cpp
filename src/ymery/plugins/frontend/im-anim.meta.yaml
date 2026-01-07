@@ -1,0 +1,67 @@
+name: im-anim
+category: Animation
+description: |
+  Animation container powered by ImAnim library. Provides smooth tweening animations
+  for float values with 30+ easing functions and advanced animation capabilities.
+  
+  ImAnim: https://github.com/soufianekhiat/ImAnim
+properties:
+  - name: mode
+    type: string
+    default: tween
+    description: |
+      Animation mode:
+      - tween: Smooth interpolation to target value
+      - oscillate: Continuous oscillation
+  - name: target
+    type: number
+    default: 1.0
+    description: Target value to animate towards
+  - name: duration
+    type: number
+    default: 0.3
+    description: Animation duration in seconds
+  - name: easing
+    type: number
+    default: 1
+    description: |
+      Easing function type ID (see ImAnim enum iam_ease_type):
+      0=linear, 1=ease_out_quad, 2=ease_in_cubic, 3=ease_out_elastic, etc.
+      ImAnim provides 30+ easing functions including spring physics
+  - name: policy
+    type: number
+    default: 0
+    description: |
+      Tween policy:
+      0=crossfade (smooth to new target)
+      1=cut (snap to target)
+      2=queue (queue one pending target)
+  - name: value
+    type: number
+    description: Current animated value (output property)
+
+events:
+  - name: on-frame
+    description: Fires every frame with animation updates
+
+examples:
+  - name: Button hover scale
+    description: |
+      Smooth scale animation on hover using ImAnim
+      ```yaml
+      - type: im-anim
+        properties:
+          target: 1.2
+          duration: 0.2
+          easing: 1
+      ```
+  - name: Fade effect
+    description: |
+      Fade-in animation from 0 to 1 with ease-out-cubic
+      ```yaml
+      - type: im-anim
+        properties:
+          target: 1.0
+          duration: 0.5
+          easing: 5
+      ```
