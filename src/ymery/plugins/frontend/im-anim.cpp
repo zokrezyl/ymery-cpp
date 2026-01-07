@@ -3,13 +3,7 @@
 #include "../../frontend/composite.hpp"
 #include "../../frontend/widget_factory.hpp"
 #include <imgui.h>
-
-// Forward declare ImAnim functions (include im_anim.h when integrated)
-extern "C" {
-    void iam_update_begin_frame();
-    float iam_tween_float(unsigned int id, unsigned int channel_id, float target, float dur,
-                          void* ease_desc, int policy, float dt);
-}
+#include <im_anim.h>
 
 namespace ymery::plugins {
 
@@ -82,26 +76,14 @@ protected:
         if (dt <= 0.0f) dt = 0.016f;
 
         if (mode == "tween") {
-            // Simple ease descriptor struct (matching ImAnim's iam_ease_desc)
-            struct EaseDesc {
-                int type;
-                float p0, p1, p2, p3;
-            } ease = {easing, 0.f, 0.f, 0.f, 0.f};
+            iam_ease_desc ease = iam_ease_preset(static_cast<iam_ease_type>(easing));
 
-            unsigned int id = ImGui::GetID(_uid.c_str());
-            unsigned int channel = ImGui::GetID((_uid + "_channel").c_str());
-
-            // Get current value from data bag
-            double current = 0.0;
-            if (auto res = _data_bag->get("value"); res) {
-                if (auto v = get_as<double>(*res)) {
-                    current = *v;
-                }
-            }
+            ImGuiID id = ImGui::GetID(_uid.c_str());
+            ImGuiID channel = ImGui::GetID((_uid + "_channel").c_str());
 
             // Perform tween
             float animated_value = iam_tween_float(id, channel, static_cast<float>(target),
-                                                    static_cast<float>(duration), &ease, policy, dt);
+                                                    static_cast<float>(duration), ease, policy, dt);
 
             // Store result
             _data_bag->set("value", Value(static_cast<double>(animated_value)));

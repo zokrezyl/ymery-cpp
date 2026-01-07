@@ -94,7 +94,6 @@ set(WIDGET_PLUGINS
     hello-imgui-main-window
     hello-imgui-menu
     hello-imgui-app-menu-items
-    im-anim
 )
 
 foreach(plugin ${WIDGET_PLUGINS})
@@ -112,6 +111,21 @@ foreach(plugin ${WIDGET_PLUGINS})
     )
     configure_plugin(${plugin})
 endforeach()
+
+# ImAnim widget (requires imanim)
+add_library(im-anim_plugin SHARED im-anim.cpp)
+target_link_libraries(im-anim_plugin PRIVATE ymery_lib imgui imanim)
+target_include_directories(im-anim_plugin PRIVATE ${CMAKE_SOURCE_DIR}/src)
+set_target_properties(im-anim_plugin PROPERTIES
+    PREFIX ""
+    OUTPUT_NAME "im-anim"
+    LIBRARY_OUTPUT_DIRECTORY "${PLUGIN_OUTPUT_DIR}"
+    LIBRARY_OUTPUT_DIRECTORY_DEBUG "${PLUGIN_OUTPUT_DIR}"
+    LIBRARY_OUTPUT_DIRECTORY_RELEASE "${PLUGIN_OUTPUT_DIR}"
+    LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO "${PLUGIN_OUTPUT_DIR}"
+    LIBRARY_OUTPUT_DIRECTORY_MINSIZEREL "${PLUGIN_OUTPUT_DIR}"
+)
+configure_plugin(im-anim_plugin)
 
 # Markdown widget (requires imgui_md)
 add_library(markdown SHARED markdown.cpp)

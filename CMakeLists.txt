@@ -147,7 +147,10 @@ CPMAddPackage(
 # WebGPU native library
 # Not needed for Emscripten - browser provides WebGPU
 # Uses pre-built wgpu-native v27+ for all native platforms
-if(YMERY_USE_WEBGPU AND NOT YMERY_WEB)
+# Skip if parent project already provides webgpu target
+if(TARGET webgpu)
+    message(STATUS "ymery-cpp: Using existing webgpu target from parent project")
+elseif(YMERY_USE_WEBGPU AND NOT YMERY_WEB)
     if(YMERY_ANDROID)
         # Android: Use pre-built wgpu-native from build-tools/android/ymery/app/libs
         # Downloaded by build-tools/android/ymery/build-wgpu.sh script
@@ -357,6 +360,22 @@ if(imspinner_ADDED)
     # imspinner is header-only
     add_library(imspinner INTERFACE)
     target_include_directories(imspinner INTERFACE ${imspinner_SOURCE_DIR})
+endif()
+
+# ImAnim - Animation Engine for Dear ImGui
+CPMAddPackage(
+    NAME imanim
+    GITHUB_REPOSITORY soufianekhiat/ImAnim
+    GIT_TAG main
+    DOWNLOAD_ONLY YES
+)
+
+if(imanim_ADDED)
+    add_library(imanim STATIC
+        ${imanim_SOURCE_DIR}/im_anim.cpp
+    )
+    target_include_directories(imanim PUBLIC ${imanim_SOURCE_DIR})
+    target_link_libraries(imanim PUBLIC imgui)
 endif()
 
 # ImGuiColorTextEdit - Syntax highlighting text editor
