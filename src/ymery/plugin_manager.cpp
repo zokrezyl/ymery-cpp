@@ -722,25 +722,24 @@ Result<TreeLikePtr> PluginManager::create_tree(const std::string& name, std::sha
 }
 
 bool PluginManager::has_widget(const std::string& name) const {
-    // Need to cast away const to call discovery
-    const_cast<PluginManager*>(this)->_ensure_plugins_discovered();
+    // Need to cast away const to call discovery/loading
+    auto* self = const_cast<PluginManager*>(this);
+    self->_ensure_plugins_discovered();
 
     // Check for new-style plugin.widget format (e.g., "imgui.button")
     auto dot_pos = name.find('.');
     if (dot_pos != std::string::npos) {
         std::string plugin_name = name.substr(0, dot_pos);
+        std::string widget_name = name.substr(dot_pos + 1);
 
-        // Check if plugin is discovered (may not be loaded yet)
+        // Load plugin if discovered but not yet loaded
         if (_discovered_plugins.find(plugin_name) != _discovered_plugins.end()) {
-            // Plugin exists - we assume it has the widget (lazy loading)
-            // For accurate check, we'd need to load the plugin
-            return true;
+            self->_ensure_plugin_loaded(plugin_name);
         }
 
-        // Check already loaded plugins
+        // Check loaded plugins for the specific widget
         auto plugin_it = _new_plugins.find(plugin_name);
         if (plugin_it != _new_plugins.end()) {
-            std::string widget_name = name.substr(dot_pos + 1);
             const auto& widgets = plugin_it->second->widgets();
             return std::find(widgets.begin(), widgets.end(), widget_name) != widgets.end();
         }

@@ -93,6 +93,10 @@ Result<WidgetPtr> WidgetFactory::create_widget(
     auto [widget_name, inline_props] = *parse_res;
     spdlog::debug("Creating widget: {}", widget_name);
 
+    // Check if widget is defined in YAML first (before checking plugins)
+    const auto& yaml_defs = _lang->widget_definitions();
+    bool is_yaml_widget = yaml_defs.find(widget_name) != yaml_defs.end();
+
     // Resolve widget definition
     auto def_res = _resolve_widget_definition(widget_name);
     if (!def_res) {
@@ -107,8 +111,19 @@ Result<WidgetPtr> WidgetFactory::create_widget(
         widget_def[key] = value;
     }
 
+    // Extract namespace from widget_name ONLY for YAML-defined widgets
+    // Plugin widgets (e.g., imgui.button) should NOT change the namespace
+    // e.g., "shared.imgui.demo" -> namespace "shared.imgui"
+    std::string child_namespace = namespace_;
+    if (is_yaml_widget) {
+        size_t last_dot = widget_name.rfind('.');
+        if (last_dot != std::string::npos) {
+            child_namespace = widget_name.substr(0, last_dot);
+        }
+    }
+
     // Create DataBag for this widget
-    auto data_bag_res = _create_data_bag(parent_data_bag, widget_def, namespace_);
+    auto data_bag_res = _create_data_bag(parent_data_bag, widget_def, child_namespace);
     if (!data_bag_res) {
         return Err<WidgetPtr>(
             "WidgetFactory::create_widget: failed to create data bag", data_bag_res);
@@ -125,37 +140,32 @@ Result<WidgetPtr> WidgetFactory::create_widget(
         }
     }
 
+    // Extract base type (after dot if present, e.g., "imgui.composite" -> "composite")
+    std::string base_type = widget_type;
+    size_t dot_pos = widget_type.rfind('.');
+    if (dot_pos != std::string::npos) {
+        base_type = widget_type.substr(dot_pos + 1);
+    }
+
     // Handle built-in types first
-    if (widget_type == "composite") {
-        spdlog::debug("Creating built-in Composite widget");
-        return Composite::create(shared_from_this(), _dispatcher, namespace_, data_bag);
+    if (base_type == "composite") {
+        spdlog::debug("Creating built-in Composite widget with namespace '{}'", child_namespace);
+        return Composite::create(shared_from_this(), _dispatcher, child_namespace, data_bag);
     }
 
-    // Try to create from plugin manager
-    spdlog::debug("Looking up widget type '{}' in plugin manager", widget_type);
-    if (_plugin_manager->has_widget(widget_type)) {
-        spdlog::debug("Found '{}' in plugin manager, creating", widget_type);
-        auto res = _plugin_manager->create_widget(
-            widget_type,
-            shared_from_this(),
-            _dispatcher,
-            namespace_,
-            data_bag
-        );
-        if (!res) {
-            return Err<WidgetPtr>("WidgetFactory::create_widget: failed to create '" + widget_type + "'", res);
-        }
-        return res;
-    }
-
-    // Fall back to base Widget
-    spdlog::debug("Widget type '{}' not in plugin manager, using base Widget", widget_type);
-    return Widget::create(
+    // Create widget from plugin manager - let it fail if widget type unknown
+    spdlog::debug("Creating widget type '{}' from plugin manager", widget_type);
+    auto res = _plugin_manager->create_widget(
+        widget_type,
         shared_from_this(),
         _dispatcher,
-        namespace_,
+        child_namespace,
         data_bag
     );
+    if (!res) {
+        return Err<WidgetPtr>("WidgetFactory::create_widget: unknown widget type '" + widget_type + "'", res);
+    }
+    return res;
 }
 
 Result<WidgetPtr> WidgetFactory::create_root_widget() {
@@ -293,19 +303,27 @@ Result<Dict> WidgetFactory::_resolve_widget_definition(const std::string& full_n
     }
 
     // Not in YAML definitions - check if it's a plugin widget
-    // Extract widget name without namespace (e.g., "app.implot" -> "implot")
-    std::string widget_name = full_name;
-    size_t dot_pos = full_name.rfind('.');
-    if (dot_pos != std::string::npos) {
-        widget_name = full_name.substr(dot_pos + 1);
+    // For new-style plugins, full_name is "plugin.widget" (e.g., "imgui.text")
+    // For legacy, it could be "namespace.widget" (e.g., "app.button")
+
+    // First try the full name as plugin.widget format
+    if (_plugin_manager->has_widget(full_name)) {
+        Dict def;
+        def["type"] = full_name;
+        spdlog::debug("WidgetFactory::_resolve_widget_definition: using plugin widget '{}' directly", full_name);
+        return Ok(def);
     }
 
-    if (_plugin_manager->has_widget(widget_name)) {
-        // Create minimal definition for plugin widget
-        Dict def;
-        def["type"] = widget_name;
-        spdlog::debug("WidgetFactory::_resolve_widget_definition: using plugin widget '{}' directly", widget_name);
-        return Ok(def);
+    // Legacy fallback: extract widget name without namespace
+    size_t dot_pos = full_name.rfind('.');
+    if (dot_pos != std::string::npos) {
+        std::string widget_name = full_name.substr(dot_pos + 1);
+        if (_plugin_manager->has_widget(widget_name)) {
+            Dict def;
+            def["type"] = widget_name;
+            spdlog::debug("WidgetFactory::_resolve_widget_definition: using legacy plugin widget '{}' directly", widget_name);
+            return Ok(def);
+        }
     }
 
     return Err<Dict>(

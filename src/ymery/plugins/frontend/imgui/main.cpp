@@ -46,6 +46,7 @@
 #include "table.hpp"
 #include "table-row.hpp"
 #include "table-column.hpp"
+#include "next-column.hpp"
 #include "imgui-main-window.hpp"
 #include "hello-imgui-main-window.hpp"
 #include "hello-imgui-menu.hpp"
@@ -73,7 +74,7 @@ public:
             "child", "collapsing-header", "tab-bar", "tab-item", "tree-node",
             "popup", "popup-modal", "tooltip", "menu-bar", "menu", "menu-item",
             "color-edit", "color-button", "progress-bar",
-            "column", "row", "indent", "bullet-text", "separator-text",
+            "column", "next-column", "row", "indent", "bullet-text", "separator-text",
             "main-menu-bar", "table", "table-row", "table-column",
             "imgui-main-window", "hello-imgui-main-window",
             "hello-imgui-menu", "hello-imgui-app-menu-items",
@@ -183,6 +184,9 @@ public:
         }
         if (widget_name == "column") {
             return imgui::Column::create(widget_factory, dispatcher, ns, data_bag);
+        }
+        if (widget_name == "next-column") {
+            return imgui::NextColumn::create(widget_factory, dispatcher, ns, data_bag);
         }
         if (widget_name == "row") {
             return imgui::Row::create(widget_factory, dispatcher, ns, data_bag);

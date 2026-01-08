@@ -1,9 +1,15 @@
-// im-anim plugin - Animation demos using ImAnim library
+// im-anim plugin - Animation widgets using ImAnim library
 #include "../../../plugin.hpp"
 #include "../../../frontend/widget.hpp"
 #include "../../../frontend/widget_factory.hpp"
 
-#include "anim.hpp"
+#include "float-tween.hpp"
+#include "vec2-tween.hpp"
+#include "color-tween.hpp"
+#include "oscillate.hpp"
+#include "shake.hpp"
+#include "spring.hpp"
+#include "easing-compare.hpp"
 
 namespace ymery::plugins {
 
@@ -13,7 +19,13 @@ public:
 
     std::vector<std::string> widgets() const override {
         return {
-            "anim"
+            "float-tween",
+            "vec2-tween",
+            "color-tween",
+            "oscillate",
+            "shake",
+            "spring",
+            "easing-compare"
         };
     }
 
@@ -24,8 +36,26 @@ public:
         const std::string& ns,
         std::shared_ptr<DataBag> data_bag
     ) override {
-        if (widget_name == "anim") {
-            return imanim::Anim::create(widget_factory, dispatcher, ns, data_bag);
+        if (widget_name == "float-tween") {
+            return imanim::FloatTween::create(widget_factory, dispatcher, ns, data_bag);
+        }
+        if (widget_name == "vec2-tween") {
+            return imanim::Vec2Tween::create(widget_factory, dispatcher, ns, data_bag);
+        }
+        if (widget_name == "color-tween") {
+            return imanim::ColorTween::create(widget_factory, dispatcher, ns, data_bag);
+        }
+        if (widget_name == "oscillate") {
+            return imanim::Oscillate::create(widget_factory, dispatcher, ns, data_bag);
+        }
+        if (widget_name == "shake") {
+            return imanim::Shake::create(widget_factory, dispatcher, ns, data_bag);
+        }
+        if (widget_name == "spring") {
+            return imanim::Spring::create(widget_factory, dispatcher, ns, data_bag);
+        }
+        if (widget_name == "easing-compare") {
+            return imanim::EasingCompare::create(widget_factory, dispatcher, ns, data_bag);
         }
         return Err<WidgetPtr>("Unknown widget: " + widget_name);
     }

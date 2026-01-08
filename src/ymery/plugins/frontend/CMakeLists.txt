@@ -48,6 +48,7 @@ add_subdirectory(imnodes)         # Nelarius/imnodes
 add_subdirectory(im-anim)         # soufianekhiat/ImAnim
 add_subdirectory(imguizmo)        # CedricGuillemet/ImGuizmo
 add_subdirectory(imgui-markdown)  # juliettef/imgui_markdown
+# add_subdirectory(imgui-node-editor) # DISABLED: incompatible with imgui 1.91.6
 
 # =============================================================================
 # Feature-area plugins

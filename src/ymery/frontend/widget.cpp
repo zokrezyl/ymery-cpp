@@ -115,7 +115,9 @@ Result<void> Widget::render() {
 
 void Widget::_handle_error(const Result<void>& result) {
     if (!result) {
-        _error_messages.push_back(result.error().to_string());
+        std::string err_str = result.error().to_string();
+        spdlog::error("Widget error: {}", err_str);
+        _error_messages.push_back(err_str);
     }
 }
 

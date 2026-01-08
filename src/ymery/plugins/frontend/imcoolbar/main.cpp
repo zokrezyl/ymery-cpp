@@ -4,6 +4,7 @@
 #include "../../../frontend/widget_factory.hpp"
 
 #include "coolbar.hpp"
+#include "coolbar-item.hpp"
 
 namespace ymery::plugins {
 
@@ -12,7 +13,7 @@ public:
     const char* name() const override { return "imcoolbar"; }
 
     std::vector<std::string> widgets() const override {
-        return { "coolbar" };
+        return { "coolbar", "coolbar-item" };
     }
 
     Result<WidgetPtr> createWidget(
@@ -24,6 +25,9 @@ public:
     ) override {
         if (widget_name == "coolbar") {
             return imcoolbar::CoolBar::create(widget_factory, dispatcher, ns, data_bag);
+        }
+        if (widget_name == "coolbar-item") {
+            return imcoolbar::CoolBarItem::create(widget_factory, dispatcher, ns, data_bag);
         }
         return Err<WidgetPtr>("Unknown widget: " + widget_name);
     }
