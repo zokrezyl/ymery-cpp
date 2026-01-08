@@ -20,17 +20,11 @@ endif()
 # Helper macro to configure a plugin target (handles Emscripten side module flags)
 macro(configure_plugin target)
     if(YMERY_WEB)
+        # Side modules are self-contained with their own dependencies
         set_target_properties(${target} PROPERTIES
             SUFFIX ".wasm"
             LINK_FLAGS "${EMSCRIPTEN_SIDE_MODULE_FLAGS}"
         )
-        # Add include paths explicitly (needed since we clear LINK_LIBRARIES)
-        target_include_directories(${target} PRIVATE
-            ${yaml-cpp_SOURCE_DIR}/include
-            ${spdlog_SOURCE_DIR}/include
-        )
-        # Clear link libraries - SIDE_MODULE imports symbols from MAIN_MODULE at runtime
-        set_target_properties(${target} PROPERTIES LINK_LIBRARIES "")
     endif()
 endmacro()
 

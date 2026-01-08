@@ -1,0 +1,108 @@
+# ImNodes plugin showcase
+# Node-based visual programming
+
+widgets:
+  demo:
+    type: composite
+    data:
+      local:
+        type: data-tree
+        arg:
+          children:
+            nodes:
+              children:
+                node-1:
+                  metadata:
+                    id: 1
+                    title: "Input"
+                    type: input
+                    x: 50
+                    y: 100
+                node-2:
+                  metadata:
+                    id: 2
+                    title: "Process"
+                    type: process
+                    x: 250
+                    y: 100
+                node-3:
+                  metadata:
+                    id: 3
+                    title: "Output"
+                    type: output
+                    x: 450
+                    y: 100
+            links:
+              children:
+                link-1:
+                  metadata:
+                    from: 1
+                    to: 2
+                link-2:
+                  metadata:
+                    from: 2
+                    to: 3
+            stats:
+              children:
+                node-count:
+                  metadata:
+                    label: 3
+                link-count:
+                  metadata:
+                    label: 2
+    main-data: local
+    body:
+      - text:
+          label: "ImNodes - Node Editor"
+          style:
+            text: [0.7, 0.9, 0.7, 1.0]
+      - separator
+      - text:
+          label: "Visual node-based programming interface"
+      - separator
+
+      - tab-bar:
+          body:
+            - tab-item:
+                label: "Node Editor"
+                body:
+                  - imnodes:
+                      size: [-1, 400]
+                    data-path: nodes
+                    links-path: links
+
+            - tab-item:
+                label: "Node Data"
+                body:
+                  - text:
+                      label: "Node Definitions"
+                  - separator
+                  - data-path: nodes
+                    builtin.tree-view:
+
+            - tab-item:
+                label: "Statistics"
+                body:
+                  - text:
+                      label: "Graph Statistics"
+                  - separator
+                  - text:
+                      label: "Nodes: "
+                  - same-line
+                  - data-path: stats/node-count
+                    text:
+                  - text:
+                      label: "Links: "
+                  - same-line
+                  - data-path: stats/link-count
+                    text:
+
+      - separator-text: "Features"
+      - bullet-text:
+          label: "Drag nodes to reposition"
+      - bullet-text:
+          label: "Connect pins by dragging"
+      - bullet-text:
+          label: "Delete links with middle-click"
+      - bullet-text:
+          label: "Box selection for multiple nodes"

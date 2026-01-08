@@ -1,0 +1,13 @@
+import:
+  - shared.imgui-markdown
+
+widgets:
+  main-window:
+    type: window
+    label: "ImGui Markdown Demo"
+    size: [700, 600]
+    body:
+      - shared.imgui-markdown.demo:
+
+app:
+  root-widget: main-window

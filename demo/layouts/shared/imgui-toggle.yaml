@@ -1,0 +1,77 @@
+# ImGui Toggle plugin showcase
+# Animated toggle switch widgets
+
+widgets:
+  demo:
+    type: composite
+    data:
+      local:
+        type: data-tree
+        arg:
+          children:
+            toggle-default:
+              metadata:
+                label: true
+            toggle-animated:
+              metadata:
+                label: false
+            toggle-material:
+              metadata:
+                label: true
+            toggle-ios:
+              metadata:
+                label: false
+    main-data: local
+    body:
+      - text:
+          label: "ImGui Toggle - Switch Controls"
+          style:
+            text: [0.7, 0.9, 0.7, 1.0]
+      - separator
+      - text:
+          label: "Various toggle styles with animations"
+      - separator
+
+      - separator-text: "Toggle Styles"
+
+      - data-path: toggle-default
+        toggle:
+          label: "Default Style"
+          style: default
+          tooltip: "Standard toggle switch"
+
+      - data-path: toggle-animated
+        toggle:
+          label: "Animated Style"
+          style: animated
+          animation-duration: 0.25
+          tooltip: "Toggle with smooth animation"
+
+      - data-path: toggle-material
+        toggle:
+          label: "Material Style"
+          style: material
+          tooltip: "Material design toggle"
+
+      - data-path: toggle-ios
+        toggle:
+          label: "iOS Style"
+          style: ios
+          tooltip: "iOS-style toggle switch"
+
+      - separator-text: "Sized Toggles"
+
+      - row:
+          body:
+            - data-path: toggle-default
+              toggle:
+                label: "Small"
+                size-scale: 0.75
+            - data-path: toggle-default
+              toggle:
+                label: "Normal"
+                size-scale: 1.0
+            - data-path: toggle-default
+              toggle:
+                label: "Large"
+                size-scale: 1.5

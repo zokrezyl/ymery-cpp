@@ -1,86 +1,14 @@
-widgets:
-  # Widget type definitions
-  window:
-    type: window
-  text:
-    type: text
-  button:
-    type: button
-  separator:
-    type: separator
-  row:
-    type: row
-  column:
-    type: column
-  collapsing-header:
-    type: collapsing-header
-  implot:
-    type: implot
-  implot-layer:
-    type: implot-layer
+import:
+  - shared.waveform
 
-  # Main window widget
+widgets:
   main-window:
     type: window
-    label: Waveform Demo
+    label: "Waveform Demo"
+    size: [800, 700]
     body:
-      - text:
-          content: "Waveform Generator Demo"
-          tooltip: "Real-time waveform generation with ImPlot"
-      - separator
-      - text:
-          content: "This demo shows real-time generated waveforms plotted with ImPlot."
-      - text:
-          content: "Each waveform runs in a background thread writing to a ring buffer."
-      - separator
-      - collapsing-header:
-          label: Sine Wave
-          body:
-            - implot:
-                label: Sine Waveform
-                size: [600, 200]
-                body:
-                  - implot-layer:
-                      label: Sine
-                      data-path: /opened/sine/0
-      - collapsing-header:
-          label: Square Wave
-          body:
-            - implot:
-                label: Square Waveform
-                size: [600, 200]
-                body:
-                  - implot-layer:
-                      label: Square
-                      data-path: /opened/square/0
-      - collapsing-header:
-          label: Triangle Wave
-          body:
-            - implot:
-                label: Triangle Waveform
-                size: [600, 200]
-                body:
-                  - implot-layer:
-                      label: Triangle
-                      data-path: /opened/triangle/0
-      - separator
-      - collapsing-header:
-          label: All Waveforms Combined
-          body:
-            - implot:
-                label: All Waveforms
-                size: [600, 300]
-                body:
-                  - implot-layer:
-                      label: Sine
-                      data-path: /opened/sine/0
-                  - implot-layer:
-                      label: Square
-                      data-path: /opened/square/0
-                  - implot-layer:
-                      label: Triangle
-                      data-path: /opened/triangle/0
+      - shared.waveform.demo:
 
 app:
-  root-widget: app.main-window
-  data-tree: waveform
+  root-widget: main-window
+  main-data: waveform

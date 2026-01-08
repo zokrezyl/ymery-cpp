@@ -1,0 +1,612 @@
+# Core ImGui widgets showcase
+# All widgets use local data for easy importing
+
+widgets:
+  # ============================================================================
+  # MAIN DEMO COMPOSITE - use this to import all imgui demos
+  # ============================================================================
+  demo:
+    type: composite
+    body:
+      - collapsing-header:
+          label: "Basic Widgets"
+          flags: [default-open]
+          body:
+            - imgui.basic:
+      - collapsing-header:
+          label: "Text Widgets"
+          body:
+            - imgui.text-demo:
+      - collapsing-header:
+          label: "Input Widgets"
+          body:
+            - imgui.inputs:
+      - collapsing-header:
+          label: "Sliders & Drags"
+          body:
+            - imgui.sliders:
+      - collapsing-header:
+          label: "Color Widgets"
+          body:
+            - imgui.colors:
+      - collapsing-header:
+          label: "Selection Widgets"
+          body:
+            - imgui.selections:
+      - collapsing-header:
+          label: "Layout Widgets"
+          body:
+            - imgui.layout:
+      - collapsing-header:
+          label: "Tables"
+          body:
+            - imgui.tables:
+      - collapsing-header:
+          label: "Trees & Headers"
+          body:
+            - imgui.trees:
+      - collapsing-header:
+          label: "Tabs"
+          body:
+            - imgui.tabs:
+      - collapsing-header:
+          label: "Popups & Modals"
+          body:
+            - imgui.popups:
+      - collapsing-header:
+          label: "Tooltips"
+          body:
+            - imgui.tooltips:
+
+  # ============================================================================
+  # BASIC WIDGETS
+  # ============================================================================
+  basic:
+    type: composite
+    data:
+      local:
+        type: data-tree
+        arg:
+          children:
+            checkbox:
+              metadata:
+                label: true
+            radio:
+              metadata:
+                label: 0
+    main-data: local
+    body:
+      - separator-text: "Buttons"
+      - row:
+          body:
+            - button:
+                label: "Button"
+                tooltip: "Click to trigger an action"
+            - button:
+                label: "Styled"
+                tooltip: "Button with custom colors"
+                style:
+                  button: [0.2, 0.6, 0.2, 1.0]
+                  button-hovered: [0.3, 0.7, 0.3, 1.0]
+                  button-active: [0.1, 0.5, 0.1, 1.0]
+            - button:
+                label: "Small"
+                small: true
+                tooltip: "Small button variant"
+
+      - separator-text: "Checkbox"
+      - data-path: checkbox
+        checkbox:
+          label: "Enable feature"
+          tooltip: "Toggle this option on or off"
+
+      - separator-text: "Radio Buttons"
+      - data-path: radio
+        radio-button:
+          label: "Option A"
+          value: 0
+          tooltip: "Select option A"
+      - data-path: radio
+        radio-button:
+          label: "Option B"
+          value: 1
+          tooltip: "Select option B"
+      - data-path: radio
+        radio-button:
+          label: "Option C"
+          value: 2
+          tooltip: "Select option C"
+
+  # ============================================================================
+  # TEXT WIDGETS
+  # ============================================================================
+  text-demo:
+    type: composite
+    body:
+      - separator-text: "Text Display"
+      - text:
+          label: "Simple text label"
+      - text:
+          label: "Colored text"
+          style:
+            text: [0.2, 0.8, 0.2, 1.0]
+
+      - separator-text: "Bullet Text"
+      - bullet-text:
+          label: "First bullet item"
+      - bullet-text:
+          label: "Second bullet item"
+      - bullet-text:
+          label: "Third bullet item"
+
+      - separator-text: "Separator Text"
+      - separator-text: "Section Header"
+      - text:
+          label: "Content below separator"
+
+  # ============================================================================
+  # INPUT WIDGETS
+  # ============================================================================
+  inputs:
+    type: composite
+    data:
+      local:
+        type: data-tree
+        arg:
+          children:
+            input-text:
+              metadata:
+                label: "Hello, world!"
+            input-int:
+              metadata:
+                label: 42
+            input-float:
+              metadata:
+                label: 3.14159
+    main-data: local
+    body:
+      - separator-text: "Text Input"
+      - data-path: input-text
+        input-text:
+          tooltip: "Enter text value"
+
+      - separator-text: "Integer Input"
+      - data-path: input-int
+        input-int:
+          tooltip: "Enter integer value"
+
+      - separator-text: "Float Input"
+      - data-path: input-float
+        input-float:
+          tooltip: "Enter floating point value"
+
+  # ============================================================================
+  # SLIDERS & DRAGS
+  # ============================================================================
+  sliders:
+    type: composite
+    data:
+      local:
+        type: data-tree
+        arg:
+          children:
+            slider-int:
+              metadata:
+                label: 50
+            slider-float:
+              metadata:
+                label: 0.5
+            drag-int:
+              metadata:
+                label: 25
+            drag-float:
+              metadata:
+                label: 0.25
+    main-data: local
+    body:
+      - separator-text: "Sliders"
+      - data-path: slider-int
+        slider-int:
+          label: "Integer Slider"
+          min: 0
+          max: 100
+          tooltip: "Drag to adjust integer value (0-100)"
+      - data-path: slider-float
+        slider-float:
+          label: "Float Slider"
+          min: 0.0
+          max: 1.0
+          tooltip: "Drag to adjust float value (0.0-1.0)"
+
+      - separator-text: "Drags"
+      - data-path: drag-int
+        drag-int:
+          label: "Integer Drag"
+          min: 0
+          max: 100
+          tooltip: "Drag to adjust integer"
+      - data-path: drag-float
+        drag-float:
+          label: "Float Drag"
+          min: 0.0
+          max: 1.0
+          tooltip: "Drag to adjust float"
+
+  # ============================================================================
+  # COLOR WIDGETS
+  # ============================================================================
+  colors:
+    type: composite
+    data:
+      local:
+        type: data-tree
+        arg:
+          children:
+            color-rgb:
+              metadata:
+                label: [0.8, 0.2, 0.2]
+            color-rgba:
+              metadata:
+                label: [0.2, 0.4, 0.8, 0.75]
+    main-data: local
+    body:
+      - separator-text: "Color Edit"
+      - data-path: color-rgb
+        color-edit:
+          label: "RGB Color"
+          format: rgb
+          tooltip: "Pick an RGB color"
+      - data-path: color-rgba
+        color-edit:
+          label: "RGBA Color"
+          format: rgba
+          tooltip: "Pick an RGBA color with alpha"
+
+      - separator-text: "Color Button"
+      - data-path: color-rgb
+        color-button:
+          label: "Color Preview"
+          tooltip: "Shows current color"
+
+  # ============================================================================
+  # SELECTION WIDGETS
+  # ============================================================================
+  selections:
+    type: composite
+    data:
+      local:
+        type: data-tree
+        arg:
+          children:
+            combo:
+              metadata:
+                label: 0
+            listbox:
+              metadata:
+                label: 1
+            selectable-a:
+              metadata:
+                label: true
+            selectable-b:
+              metadata:
+                label: false
+            selectable-c:
+              metadata:
+                label: false
+    main-data: local
+    body:
+      - separator-text: "Combo Box"
+      - data-path: combo
+        combo:
+          label: "Select Theme"
+          items:
+            - "Dark"
+            - "Light"
+            - "Classic"
+            - "Custom"
+          tooltip: "Choose a theme from dropdown"
+
+      - separator-text: "List Box"
+      - data-path: listbox
+        listbox:
+          label: "Select Item"
+          items:
+            - "Item One"
+            - "Item Two"
+            - "Item Three"
+            - "Item Four"
+            - "Item Five"
+          height: 4
+          tooltip: "Scrollable list selection"
+
+      - separator-text: "Selectables"
+      - data-path: selectable-a
+        selectable:
+          label: "Selectable A"
+          tooltip: "Click to toggle selection"
+      - data-path: selectable-b
+        selectable:
+          label: "Selectable B"
+          tooltip: "Click to toggle selection"
+      - data-path: selectable-c
+        selectable:
+          label: "Selectable C"
+          tooltip: "Click to toggle selection"
+
+  # ============================================================================
+  # LAYOUT WIDGETS
+  # ============================================================================
+  layout:
+    type: composite
+    body:
+      - separator-text: "Same Line"
+      - button:
+          label: "Button 1"
+      - same-line
+      - button:
+          label: "Button 2"
+      - same-line
+      - button:
+          label: "Button 3"
+
+      - separator-text: "Group"
+      - group:
+          body:
+            - text:
+                label: "Grouped content"
+            - button:
+                label: "Grouped Button"
+
+      - separator-text: "Indent"
+      - text:
+          label: "Not indented"
+      - indent:
+          body:
+            - text:
+                label: "Indented level 1"
+            - indent:
+                body:
+                  - text:
+                      label: "Indented level 2"
+
+      - separator-text: "Spacing"
+      - text:
+          label: "Before spacing"
+      - spacing
+      - spacing
+      - text:
+          label: "After spacing"
+
+      - separator-text: "Child Window (Scrollable)"
+      - child:
+          size: [0, 100]
+          border: true
+          body:
+            - text:
+                label: "Scrollable content"
+            - text:
+                label: "Line 1"
+            - text:
+                label: "Line 2"
+            - text:
+                label: "Line 3"
+            - text:
+                label: "Line 4"
+            - text:
+                label: "Line 5"
+            - text:
+                label: "Line 6"
+
+      - separator-text: "Columns"
+      - column:
+          count: 3
+          body:
+            - text:
+                label: "Column 1"
+            - button:
+                label: "Btn 1"
+            - next-column
+            - text:
+                label: "Column 2"
+            - button:
+                label: "Btn 2"
+            - next-column
+            - text:
+                label: "Column 3"
+            - button:
+                label: "Btn 3"
+
+  # ============================================================================
+  # TABLES
+  # ============================================================================
+  tables:
+    type: composite
+    body:
+      - separator-text: "Basic Table"
+      - table:
+          label: "Demo Table"
+          flags: [borders, row-bg, sizing-stretch-prop]
+          body:
+            - table-column:
+                label: "Name"
+            - table-column:
+                label: "Value"
+            - table-column:
+                label: "Status"
+            - table-row:
+                body:
+                  - text:
+                      label: "Item A"
+                  - text:
+                      label: "100"
+                  - text:
+                      label: "Active"
+                      style:
+                        text: [0.2, 0.8, 0.2, 1.0]
+            - table-row:
+                body:
+                  - text:
+                      label: "Item B"
+                  - text:
+                      label: "75"
+                  - text:
+                      label: "Pending"
+                      style:
+                        text: [0.8, 0.8, 0.2, 1.0]
+            - table-row:
+                body:
+                  - text:
+                      label: "Item C"
+                  - text:
+                      label: "50"
+                  - text:
+                      label: "Inactive"
+                      style:
+                        text: [0.8, 0.2, 0.2, 1.0]
+
+  # ============================================================================
+  # TREES & HEADERS
+  # ============================================================================
+  trees:
+    type: composite
+    body:
+      - separator-text: "Collapsing Headers"
+      - collapsing-header:
+          label: "Section A"
+          flags: [default-open]
+          body:
+            - text:
+                label: "Content in Section A"
+            - button:
+                label: "Action A"
+      - collapsing-header:
+          label: "Section B"
+          body:
+            - text:
+                label: "Content in Section B"
+
+      - separator-text: "Tree Nodes"
+      - tree-node:
+          label: "Root Node"
+          flags: [default-open]
+          body:
+            - tree-node:
+                label: "Child 1"
+                body:
+                  - text:
+                      label: "Leaf item 1.1"
+                  - text:
+                      label: "Leaf item 1.2"
+            - tree-node:
+                label: "Child 2"
+                body:
+                  - tree-node:
+                      label: "Grandchild 2.1"
+                      body:
+                        - text:
+                            label: "Deep leaf"
+
+  # ============================================================================
+  # TABS
+  # ============================================================================
+  tabs:
+    type: composite
+    body:
+      - tab-bar:
+          body:
+            - tab-item:
+                label: "First Tab"
+                tooltip: "First tab content"
+                body:
+                  - text:
+                      label: "Content of first tab"
+                  - button:
+                      label: "Tab 1 Button"
+            - tab-item:
+                label: "Second Tab"
+                tooltip: "Second tab content"
+                body:
+                  - text:
+                      label: "Content of second tab"
+                  - checkbox:
+                      label: "Tab 2 Checkbox"
+            - tab-item:
+                label: "Third Tab"
+                tooltip: "Third tab content"
+                body:
+                  - text:
+                      label: "Content of third tab"
+
+  # ============================================================================
+  # POPUPS & MODALS
+  # ============================================================================
+  popups:
+    type: composite
+    body:
+      - separator-text: "Regular Popup"
+      - button:
+          label: "Open Popup"
+          body:
+            - popup:
+                label: "my-popup"
+                body:
+                  - text:
+                      label: "This is a popup!"
+                  - separator
+                  - button:
+                      label: "Close"
+                      body:
+                        - close-current-popup
+            - open-popup:
+                label: "my-popup"
+
+      - separator-text: "Modal Dialog"
+      - button:
+          label: "Open Modal"
+          body:
+            - popup-modal:
+                label: "Modal Dialog"
+                body:
+                  - text:
+                      label: "This is a modal dialog."
+                  - text:
+                      label: "You must close it to continue."
+                  - separator
+                  - button:
+                      label: "OK"
+                      body:
+                        - close-current-popup
+            - open-popup:
+                label: "Modal Dialog"
+
+  # ============================================================================
+  # TOOLTIPS
+  # ============================================================================
+  tooltips:
+    type: composite
+    body:
+      - separator-text: "Simple Tooltips"
+      - button:
+          label: "Hover me"
+          tooltip: "This is a simple tooltip"
+      - text:
+          label: "Text with tooltip"
+          tooltip: "Tooltip on text element"
+
+      - separator-text: "Rich Tooltip"
+      - button:
+          label: "Rich Tooltip"
+          body:
+            - tooltip:
+                body:
+                  - text:
+                      label: "Rich Tooltip Content"
+                      style:
+                        text: [0.2, 0.8, 0.8, 1.0]
+                  - separator
+                  - bullet-text:
+                      label: "Feature one"
+                  - bullet-text:
+                      label: "Feature two"
+                  - bullet-text:
+                      label: "Feature three"

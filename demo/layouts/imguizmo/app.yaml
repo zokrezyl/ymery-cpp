@@ -1,0 +1,13 @@
+import:
+  - shared.imguizmo
+
+widgets:
+  main-window:
+    type: window
+    label: "ImGuizmo Demo"
+    size: [800, 600]
+    body:
+      - shared.imguizmo.demo:
+
+app:
+  root-widget: main-window

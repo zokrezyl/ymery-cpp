@@ -1,7 +1,10 @@
+import:
+  - shared.editor
+
 widgets:
-  main-widget:
+  main-window:
     type: docking-main-window
-    title: Ymery Layout Editor
+    title: "Ymery Layout Editor"
     body:
       # Menu bar
       - main-menu-bar:
@@ -11,10 +14,10 @@ widgets:
                 body:
                   - menu-item:
                       label: "New"
-                  - separator: {}
+                  - separator
                   - menu-item:
                       label: "Export YAML..."
-                  - separator: {}
+                  - separator
                   - menu-item:
                       label: "Exit"
             - menu:
@@ -38,22 +41,19 @@ widgets:
                   - menu-item:
                       label: "Logs"
 
-      # Vertical splits: Upper | Middle (Preview) | Lower
-      # First split off the bottom for Errors/Logs
+      # Docking layout
       - docking-split:
           initial-dock: "MainDockSpace"
           new-dock: "BottomPanel"
           direction: "down"
           ratio: 0.20
 
-      # Split off the top for Widget Browser/Editor/Code
       - docking-split:
           initial-dock: "MainDockSpace"
           new-dock: "TopPanel"
           direction: "up"
           ratio: 0.35
 
-      # Horizontal splits in TopPanel: Widget Browser | Editor | Code
       - docking-split:
           initial-dock: "TopPanel"
           new-dock: "TopLeft"
@@ -66,27 +66,24 @@ widgets:
           direction: "right"
           ratio: 0.40
 
-      # Dockable windows - Upper row
+      # Upper row
       - dockable-window:
           label: "Widget Browser"
           dock-space-name: "TopLeft"
           body:
             - editor-widget-tree:
-                title: ""
 
       - dockable-window:
           label: "Editor"
           dock-space-name: "TopPanel"
           body:
             - editor:
-                title: ""
 
       - dockable-window:
           label: "Code"
           dock-space-name: "TopRight"
           body:
             - code-preview:
-                title: ""
 
       # Middle - Preview
       - dockable-window:
@@ -94,50 +91,19 @@ widgets:
           dock-space-name: "MainDockSpace"
           body:
             - preview:
-                title: ""
 
-      # Bottom - Errors and Logs (tabbed)
+      # Bottom - Errors and Logs
       - dockable-window:
           label: "Errors"
           dock-space-name: "BottomPanel"
           body:
             - errors-view:
-                title: ""
 
       - dockable-window:
           label: "Logs"
           dock-space-name: "BottomPanel"
           body:
             - logs-view:
-                title: ""
-
-  # Widget type definitions
-  docking-main-window:
-    type: docking-main-window
-  docking-split:
-    type: docking-split
-  dockable-window:
-    type: dockable-window
-  main-menu-bar:
-    type: main-menu-bar
-  menu:
-    type: menu
-  menu-item:
-    type: menu-item
-  separator:
-    type: separator
-  editor-widget-tree:
-    type: editor-widget-tree
-  editor:
-    type: editor
-  preview:
-    type: preview
-  code-preview:
-    type: code-preview
-  errors-view:
-    type: errors-view
-  logs-view:
-    type: logs-view
 
 app:
-  root-widget: app.main-widget
+  root-widget: main-window

@@ -1,0 +1,13 @@
+import:
+  - shared.imspinner
+
+widgets:
+  main-window:
+    type: window
+    label: "ImSpinner Demo"
+    size: [600, 500]
+    body:
+      - shared.imspinner.demo:
+
+app:
+  root-widget: main-window

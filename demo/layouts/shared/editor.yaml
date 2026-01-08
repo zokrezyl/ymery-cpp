@@ -1,0 +1,51 @@
+# Editor plugin showcase
+# YAML editor with live preview
+
+widgets:
+  demo:
+    type: composite
+    body:
+      - text:
+          label: "YAML Layout Editor"
+          style:
+            text: [0.7, 0.9, 0.7, 1.0]
+      - separator
+      - text:
+          label: "Edit YAML layouts with live preview and code generation"
+      - separator
+
+      - tab-bar:
+          body:
+            - tab-item:
+                label: "Widget Tree"
+                tooltip: "Browse widget hierarchies"
+                body:
+                  - editor-widget-tree:
+
+            - tab-item:
+                label: "Editor"
+                tooltip: "YAML editor with syntax highlighting"
+                body:
+                  - editor:
+
+            - tab-item:
+                label: "Code Preview"
+                tooltip: "Generated C++ code"
+                body:
+                  - code-preview:
+
+            - tab-item:
+                label: "Preview"
+                tooltip: "Live widget preview"
+                body:
+                  - preview:
+
+      - separator-text: "Features"
+      - bullet-text:
+          label: "Live YAML validation"
+      - bullet-text:
+          label: "Widget hierarchy browser"
+      - bullet-text:
+          label: "C++ code generation"
+      - bullet-text:
+          label: "Real-time preview updates"

@@ -1,89 +1,145 @@
-widgets:
-  # Widget type definitions
-  window:
-    type: window
-  text:
-    type: text
-  button:
-    type: button
-  separator:
-    type: separator
-  checkbox:
-    type: checkbox
-  slider-int:
-    type: slider-int
-  input-text:
-    type: input-text
-  tooltip:
-    type: tooltip
-  row:
-    type: row
-  collapsing-header:
-    type: collapsing-header
+# Simple Aggregate Demo
+# All plugins in a tree-navigable interface (no docking)
 
-  # Main window widget
+import:
+  - shared.imgui
+  - shared.imcoolbar
+  - shared.imgui-knobs
+  - shared.imgui-toggle
+  - shared.imspinner
+  - shared.im-anim
+  - shared.imguizmo
+  - shared.implot
+  - shared.implot3d
+  - shared.imnodes
+  - shared.imgui-markdown
+  - shared.filesystem
+  - shared.kernel
+  - shared.waveform
+
+widgets:
   main-window:
     type: window
-    label: Simple Demo
+    label: "Ymery Plugin Showcase"
+    size: [1200, 800]
     body:
       - text:
-          content: "Simple Widget Demo"
+          label: "Ymery Plugin Showcase"
+          style:
+            text: [0.9, 0.9, 0.2, 1.0]
       - separator
-      - collapsing-header:
-          label: Buttons
-          body:
-            - row:
-                body:
-                  - button:
-                      label: Button 1
-                      tooltip: First button
-                  - button:
-                      label: Button 2
-                      tooltip: Second button
-                  - button:
-                      label: Button 3
-                      tooltip: Third button
-      - collapsing-header:
-          label: Input Widgets
-          body:
-            - input-text:
-                label: Name
-                tooltip: Enter your name
-            - slider-int:
-                label: Value
-                min: 0
-                max: 100
-                tooltip: Drag to change value
-            - checkbox:
-                label: Enable feature
-                tooltip: Toggle this option
-      - collapsing-header:
-          label: Tooltips Demo
-          body:
-            - text:
-                content: "Hover over buttons to see tooltips"
-            - row:
-                body:
-                  - button:
-                      label: Simple Tooltip
-                      tooltip: This is a simple text tooltip
-                  - button:
-                      label: Rich Tooltip
-                      event-handlers:
-                        on-hover:
-                          show: rich-tooltip
+      - text:
+          label: "Expand sections below to explore each plugin"
+      - separator
 
-  # Rich tooltip widget
-  rich-tooltip:
-    type: tooltip
-    body:
-      - text:
-          content: "Rich Tooltip Content"
-      - separator
-      - text:
-          content: "Line 1: Information"
-      - text:
-          content: "Line 2: More details"
+      # ============================================================================
+      # UI WIDGET PLUGINS
+      # ============================================================================
+      - collapsing-header:
+          label: "UI Widget Plugins"
+          flags: [default-open]
+          body:
+            - tree-node:
+                label: "ImGui - Core Widgets"
+                tooltip: "Buttons, inputs, sliders, tables, popups..."
+                body:
+                  - shared.imgui.demo:
+
+            - tree-node:
+                label: "ImCoolBar - Animated Toolbar"
+                tooltip: "Dock-like animated toolbar"
+                body:
+                  - shared.imcoolbar.demo:
+
+            - tree-node:
+                label: "ImGui Knobs - Rotary Controls"
+                tooltip: "Various knob styles for value adjustment"
+                body:
+                  - shared.imgui-knobs.demo:
+
+            - tree-node:
+                label: "ImGui Toggle - Switch Controls"
+                tooltip: "Animated toggle switches"
+                body:
+                  - shared.imgui-toggle.demo:
+
+            - tree-node:
+                label: "ImSpinner - Loading Animations"
+                tooltip: "Various spinner styles"
+                body:
+                  - shared.imspinner.demo:
+
+            - tree-node:
+                label: "ImAnim - Animation Engine"
+                tooltip: "Tweens, springs, oscillators, easings"
+                body:
+                  - shared.im-anim.demo:
+
+            - tree-node:
+                label: "ImGui Markdown - Rich Text"
+                tooltip: "Markdown rendering"
+                body:
+                  - shared.imgui-markdown.demo:
+
+      # ============================================================================
+      # 3D & PLOTTING PLUGINS
+      # ============================================================================
+      - collapsing-header:
+          label: "3D & Plotting Plugins"
+          body:
+            - tree-node:
+                label: "ImGuizmo - 3D Gizmos"
+                tooltip: "Translation, rotation, scale gizmos"
+                body:
+                  - shared.imguizmo.demo:
+
+            - tree-node:
+                label: "ImPlot - 2D Plotting"
+                tooltip: "Line charts, scatter plots, bar charts"
+                body:
+                  - shared.implot.demo:
+
+            - tree-node:
+                label: "ImPlot3D - 3D Plotting"
+                tooltip: "3D surface and scatter plots"
+                body:
+                  - shared.implot3d.demo:
+
+      # ============================================================================
+      # NODE EDITOR PLUGINS
+      # ============================================================================
+      - collapsing-header:
+          label: "Node Editor Plugins"
+          body:
+            - tree-node:
+                label: "ImNodes - Visual Programming"
+                tooltip: "Node-based visual programming"
+                body:
+                  - shared.imnodes.demo:
+
+      # ============================================================================
+      # DATA SOURCE PLUGINS
+      # ============================================================================
+      - collapsing-header:
+          label: "Data Source Plugins"
+          body:
+            - tree-node:
+                label: "Filesystem Browser"
+                tooltip: "Tree-based filesystem navigation"
+                body:
+                  - shared.filesystem.demo:
+
+            - tree-node:
+                label: "Kernel Provider Hub"
+                tooltip: "Central routing to data providers"
+                body:
+                  - shared.kernel.demo:
+
+            - tree-node:
+                label: "Waveform Visualization"
+                tooltip: "Real-time waveform display"
+                body:
+                  - shared.waveform.demo:
 
 app:
-  root-widget: app.main-window
+  root-widget: main-window

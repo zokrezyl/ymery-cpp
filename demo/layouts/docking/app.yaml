@@ -1,0 +1,218 @@
+# Docking Aggregate Demo
+# All plugins showcased in dockable windows
+
+import:
+  - shared.imgui
+  - shared.imcoolbar
+  - shared.imgui-knobs
+  - shared.imgui-toggle
+  - shared.imspinner
+  - shared.im-anim
+  - shared.imguizmo
+  - shared.implot
+  - shared.implot3d
+  - shared.imnodes
+  - shared.imgui-markdown
+  - shared.filesystem
+  - shared.kernel
+  - shared.waveform
+  - shared.editor
+
+widgets:
+  main-window:
+    type: hello-imgui-main-window
+    runner-params:
+      app-window-params:
+        window-geometry:
+          size: [1800, 1000]
+      imgui-window-params:
+        default-imgui-window-type: provide-full-screen-dock-space
+    fps-idle: 0
+    body:
+      # Menu
+      - hello-imgui-menu:
+          body:
+            - menu:
+                label: "File"
+                body:
+                  - menu-item:
+                      label: "Exit"
+            - menu:
+                label: "View"
+                body:
+                  - separator-text: "UI Plugins"
+                  - menu-item:
+                      label: "ImGui Widgets"
+                  - menu-item:
+                      label: "ImCoolBar"
+                  - menu-item:
+                      label: "ImGui Knobs"
+                  - menu-item:
+                      label: "ImGui Toggle"
+                  - menu-item:
+                      label: "ImSpinner"
+                  - menu-item:
+                      label: "ImAnim"
+                  - separator-text: "3D & Plotting"
+                  - menu-item:
+                      label: "ImGuizmo"
+                  - menu-item:
+                      label: "ImPlot"
+                  - menu-item:
+                      label: "ImPlot3D"
+                  - separator-text: "Node Editors"
+                  - menu-item:
+                      label: "ImNodes"
+                  - separator-text: "Data Sources"
+                  - menu-item:
+                      label: "Filesystem"
+                  - menu-item:
+                      label: "Kernel"
+                  - menu-item:
+                      label: "Waveform"
+
+      - hello-imgui-app-menu-items:
+          body:
+            - menu-item:
+                label: "About Ymery"
+
+      # Docking layout
+      - docking-split:
+          initial-dock: "MainDockSpace"
+          new-dock: "BottomPanel"
+          direction: "down"
+          ratio: 0.2
+
+      - docking-split:
+          initial-dock: "MainDockSpace"
+          new-dock: "LeftPanel"
+          direction: "left"
+          ratio: 0.25
+
+      # ============================================================================
+      # UI WIDGET PLUGINS
+      # ============================================================================
+      - dockable-window:
+          label: "ImGui"
+          dock-space-name: "MainDockSpace"
+          tooltip: "Core Dear ImGui widgets"
+          body:
+            - shared.imgui.demo:
+
+      - dockable-window:
+          label: "ImCoolBar"
+          dock-space-name: "MainDockSpace"
+          tooltip: "Animated dock-like toolbar"
+          body:
+            - shared.imcoolbar.demo:
+
+      - dockable-window:
+          label: "ImGui Knobs"
+          dock-space-name: "MainDockSpace"
+          tooltip: "Rotary control widgets"
+          body:
+            - shared.imgui-knobs.demo:
+
+      - dockable-window:
+          label: "ImGui Toggle"
+          dock-space-name: "MainDockSpace"
+          tooltip: "Animated toggle switches"
+          body:
+            - shared.imgui-toggle.demo:
+
+      - dockable-window:
+          label: "ImSpinner"
+          dock-space-name: "MainDockSpace"
+          tooltip: "Loading animations"
+          body:
+            - shared.imspinner.demo:
+
+      - dockable-window:
+          label: "ImAnim"
+          dock-space-name: "MainDockSpace"
+          tooltip: "Animation engine"
+          body:
+            - shared.im-anim.demo:
+
+      - dockable-window:
+          label: "Markdown"
+          dock-space-name: "MainDockSpace"
+          tooltip: "Markdown rendering"
+          body:
+            - shared.imgui-markdown.demo:
+
+      # ============================================================================
+      # 3D & PLOTTING PLUGINS
+      # ============================================================================
+      - dockable-window:
+          label: "ImGuizmo"
+          dock-space-name: "MainDockSpace"
+          tooltip: "3D manipulation gizmos"
+          body:
+            - shared.imguizmo.demo:
+
+      - dockable-window:
+          label: "ImPlot"
+          dock-space-name: "MainDockSpace"
+          tooltip: "2D plotting"
+          body:
+            - shared.implot.demo:
+
+      - dockable-window:
+          label: "ImPlot3D"
+          dock-space-name: "MainDockSpace"
+          tooltip: "3D plotting"
+          body:
+            - shared.implot3d.demo:
+
+      # ============================================================================
+      # NODE EDITOR PLUGINS
+      # ============================================================================
+      - dockable-window:
+          label: "ImNodes"
+          dock-space-name: "MainDockSpace"
+          tooltip: "Node-based visual programming"
+          body:
+            - shared.imnodes.demo:
+
+      # ============================================================================
+      # DATA SOURCE PLUGINS
+      # ============================================================================
+      - dockable-window:
+          label: "Filesystem"
+          dock-space-name: "LeftPanel"
+          tooltip: "Filesystem browser"
+          body:
+            - shared.filesystem.demo:
+
+      - dockable-window:
+          label: "Kernel"
+          dock-space-name: "LeftPanel"
+          tooltip: "Kernel provider hub"
+          body:
+            - shared.kernel.demo:
+
+      - dockable-window:
+          label: "Waveform"
+          dock-space-name: "MainDockSpace"
+          tooltip: "Real-time waveform visualization"
+          body:
+            - shared.waveform.demo:
+
+      # ============================================================================
+      # BOTTOM PANEL - Logs
+      # ============================================================================
+      - dockable-window:
+          label: "Logs"
+          dock-space-name: "BottomPanel"
+          body:
+            - logs-view:
+
+      - dockable-window:
+          label: "Errors"
+          dock-space-name: "BottomPanel"
+          body:
+            - errors-view:
+
+app:
+  root-widget: main-window

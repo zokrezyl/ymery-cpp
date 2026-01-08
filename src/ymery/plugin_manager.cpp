@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <sstream>
 #include <fstream>
+#include <algorithm>
 #include <yaml-cpp/yaml.h>
 
 #ifdef __EMSCRIPTEN__
@@ -147,6 +148,9 @@ using PluginWidgetCreateFn = void*(*)(
 );
 using PluginTreeCreateFn = void*(*)(std::shared_ptr<Dispatcher>, std::shared_ptr<PluginManager>);
 
+// New plugin system: create() returns Plugin* directly
+using NewPluginCreateFn = void*(*)();
+
 Result<std::shared_ptr<PluginManager>> PluginManager::create(const std::string& plugins_path) {
     auto manager = std::shared_ptr<PluginManager>(new PluginManager());
     manager->_plugins_path = plugins_path;
@@ -174,17 +178,19 @@ Result<void> PluginManager::dispose() {
     }
     _handles.clear();
     _plugins.clear();
-    _plugins_loaded = false;
+    _new_plugins.clear();
+    _discovered_plugins.clear();
+    _plugins_discovered = false;
     return Ok();
 }
 
-Result<void> PluginManager::_ensure_plugins_loaded() {
-    if (_plugins_loaded) {
+Result<void> PluginManager::_ensure_plugins_discovered() {
+    if (_plugins_discovered) {
         return Ok();
     }
 
-    // Dynamic loading on all platforms (including web via dlopen)
-    spdlog::debug("PluginManager: loading plugins from {}", _plugins_path);
+    // Discover plugins without loading them (lazy loading)
+    spdlog::debug("PluginManager: discovering plugins from {}", _plugins_path);
 
     // Parse path-separated paths (: on Unix/web, ; on Windows)
     std::vector<std::string> plugin_dirs;
@@ -216,14 +222,13 @@ Result<void> PluginManager::_ensure_plugins_loaded() {
     }
 #endif
 
-    // Scan each directory
+    // Scan each directory and record plugin paths (without loading)
     for (const auto& dir : plugin_dirs) {
-        spdlog::info("PluginManager: checking directory: {}", dir);
+        spdlog::debug("PluginManager: scanning directory: {}", dir);
         if (!fs::exists(dir)) {
             spdlog::warn("Plugin directory does not exist: {}", dir);
             continue;
         }
-        spdlog::info("PluginManager: directory exists: {}", dir);
 
 #ifdef __EMSCRIPTEN__
         // Emscripten: use POSIX opendir/readdir (more reliable with VFS than std::filesystem)
@@ -232,43 +237,71 @@ Result<void> PluginManager::_ensure_plugins_loaded() {
             spdlog::warn("PluginManager: opendir failed for {}", dir);
             continue;
         }
-        spdlog::info("PluginManager: opendir succeeded for {}", dir);
         struct dirent* entry;
-        int file_count = 0;
         while ((entry = readdir(d)) != nullptr) {
             std::string name = entry->d_name;
             if (name == "." || name == "..") continue;
-            file_count++;
 
             std::string full_path = dir + "/" + name;
-            spdlog::info("PluginManager: found entry: {}", full_path);
 
             // Check if it's a .wasm file
             if (name.size() > 5 && name.substr(name.size() - 5) == ".wasm") {
-                spdlog::info("PluginManager: loading .wasm: {}", full_path);
-                if (auto res = _load_plugin(full_path); !res) {
-                    spdlog::warn("Failed to load plugin {}: {}", full_path, error_msg(res));
-                }
+                // Extract plugin name from filename (e.g., "im-anim.wasm" -> "im-anim")
+                std::string plugin_name = name.substr(0, name.size() - 5);
+                _discovered_plugins[plugin_name] = full_path;
+                spdlog::debug("PluginManager: discovered plugin: {} -> {}", plugin_name, full_path);
             }
         }
         closedir(d);
-        spdlog::info("PluginManager: found {} files in {}", file_count, dir);
 #else
         // Native: use recursive_directory_iterator
         for (const auto& entry : fs::recursive_directory_iterator(dir)) {
             if (entry.is_regular_file() && entry.path().extension() == YMERY_PLUGIN_EXT) {
                 std::string path = entry.path().string();
-                if (auto res = _load_plugin(path); !res) {
-                    spdlog::warn("Failed to load plugin {}: {}", path, error_msg(res));
-                }
+                // Extract plugin name from filename (e.g., "im-anim.so" -> "im-anim")
+                std::string plugin_name = entry.path().stem().string();
+                _discovered_plugins[plugin_name] = path;
+                spdlog::debug("PluginManager: discovered plugin: {} -> {}", plugin_name, path);
             }
         }
 #endif
     }
 
-    _plugins_loaded = true;
-    spdlog::info("PluginManager: loaded plugins - widget: {}, tree-like: {}, device-manager: {}",
-        _plugins["widget"].size(), _plugins["tree-like"].size(), _plugins["device-manager"].size());
+    _plugins_discovered = true;
+    spdlog::info("PluginManager: discovered {} plugins (lazy loading enabled)", _discovered_plugins.size());
+
+    return Ok();
+}
+
+Result<void> PluginManager::_ensure_plugin_loaded(const std::string& plugin_name) {
+    // Already loaded?
+    if (_new_plugins.find(plugin_name) != _new_plugins.end()) {
+        return Ok();
+    }
+
+    // Check legacy plugins
+    for (const auto& [category, plugins] : _plugins) {
+        if (plugins.find(plugin_name) != plugins.end()) {
+            return Ok();
+        }
+    }
+
+    // Ensure plugins are discovered
+    if (auto res = _ensure_plugins_discovered(); !res) {
+        return Err<void>("PluginManager: failed to discover plugins", res);
+    }
+
+    // Find the plugin path
+    auto it = _discovered_plugins.find(plugin_name);
+    if (it == _discovered_plugins.end()) {
+        return Err<void>("PluginManager: plugin '" + plugin_name + "' not found");
+    }
+
+    // Load the plugin
+    spdlog::info("PluginManager: lazy loading plugin: {}", plugin_name);
+    if (auto res = _load_plugin(it->second); !res) {
+        return Err<void>("PluginManager: failed to load plugin '" + plugin_name + "'", res);
+    }
 
     return Ok();
 }
@@ -294,16 +327,14 @@ Result<void> PluginManager::_load_plugin(const std::string& path) {
         return Err<void>(std::string("Failed to load plugin '") + path + "': " + error);
     }
 
+    // Check for legacy plugin exports (name, type)
     auto name_fn = reinterpret_cast<PluginNameFn>(ymery_dlsym(handle, "name"));
-    if (!name_fn) {
-        ymery_dlclose(handle);
-        return Err<void>("Plugin has no 'name' function: " + path);
-    }
-
     auto type_fn = reinterpret_cast<PluginTypeFn>(ymery_dlsym(handle, "type"));
-    if (!type_fn) {
+
+    // If no name/type exports, try loading as new-style plugin
+    if (!name_fn || !type_fn) {
         ymery_dlclose(handle);
-        return Err<void>("Plugin has no 'type' function: " + path);
+        return _load_new_plugin(path);
     }
 
     std::string plugin_name = name_fn();
@@ -393,10 +424,61 @@ Result<void> PluginManager::_load_plugin(const std::string& path) {
     return Ok();
 }
 
+Result<void> PluginManager::_load_new_plugin(const std::string& path) {
+    spdlog::info("Loading new-style plugin: {}", path);
+
+    fs::path plugin_path(path);
+
+#ifdef _WIN32
+    std::wstring wide_path = plugin_path.wstring();
+    PluginHandle handle = ymery_dlopen(wide_path.c_str());
+#else
+    PluginHandle handle = ymery_dlopen(plugin_path.string().c_str());
+#endif
+    if (!handle) {
+        std::string error = ymery_dlerror();
+        return Err<void>("Failed to load plugin '" + path + "': " + error);
+    }
+
+    // New-style plugins export only 'create()' that returns Plugin*
+    auto create_fn = reinterpret_cast<NewPluginCreateFn>(ymery_dlsym(handle, "create"));
+    if (!create_fn) {
+        ymery_dlclose(handle);
+        return Err<void>("Plugin has no 'create' function: " + path);
+    }
+
+    // Create the plugin instance
+    void* raw_plugin = create_fn();
+    if (!raw_plugin) {
+        ymery_dlclose(handle);
+        return Err<void>("Plugin create() returned null: " + path);
+    }
+
+    Plugin* plugin = static_cast<Plugin*>(raw_plugin);
+    std::string plugin_name = plugin->name();
+
+    // Wrap in shared_ptr (transfers ownership)
+    auto plugin_ptr = std::shared_ptr<Plugin>(plugin);
+
+    spdlog::info("Loaded new-style plugin '{}' with widgets: {}", plugin_name,
+        [&]() {
+            std::string widgets_str;
+            for (const auto& w : plugin_ptr->widgets()) {
+                if (!widgets_str.empty()) widgets_str += ", ";
+                widgets_str += w;
+            }
+            return widgets_str;
+        }());
+
+    _new_plugins[plugin_name] = plugin_ptr;
+    _handles.push_back(handle);
+    return Ok();
+}
+
 // TreeLike interface implementation
 
 Result<std::vector<std::string>> PluginManager::get_children_names(const DataPath& path) {
-    if (auto res = _ensure_plugins_loaded(); !res) {
+    if (auto res = _ensure_plugins_discovered(); !res) {
         return Err<std::vector<std::string>>("PluginManager: error loading plugins", res);
     }
 
@@ -445,7 +527,7 @@ Result<std::vector<std::string>> PluginManager::get_children_names(const DataPat
 }
 
 Result<Dict> PluginManager::get_metadata(const DataPath& path) {
-    if (auto res = _ensure_plugins_loaded(); !res) {
+    if (auto res = _ensure_plugins_discovered(); !res) {
         return Err<Dict>("PluginManager: error loading plugins", res);
     }
 
@@ -554,8 +636,32 @@ Result<WidgetPtr> PluginManager::create_widget(
     const std::string& ns,
     std::shared_ptr<DataBag> data_bag
 ) {
-    if (auto res = _ensure_plugins_loaded(); !res) {
-        return Err<WidgetPtr>("PluginManager: error loading plugins", res);
+    // Check for new-style plugin.widget format (e.g., "imgui.button")
+    auto dot_pos = name.find('.');
+    if (dot_pos != std::string::npos) {
+        std::string plugin_name = name.substr(0, dot_pos);
+        std::string widget_name = name.substr(dot_pos + 1);
+
+        // Lazy load the plugin if not already loaded
+        if (auto res = _ensure_plugin_loaded(plugin_name); !res) {
+            return Err<WidgetPtr>("PluginManager: failed to load plugin '" + plugin_name + "'", res);
+        }
+
+        auto plugin_it = _new_plugins.find(plugin_name);
+        if (plugin_it != _new_plugins.end()) {
+            return plugin_it->second->createWidget(widget_name, widget_factory, dispatcher, ns, data_bag);
+        }
+        return Err<WidgetPtr>("PluginManager: plugin '" + plugin_name + "' not found");
+    }
+
+    // Legacy: single widget name lookup - need to discover plugins first
+    if (auto res = _ensure_plugins_discovered(); !res) {
+        return Err<WidgetPtr>("PluginManager: error discovering plugins", res);
+    }
+
+    // Try to lazy load as legacy plugin
+    if (auto res = _ensure_plugin_loaded(name); !res) {
+        // Ignore error - may not be a loadable plugin
     }
 
     auto cat_it = _plugins.find("widget");
@@ -577,8 +683,9 @@ Result<WidgetPtr> PluginManager::create_widget(
 }
 
 Result<TreeLikePtr> PluginManager::create_tree(const std::string& name, std::shared_ptr<Dispatcher> dispatcher) {
-    if (auto res = _ensure_plugins_loaded(); !res) {
-        return Err<TreeLikePtr>("PluginManager: error loading plugins", res);
+    // Lazy load the plugin
+    if (auto res = _ensure_plugin_loaded(name); !res) {
+        return Err<TreeLikePtr>("PluginManager: failed to load plugin '" + name + "'", res);
     }
 
     // Search in both tree-like and device-manager categories
@@ -615,17 +722,46 @@ Result<TreeLikePtr> PluginManager::create_tree(const std::string& name, std::sha
 }
 
 bool PluginManager::has_widget(const std::string& name) const {
-    // Need to cast away const to call _ensure_plugins_loaded
-    const_cast<PluginManager*>(this)->_ensure_plugins_loaded();
+    // Need to cast away const to call discovery
+    const_cast<PluginManager*>(this)->_ensure_plugins_discovered();
+
+    // Check for new-style plugin.widget format (e.g., "imgui.button")
+    auto dot_pos = name.find('.');
+    if (dot_pos != std::string::npos) {
+        std::string plugin_name = name.substr(0, dot_pos);
+
+        // Check if plugin is discovered (may not be loaded yet)
+        if (_discovered_plugins.find(plugin_name) != _discovered_plugins.end()) {
+            // Plugin exists - we assume it has the widget (lazy loading)
+            // For accurate check, we'd need to load the plugin
+            return true;
+        }
+
+        // Check already loaded plugins
+        auto plugin_it = _new_plugins.find(plugin_name);
+        if (plugin_it != _new_plugins.end()) {
+            std::string widget_name = name.substr(dot_pos + 1);
+            const auto& widgets = plugin_it->second->widgets();
+            return std::find(widgets.begin(), widgets.end(), widget_name) != widgets.end();
+        }
+        return false;
+    }
+
+    // Legacy: single widget name lookup
     auto cat_it = _plugins.find("widget");
-    if (cat_it == _plugins.end()) return false;
-    return cat_it->second.find(name) != cat_it->second.end();
+    if (cat_it != _plugins.end() && cat_it->second.find(name) != cat_it->second.end()) {
+        return true;
+    }
+
+    // Check discovered plugins
+    return _discovered_plugins.find(name) != _discovered_plugins.end();
 }
 
 bool PluginManager::has_tree(const std::string& name) const {
-    // Need to cast away const to call _ensure_plugins_loaded
-    const_cast<PluginManager*>(this)->_ensure_plugins_loaded();
-    // Check both tree-like and device-manager categories
+    // Need to cast away const to call discovery
+    const_cast<PluginManager*>(this)->_ensure_plugins_discovered();
+
+    // Check already loaded plugins
     auto cat_it = _plugins.find("tree-like");
     if (cat_it != _plugins.end() && cat_it->second.find(name) != cat_it->second.end()) {
         return true;
@@ -634,7 +770,9 @@ bool PluginManager::has_tree(const std::string& name) const {
     if (cat_it != _plugins.end() && cat_it->second.find(name) != cat_it->second.end()) {
         return true;
     }
-    return false;
+
+    // Check discovered plugins
+    return _discovered_plugins.find(name) != _discovered_plugins.end();
 }
 
 } // namespace ymery

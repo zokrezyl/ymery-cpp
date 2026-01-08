@@ -1,0 +1,24 @@
+# imgui-knobs plugin - Rotary knob controls
+add_library(imgui_knobs_plugin SHARED main.cpp)
+target_link_libraries(imgui_knobs_plugin PRIVATE ymery_lib imgui_knobs)
+target_include_directories(imgui_knobs_plugin PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${imgui_knobs_SOURCE_DIR}
+)
+
+set_target_properties(imgui_knobs_plugin PROPERTIES
+    PREFIX ""
+    OUTPUT_NAME "imgui-knobs"
+    LIBRARY_OUTPUT_DIRECTORY "${PLUGIN_OUTPUT_DIR}"
+    LIBRARY_OUTPUT_DIRECTORY_DEBUG "${PLUGIN_OUTPUT_DIR}"
+    LIBRARY_OUTPUT_DIRECTORY_RELEASE "${PLUGIN_OUTPUT_DIR}"
+    LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO "${PLUGIN_OUTPUT_DIR}"
+    LIBRARY_OUTPUT_DIRECTORY_MINSIZEREL "${PLUGIN_OUTPUT_DIR}"
+    ARCHIVE_OUTPUT_DIRECTORY "${PLUGIN_OUTPUT_DIR}"
+    ARCHIVE_OUTPUT_DIRECTORY_DEBUG "${PLUGIN_OUTPUT_DIR}"
+    ARCHIVE_OUTPUT_DIRECTORY_RELEASE "${PLUGIN_OUTPUT_DIR}"
+    ARCHIVE_OUTPUT_DIRECTORY_RELWITHDEBINFO "${PLUGIN_OUTPUT_DIR}"
+    ARCHIVE_OUTPUT_DIRECTORY_MINSIZEREL "${PLUGIN_OUTPUT_DIR}"
+)
+
+configure_plugin(imgui_knobs_plugin)

@@ -1,0 +1,24 @@
+# imcoolbar plugin - macOS-style dock bar
+add_library(imcoolbar_plugin SHARED main.cpp)
+target_link_libraries(imcoolbar_plugin PRIVATE ymery_lib imcoolbar)
+target_include_directories(imcoolbar_plugin PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${imcoolbar_SOURCE_DIR}
+)
+
+set_target_properties(imcoolbar_plugin PROPERTIES
+    PREFIX ""
+    OUTPUT_NAME "imcoolbar"
+    LIBRARY_OUTPUT_DIRECTORY "${PLUGIN_OUTPUT_DIR}"
+    LIBRARY_OUTPUT_DIRECTORY_DEBUG "${PLUGIN_OUTPUT_DIR}"
+    LIBRARY_OUTPUT_DIRECTORY_RELEASE "${PLUGIN_OUTPUT_DIR}"
+    LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO "${PLUGIN_OUTPUT_DIR}"
+    LIBRARY_OUTPUT_DIRECTORY_MINSIZEREL "${PLUGIN_OUTPUT_DIR}"
+    ARCHIVE_OUTPUT_DIRECTORY "${PLUGIN_OUTPUT_DIR}"
+    ARCHIVE_OUTPUT_DIRECTORY_DEBUG "${PLUGIN_OUTPUT_DIR}"
+    ARCHIVE_OUTPUT_DIRECTORY_RELEASE "${PLUGIN_OUTPUT_DIR}"
+    ARCHIVE_OUTPUT_DIRECTORY_RELWITHDEBINFO "${PLUGIN_OUTPUT_DIR}"
+    ARCHIVE_OUTPUT_DIRECTORY_MINSIZEREL "${PLUGIN_OUTPUT_DIR}"
+)
+
+configure_plugin(imcoolbar_plugin)

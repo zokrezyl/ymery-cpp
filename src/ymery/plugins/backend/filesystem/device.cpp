@@ -1,7 +1,6 @@
 // Filesystem device-manager plugin
 // Exposes filesystem as a device-manager for use by kernel at /providers/filesystem
 #include "common.hpp"
-#include "ymery/plugin_export.hpp"
 
 // Forward declarations
 namespace ymery { class Dispatcher; class PluginManager; }

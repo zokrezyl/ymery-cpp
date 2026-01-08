@@ -1,0 +1,56 @@
+# Kernel provider showcase
+# Central hub for data providers
+
+data:
+  kernel:
+    type: kernel
+
+widgets:
+  # Recursive kernel tree component
+  kernel-recursive:
+    type: composite
+    foreach-child:
+      body:
+        - tree-node:
+            label: "@label"
+            openable: "@openable"
+            opened: "@opened"
+            style:
+              openable:
+                text: [0.5, 0.7, 1.0, 1.0]
+              opened:
+                text: [0.2, 1.0, 0.2, 1.0]
+            body:
+              - kernel.kernel-recursive:
+            metadata-tooltip:
+              body:
+                - separator-text: "Metadata"
+                - foreach-key:
+                    body:
+                      - text:
+                          label: "@key: @value"
+
+  demo:
+    type: composite
+    main-data: kernel
+    body:
+      - text:
+          label: "Kernel Provider Hub"
+          style:
+            text: [0.7, 0.9, 0.7, 1.0]
+      - separator
+      - text:
+          label: "Central routing to data providers"
+      - separator
+
+      - separator-text: "Providers"
+      - text:
+          label: "Click nodes to expand, hover for metadata"
+      - separator
+
+      - data-path: /providers
+        kernel.kernel-recursive:
+
+      - separator-text: "Settings"
+      - data-path: /settings
+        kernel.kernel-recursive:

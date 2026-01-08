@@ -1,0 +1,13 @@
+import:
+  - shared.imcoolbar
+
+widgets:
+  main-window:
+    type: window
+    label: "ImCoolBar Demo"
+    size: [600, 400]
+    body:
+      - shared.imcoolbar.demo:
+
+app:
+  root-widget: main-window

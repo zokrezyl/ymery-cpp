@@ -1,0 +1,72 @@
+# ImSpinner plugin showcase
+# Loading animation widgets
+
+widgets:
+  demo:
+    type: composite
+    body:
+      - text:
+          label: "ImSpinner - Loading Animations"
+          style:
+            text: [0.7, 0.9, 0.7, 1.0]
+      - separator
+      - text:
+          label: "Various spinner styles for loading states"
+      - separator
+
+      - separator-text: "Basic Spinners"
+
+      - row:
+          body:
+            - group:
+                body:
+                  - text:
+                      label: "Moving Dots"
+                  - spinner-moving-dots:
+                      radius: 12.0
+                      thickness: 3.0
+                      num-balls: 3
+
+            - group:
+                body:
+                  - text:
+                      label: "Arc Rotation"
+                  - spinner-arc-rotation:
+                      radius: 12.0
+                      thickness: 3.0
+
+            - group:
+                body:
+                  - text:
+                      label: "Ang Triple"
+                  - spinner-ang-triple:
+                      radius: 12.0
+                      thickness: 3.0
+
+      - separator-text: "More Spinners"
+
+      - row:
+          body:
+            - group:
+                body:
+                  - spinner:
+                      label: "Default"
+                      radius: 12.0
+                      thickness: 3.0
+
+            - group:
+                body:
+                  - spinner:
+                      label: "Large"
+                      radius: 20.0
+                      thickness: 4.0
+
+            - group:
+                body:
+                  - spinner:
+                      label: "Thin"
+                      radius: 15.0
+                      thickness: 1.5
+
+      - separator-text: "Spinners Demo"
+      - spinners-demo:

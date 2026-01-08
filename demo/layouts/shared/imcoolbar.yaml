@@ -1,0 +1,34 @@
+# ImCoolBar plugin showcase
+# Animated dock-like toolbar
+
+widgets:
+  demo:
+    type: composite
+    body:
+      - text:
+          label: "ImCoolBar - Animated Dock Toolbar"
+          style:
+            text: [0.7, 0.9, 0.7, 1.0]
+      - separator
+      - text:
+          label: "Hover over icons to see magnification effect"
+      - separator
+
+      - coolbar:
+          anchor: bottom
+          body:
+            - coolbar-item:
+                label: "Home"
+                tooltip: "Go to home"
+            - coolbar-item:
+                label: "Files"
+                tooltip: "Open file browser"
+            - coolbar-item:
+                label: "Edit"
+                tooltip: "Edit mode"
+            - coolbar-item:
+                label: "View"
+                tooltip: "View options"
+            - coolbar-item:
+                label: "Settings"
+                tooltip: "Application settings"

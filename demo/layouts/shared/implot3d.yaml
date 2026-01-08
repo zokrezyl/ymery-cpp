@@ -1,0 +1,32 @@
+# ImPlot3D plugin showcase
+# 3D plotting widgets
+
+widgets:
+  demo:
+    type: composite
+    body:
+      - text:
+          label: "ImPlot3D - 3D Plotting"
+          style:
+            text: [0.7, 0.9, 0.7, 1.0]
+      - separator
+      - text:
+          label: "Interactive 3D surface and scatter plots"
+      - separator
+
+      - separator-text: "3D Surface Plot"
+
+      - plot3d:
+          label: "Surface Demo"
+          size: [-1, 400]
+          tooltip: "Rotate with mouse drag, zoom with scroll"
+
+      - separator-text: "Features"
+      - bullet-text:
+          label: "Surface plots with color mapping"
+      - bullet-text:
+          label: "3D scatter plots"
+      - bullet-text:
+          label: "Interactive rotation and zoom"
+      - bullet-text:
+          label: "Axis labels and grid"

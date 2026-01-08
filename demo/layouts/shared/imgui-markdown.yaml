@@ -1,0 +1,62 @@
+# ImGui Markdown plugin showcase
+# Rich text rendering with markdown
+
+widgets:
+  demo:
+    type: composite
+    body:
+      - text:
+          label: "ImGui Markdown - Rich Text"
+          style:
+            text: [0.7, 0.9, 0.7, 1.0]
+      - separator
+      - text:
+          label: "Markdown rendering in Dear ImGui"
+      - separator
+
+      - separator-text: "Headers"
+      - markdown: |
+          # Heading 1
+          ## Heading 2
+          ### Heading 3
+
+      - separator-text: "Text Formatting"
+      - markdown: |
+          Regular text, **bold text**, and *italic text*.
+
+          You can also use ~~strikethrough~~ and `inline code`.
+
+      - separator-text: "Lists"
+      - markdown: |
+          Unordered list:
+          * First item
+          * Second item
+          * Third item
+
+          Ordered list:
+          1. Step one
+          2. Step two
+          3. Step three
+
+      - separator-text: "Links and Code"
+      - markdown: |
+          Visit [ImGui](https://github.com/ocornut/imgui) for more information.
+
+          ```cpp
+          void hello() {
+              ImGui::Text("Hello, World!");
+          }
+          ```
+
+      - separator-text: "Blockquotes"
+      - markdown: |
+          > This is a blockquote.
+          > It can span multiple lines.
+
+      - separator-text: "Horizontal Rule"
+      - markdown: |
+          Above the line
+
+          ---
+
+          Below the line

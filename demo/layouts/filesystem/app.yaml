@@ -1,55 +1,14 @@
+import:
+  - shared.filesystem
+
 widgets:
-  # Widget type definitions
-  window:
-    type: window
-  text:
-    type: text
-  separator:
-    type: separator
-  collapsing-header:
-    type: collapsing-header
-  tree-node:
-    type: tree-node
-  composite:
-    type: composite
-
-  # Recursive filesystem tree display
-  fs-recursive:
-    type: composite
-    body:
-      - foreach-child:
-          - tree-node:
-              body: fs-recursive
-
-  # Main window widget
   main-window:
     type: window
-    label: Filesystem Browser
+    label: "Filesystem Browser Demo"
+    size: [600, 500]
     body:
-      - text:
-          content: "Filesystem Browser Demo"
-          tooltip: "Browse the filesystem using the filesystem tree-like plugin"
-      - separator
-      - text:
-          content: "This demo shows the filesystem plugin as a tree-like data source."
-      - text:
-          content: "Structure: /available (shortcuts, mounts, bookmarks) and /opened (open files)"
-      - separator
-
-      # Available locations
-      - collapsing-header:
-          label: "Available Locations"
-          data-path: /available
-          body:
-            - fs-recursive:
-
-      # Opened files
-      - collapsing-header:
-          label: "Opened Files"
-          data-path: /opened
-          body:
-            - fs-recursive:
+      - shared.filesystem.demo:
 
 app:
-  root-widget: app.main-window
-  data-tree: filesystem
+  root-widget: main-window
+  main-data: filesystem

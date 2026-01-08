@@ -1,0 +1,84 @@
+# Waveform visualization showcase
+# Real-time waveform display with ImPlot
+
+data:
+  waveform:
+    type: kernel
+
+widgets:
+  demo:
+    type: composite
+    main-data: waveform
+    body:
+      - text:
+          label: "Waveform Visualization"
+          style:
+            text: [0.7, 0.9, 0.7, 1.0]
+      - separator
+      - text:
+          label: "Real-time waveform display using kernel providers"
+      - separator
+
+      - collapsing-header:
+          label: "Sine Wave"
+          flags: [default-open]
+          body:
+            - implot:
+                label: "Sine"
+                size: [-1, 150]
+                body:
+                  - implot-layer:
+                      label: "Sine"
+                    data-path: /providers/waveform-st/available/sine/0
+
+      - collapsing-header:
+          label: "Square Wave"
+          flags: [default-open]
+          body:
+            - implot:
+                label: "Square"
+                size: [-1, 150]
+                body:
+                  - implot-layer:
+                      label: "Square"
+                    data-path: /providers/waveform-st/available/square/0
+
+      - collapsing-header:
+          label: "Triangle Wave"
+          flags: [default-open]
+          body:
+            - implot:
+                label: "Triangle"
+                size: [-1, 150]
+                body:
+                  - implot-layer:
+                      label: "Triangle"
+                    data-path: /providers/waveform-st/available/triangle/0
+
+      - collapsing-header:
+          label: "Combined View"
+          body:
+            - implot-group:
+                label: "All Waveforms"
+                rows: 3
+                cols: 1
+                size: [-1, 400]
+                body:
+                  - implot:
+                      label: "Sine"
+                      body:
+                        - implot-layer:
+                            label: "Sine"
+                          data-path: /providers/waveform-st/available/sine/0
+                  - implot:
+                      label: "Square"
+                      body:
+                        - implot-layer:
+                            label: "Square"
+                          data-path: /providers/waveform-st/available/square/0
+                  - implot:
+                      label: "Triangle"
+                      body:
+                        - implot-layer:
+                            label: "Triangle"
+                          data-path: /providers/waveform-st/available/triangle/0

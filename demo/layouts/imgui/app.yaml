@@ -1,0 +1,13 @@
+import:
+  - shared.imgui
+
+widgets:
+  main-window:
+    type: window
+    label: "ImGui Widgets Demo"
+    size: [800, 600]
+    body:
+      - shared.imgui.demo:
+
+app:
+  root-widget: main-window

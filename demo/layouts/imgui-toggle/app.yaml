@@ -1,0 +1,13 @@
+import:
+  - shared.imgui-toggle
+
+widgets:
+  main-window:
+    type: window
+    label: "ImGui Toggle Demo"
+    size: [500, 400]
+    body:
+      - shared.imgui-toggle.demo:
+
+app:
+  root-widget: main-window

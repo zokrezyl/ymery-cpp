@@ -1,0 +1,13 @@
+import:
+  - shared.im-anim
+
+widgets:
+  main-window:
+    type: window
+    label: "ImAnim Demo"
+    size: [600, 700]
+    body:
+      - shared.im-anim.demo:
+
+app:
+  root-widget: main-window

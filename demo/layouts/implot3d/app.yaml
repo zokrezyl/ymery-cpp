@@ -1,0 +1,13 @@
+import:
+  - shared.implot3d
+
+widgets:
+  main-window:
+    type: window
+    label: "ImPlot3D Demo"
+    size: [800, 600]
+    body:
+      - shared.implot3d.demo:
+
+app:
+  root-widget: main-window

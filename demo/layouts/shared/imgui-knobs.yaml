@@ -1,0 +1,143 @@
+# ImGui Knobs plugin showcase
+# Rotary control widgets
+
+widgets:
+  demo:
+    type: composite
+    data:
+      local:
+        type: data-tree
+        arg:
+          children:
+            knob-tick:
+              metadata:
+                label: 0.5
+            knob-dot:
+              metadata:
+                label: 0.3
+            knob-wiper:
+              metadata:
+                label: 0.7
+            knob-wiper-dot:
+              metadata:
+                label: 0.4
+            knob-wiper-only:
+              metadata:
+                label: 0.6
+            knob-stepped:
+              metadata:
+                label: 0.5
+            knob-space:
+              metadata:
+                label: 0.8
+            knob-int:
+              metadata:
+                label: 50
+    main-data: local
+    body:
+      - text:
+          label: "ImGui Knobs - Rotary Controls"
+          style:
+            text: [0.7, 0.9, 0.7, 1.0]
+      - separator
+      - text:
+          label: "Various knob styles for value adjustment"
+      - separator
+
+      - separator-text: "Float Knobs"
+
+      - row:
+          body:
+            - group:
+                body:
+                  - text:
+                      label: "Tick"
+                  - data-path: knob-tick
+                    knob:
+                      label: "Tick"
+                      variant: tick
+                      min: 0.0
+                      max: 1.0
+                      size: 50
+            - group:
+                body:
+                  - text:
+                      label: "Dot"
+                  - data-path: knob-dot
+                    knob:
+                      label: "Dot"
+                      variant: dot
+                      min: 0.0
+                      max: 1.0
+                      size: 50
+            - group:
+                body:
+                  - text:
+                      label: "Wiper"
+                  - data-path: knob-wiper
+                    knob:
+                      label: "Wiper"
+                      variant: wiper
+                      min: 0.0
+                      max: 1.0
+                      size: 50
+            - group:
+                body:
+                  - text:
+                      label: "Wiper Dot"
+                  - data-path: knob-wiper-dot
+                    knob:
+                      label: "WiperDot"
+                      variant: wiper_dot
+                      min: 0.0
+                      max: 1.0
+                      size: 50
+
+      - separator
+
+      - row:
+          body:
+            - group:
+                body:
+                  - text:
+                      label: "Wiper Only"
+                  - data-path: knob-wiper-only
+                    knob:
+                      label: "WiperOnly"
+                      variant: wiper_only
+                      min: 0.0
+                      max: 1.0
+                      size: 50
+            - group:
+                body:
+                  - text:
+                      label: "Stepped"
+                  - data-path: knob-stepped
+                    knob:
+                      label: "Stepped"
+                      variant: stepped
+                      min: 0.0
+                      max: 1.0
+                      size: 50
+            - group:
+                body:
+                  - text:
+                      label: "Space"
+                  - data-path: knob-space
+                    knob:
+                      label: "Space"
+                      variant: space
+                      min: 0.0
+                      max: 1.0
+                      size: 50
+
+      - separator-text: "Integer Knob"
+
+      - data-path: knob-int
+        knob-int:
+          label: "Volume"
+          variant: wiper
+          min: 0
+          max: 100
+          size: 80
+          tooltip: "Adjust volume (0-100)"

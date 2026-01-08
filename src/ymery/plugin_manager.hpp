@@ -3,6 +3,7 @@
 #include "result.hpp"
 #include "types.hpp"
 #include "dispatcher.hpp"
+#include "plugin.hpp"
 #include <map>
 #include <memory>
 #include <string>
@@ -96,14 +97,24 @@ public:
 private:
     PluginManager() = default;
 
-    Result<void> _ensure_plugins_loaded();
+    Result<void> _ensure_plugins_discovered();
+    Result<void> _ensure_plugin_loaded(const std::string& plugin_name);
     Result<void> _load_plugin(const std::string& path);
+    Result<void> _load_new_plugin(const std::string& path);
 
     std::string _plugins_path;
-    bool _plugins_loaded = false;
+    bool _plugins_discovered = false;
 
-    // Category -> Name -> PluginMeta
+    // Category -> Name -> PluginMeta (legacy per-widget plugins)
     std::map<std::string, std::map<std::string, PluginMeta>> _plugins;
+
+    // New plugin system: plugin_name -> Plugin instance (lazy loaded)
+    // Widgets are referenced as "plugin.widget" (e.g., "imgui.button")
+    std::map<std::string, PluginPtr> _new_plugins;
+
+    // Discovered but not-yet-loaded plugins: plugin_name -> plugin_path
+    // Plugins are loaded on first access (lazy loading)
+    std::map<std::string, std::string> _discovered_plugins;
 
     // Loaded plugin handles (.so on Unix, .dll on Windows)
     std::vector<void*> _handles;

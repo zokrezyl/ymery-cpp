@@ -1,0 +1,59 @@
+# ImGuizmo plugin showcase
+# 3D manipulation gizmos
+
+widgets:
+  demo:
+    type: composite
+    body:
+      - text:
+          label: "ImGuizmo - 3D Manipulation Gizmos"
+          style:
+            text: [0.7, 0.9, 0.7, 1.0]
+      - separator
+      - text:
+          label: "Interactive 3D transform controls"
+      - separator
+
+      - separator-text: "Gizmo Operations"
+
+      - column:
+          count: 3
+          body:
+            - group:
+                body:
+                  - text:
+                      label: "Translate"
+                  - gizmo:
+                      operation: translate
+                      mode: local
+                      size: 200
+
+            - next-column
+
+            - group:
+                body:
+                  - text:
+                      label: "Rotate"
+                  - gizmo:
+                      operation: rotate
+                      mode: local
+                      size: 200
+
+            - next-column
+
+            - group:
+                body:
+                  - text:
+                      label: "Scale"
+                  - gizmo:
+                      operation: scale
+                      mode: local
+                      size: 200
+
+      - separator-text: "Combined View"
+
+      - gizmo:
+          operation: translate
+          mode: world
+          size: 300
+          tooltip: "Full-size gizmo in world mode"
