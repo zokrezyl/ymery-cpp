@@ -23,55 +23,55 @@ widgets:
                 label: false
     main-data: local
     body:
-      - text:
+      - imgui.text:
           label: "ImGui Toggle - Switch Controls"
           style:
-            text: [0.7, 0.9, 0.7, 1.0]
-      - separator
-      - text:
+            imgui.text: [0.7, 0.9, 0.7, 1.0]
+      - imgui.separator
+      - imgui.text:
           label: "Various toggle styles with animations"
-      - separator
+      - imgui.separator
 
-      - separator-text: "Toggle Styles"
+      - imgui.separator-text: "Toggle Styles"
 
       - data-path: toggle-default
-        toggle:
+        imgui-toggle.toggle:
           label: "Default Style"
           style: default
           tooltip: "Standard toggle switch"
 
       - data-path: toggle-animated
-        toggle:
+        imgui-toggle.toggle:
           label: "Animated Style"
           style: animated
           animation-duration: 0.25
           tooltip: "Toggle with smooth animation"
 
       - data-path: toggle-material
-        toggle:
+        imgui-toggle.toggle:
           label: "Material Style"
           style: material
           tooltip: "Material design toggle"
 
       - data-path: toggle-ios
-        toggle:
+        imgui-toggle.toggle:
           label: "iOS Style"
           style: ios
           tooltip: "iOS-style toggle switch"
 
-      - separator-text: "Sized Toggles"
+      - imgui.separator-text: "Sized Toggles"
 
-      - row:
+      - imgui.row:
           body:
             - data-path: toggle-default
-              toggle:
+              imgui-toggle.toggle:
                 label: "Small"
                 size-scale: 0.75
             - data-path: toggle-default
-              toggle:
+              imgui-toggle.toggle:
                 label: "Normal"
                 size-scale: 1.0
             - data-path: toggle-default
-              toggle:
+              imgui-toggle.toggle:
                 label: "Large"
                 size-scale: 1.5

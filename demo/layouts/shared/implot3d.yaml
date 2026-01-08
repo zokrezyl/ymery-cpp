@@ -5,28 +5,28 @@ widgets:
   demo:
     type: composite
     body:
-      - text:
+      - imgui.text:
           label: "ImPlot3D - 3D Plotting"
           style:
-            text: [0.7, 0.9, 0.7, 1.0]
-      - separator
-      - text:
+            imgui.text: [0.7, 0.9, 0.7, 1.0]
+      - imgui.separator
+      - imgui.text:
           label: "Interactive 3D surface and scatter plots"
-      - separator
+      - imgui.separator
 
-      - separator-text: "3D Surface Plot"
+      - imgui.separator-text: "3D Surface Plot"
 
-      - plot3d:
+      - implot3d.plot3d:
           label: "Surface Demo"
           size: [-1, 400]
           tooltip: "Rotate with mouse drag, zoom with scroll"
 
-      - separator-text: "Features"
-      - bullet-text:
+      - imgui.separator-text: "Features"
+      - imgui.bullet-text:
           label: "Surface plots with color mapping"
-      - bullet-text:
+      - imgui.bullet-text:
           label: "3D scatter plots"
-      - bullet-text:
+      - imgui.bullet-text:
           label: "Interactive rotation and zoom"
-      - bullet-text:
+      - imgui.bullet-text:
           label: "Axis labels and grid"

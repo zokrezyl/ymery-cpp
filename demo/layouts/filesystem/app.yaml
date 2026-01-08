@@ -3,7 +3,7 @@ import:
 
 widgets:
   main-window:
-    type: window
+    type: imgui.window
     label: "Filesystem Browser Demo"
     size: [600, 500]
     body:

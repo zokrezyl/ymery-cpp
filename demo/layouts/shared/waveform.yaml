@@ -10,75 +10,75 @@ widgets:
     type: composite
     main-data: waveform
     body:
-      - text:
+      - imgui.text:
           label: "Waveform Visualization"
           style:
-            text: [0.7, 0.9, 0.7, 1.0]
-      - separator
-      - text:
+            imgui.text: [0.7, 0.9, 0.7, 1.0]
+      - imgui.separator
+      - imgui.text:
           label: "Real-time waveform display using kernel providers"
-      - separator
+      - imgui.separator
 
-      - collapsing-header:
+      - imgui.collapsing-header:
           label: "Sine Wave"
           flags: [default-open]
           body:
-            - implot:
+            - implot.plot:
                 label: "Sine"
                 size: [-1, 150]
                 body:
-                  - implot-layer:
+                  - implot.line:
                       label: "Sine"
                     data-path: /providers/waveform-st/available/sine/0
 
-      - collapsing-header:
+      - imgui.collapsing-header:
           label: "Square Wave"
           flags: [default-open]
           body:
-            - implot:
+            - implot.plot:
                 label: "Square"
                 size: [-1, 150]
                 body:
-                  - implot-layer:
+                  - implot.line:
                       label: "Square"
                     data-path: /providers/waveform-st/available/square/0
 
-      - collapsing-header:
+      - imgui.collapsing-header:
           label: "Triangle Wave"
           flags: [default-open]
           body:
-            - implot:
+            - implot.plot:
                 label: "Triangle"
                 size: [-1, 150]
                 body:
-                  - implot-layer:
+                  - implot.line:
                       label: "Triangle"
                     data-path: /providers/waveform-st/available/triangle/0
 
-      - collapsing-header:
+      - imgui.collapsing-header:
           label: "Combined View"
           body:
-            - implot-group:
+            - implot.subplots:
                 label: "All Waveforms"
                 rows: 3
                 cols: 1
                 size: [-1, 400]
                 body:
-                  - implot:
+                  - implot.plot:
                       label: "Sine"
                       body:
-                        - implot-layer:
+                        - implot.line:
                             label: "Sine"
                           data-path: /providers/waveform-st/available/sine/0
-                  - implot:
+                  - implot.plot:
                       label: "Square"
                       body:
-                        - implot-layer:
+                        - implot.line:
                             label: "Square"
                           data-path: /providers/waveform-st/available/square/0
-                  - implot:
+                  - implot.plot:
                       label: "Triangle"
                       body:
-                        - implot-layer:
+                        - implot.line:
                             label: "Triangle"
                           data-path: /providers/waveform-st/available/triangle/0

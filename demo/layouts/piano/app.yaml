@@ -1,113 +1,113 @@
 widgets:
   # Widget type definitions
-  window:
-    type: window
-  text:
-    type: text
-  separator:
-    type: separator
-  collapsing-header:
-    type: collapsing-header
-  piano:
-    type: piano
-  slider-int:
-    type: slider-int
-  row:
-    type: row
+  imgui.window:
+    type: imgui.window
+  imgui.text:
+    type: imgui.text
+  imgui.separator:
+    type: imgui.separator
+  imgui.collapsing-header:
+    type: imgui.collapsing-header
+  piano.piano:
+    type: piano.piano
+  imgui.slider-int:
+    type: imgui.slider-int
+  imgui.row:
+    type: imgui.row
 
   # Main window widget
   main-window:
-    type: window
+    type: imgui.window
     label: Piano Demo
     body:
-      - text:
+      - imgui.text:
           content: "Piano Keyboard Demo"
           tooltip: "Interactive piano keyboard widget"
-      - separator
-      - text:
+      - imgui.separator
+      - imgui.text:
           content: "Click and drag on the keys to play notes."
-      - text:
+      - imgui.text:
           content: "The note and velocity values are displayed below each piano."
-      - separator
-      - collapsing-header:
+      - imgui.separator
+      - imgui.collapsing-header:
           label: Full 88-Key Piano
           body:
-            - piano:
+            - piano.piano:
                 label: Full Piano
                 size: [800, 120]
                 begin_note: 21
                 end_note: 108
-            - row:
+            - imgui.row:
                 body:
-                  - text:
+                  - imgui.text:
                       content: "Note: "
-                  - text:
+                  - imgui.text:
                       data-path: full-piano.note
                       content: "-"
-                  - text:
+                  - imgui.text:
                       content: " | Velocity: "
-                  - text:
+                  - imgui.text:
                       data-path: full-piano.velocity
                       content: "-"
-      - collapsing-header:
+      - imgui.collapsing-header:
           label: 2-Octave Piano (C3-C5)
           body:
-            - piano:
+            - piano.piano:
                 label: Two Octaves
                 size: [400, 100]
                 begin_note: 48
                 end_note: 72
-            - row:
+            - imgui.row:
                 body:
-                  - text:
+                  - imgui.text:
                       content: "Note: "
-                  - text:
+                  - imgui.text:
                       data-path: two-octave.note
                       content: "-"
-                  - text:
+                  - imgui.text:
                       content: " | Velocity: "
-                  - text:
+                  - imgui.text:
                       data-path: two-octave.velocity
                       content: "-"
-      - collapsing-header:
+      - imgui.collapsing-header:
           label: 1-Octave Piano (C4-C5)
           body:
-            - piano:
+            - piano.piano:
                 label: One Octave
                 size: [200, 80]
                 begin_note: 60
                 end_note: 72
-            - row:
+            - imgui.row:
                 body:
-                  - text:
+                  - imgui.text:
                       content: "Note: "
-                  - text:
+                  - imgui.text:
                       data-path: one-octave.note
                       content: "-"
-                  - text:
+                  - imgui.text:
                       content: " | Velocity: "
-                  - text:
+                  - imgui.text:
                       data-path: one-octave.velocity
                       content: "-"
-      - separator
-      - collapsing-header:
+      - imgui.separator
+      - imgui.collapsing-header:
           label: Compact Pianos
           body:
-            - text:
+            - imgui.text:
                 content: "Multiple small pianos in a row:"
-            - row:
+            - imgui.row:
                 body:
-                  - piano:
+                  - piano.piano:
                       label: Bass
                       size: [150, 60]
                       begin_note: 36
                       end_note: 48
-                  - piano:
+                  - piano.piano:
                       label: Middle
                       size: [150, 60]
                       begin_note: 48
                       end_note: 60
-                  - piano:
+                  - piano.piano:
                       label: Treble
                       size: [150, 60]
                       begin_note: 60

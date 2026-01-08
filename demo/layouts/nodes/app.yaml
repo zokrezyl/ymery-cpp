@@ -126,23 +126,23 @@ app:
         selected-node: null
 
   body:
-    window:
+    imgui.window:
       title: Nodes Editor Demo
       body:
-        - tab-bar:
+        - imgui.tab-bar:
             body:
               # Tab 1: Interactive Nodes Editor
-              - tab-item:
+              - imgui.tab-item:
                   label: Nodes Editor
                   body:
-                    - text:
+                    - imgui.text:
                         content: "Advanced Nodes Editor with Connection System"
                         tooltip: "Create and manage node networks with typed connections"
-                    - separator
-                    - text:
+                    - imgui.separator
+                    - imgui.text:
                         content: "Drag nodes, connect inputs/outputs, right-click for context menu."
-                    - separator
-                    - nodes:
+                    - imgui.separator
+                    - nodes.nodes:
                         label: Main Editor
                         width: 900
                         height: 600
@@ -172,7 +172,7 @@ app:
                             color: "#F44336"
                             inputs: 1
                             outputs: 0
-                        nodes:
+                        nodes.nodes:
                           - id: 1
                             type: Input
                             title: "Value A"
@@ -237,176 +237,176 @@ app:
                             from-pin: 0
                             to-node: 7
                             to-pin: 0
-                    - separator
-                    - row:
+                    - imgui.separator
+                    - imgui.row:
                         body:
-                          - button:
+                          - imgui.button:
                               label: New Node
                               tooltip: Add a new node to the graph
-                          - button:
+                          - imgui.button:
                               label: Process
                               tooltip: Process the entire graph
-                          - button:
+                          - imgui.button:
                               label: Clear All
                               tooltip: Remove all nodes and connections
-                          - button:
+                          - imgui.button:
                               label: Center View
                               tooltip: Center the view on all nodes
 
               # Tab 2: Editor State
-              - tab-item:
+              - imgui.tab-item:
                   label: Editor State
                   body:
-                    - text:
+                    - imgui.text:
                         content: "Editor State & Statistics (Data-Bag Bound)"
-                    - separator
-                    - collapsing-header:
+                    - imgui.separator
+                    - imgui.collapsing-header:
                         label: View Settings
                         body:
-                          - row:
+                          - imgui.row:
                               body:
-                                - text:
+                                - imgui.text:
                                     content: "Show Grid:"
-                                - text:
+                                - imgui.text:
                                     content: $editor-state@/show-grid
-                          - row:
+                          - imgui.row:
                               body:
-                                - text:
+                                - imgui.text:
                                     content: "Show Tooltips:"
-                                - text:
+                                - imgui.text:
                                     content: $editor-state@/show-tooltips
-                          - row:
+                          - imgui.row:
                               body:
-                                - text:
+                                - imgui.text:
                                     content: "Zoom Level:"
-                                - text:
+                                - imgui.text:
                                     content: $editor-state@/zoom-level
-                          - row:
+                          - imgui.row:
                               body:
-                                - text:
+                                - imgui.text:
                                     content: "Pan Position:"
-                                - text:
+                                - imgui.text:
                                     content: "(@pan-x, @pan-y)"
 
-                    - collapsing-header:
+                    - imgui.collapsing-header:
                         label: Graph Statistics
                         body:
-                          - row:
+                          - imgui.row:
                               body:
-                                - text:
+                                - imgui.text:
                                     content: "Total Connections:"
-                                - text:
+                                - imgui.text:
                                     content: $editor-state@/total-connections
-                          - row:
+                          - imgui.row:
                               body:
-                                - text:
+                                - imgui.text:
                                     content: "Selected Node:"
-                                - text:
+                                - imgui.text:
                                     content: $editor-state@/selected-node
 
               # Tab 3: Node Types
-              - tab-item:
+              - imgui.tab-item:
                   label: Node Types
                   body:
-                    - text:
+                    - imgui.text:
                         content: "Available Node Types & Connector Types"
-                    - separator
-                    - collapsing-header:
+                    - imgui.separator
+                    - imgui.collapsing-header:
                         label: Connection Types
                         body:
-                          - text:
+                          - imgui.text:
                               content: "Generic: Universal compatibility"
-                          - text:
+                          - imgui.text:
                               content: "Int: Integer values"
-                          - text:
+                          - imgui.text:
                               content: "Float: Floating-point values"
-                          - text:
+                          - imgui.text:
                               content: "Vector: Vector data"
-                          - text:
+                          - imgui.text:
                               content: "Image: Image data"
-                          - text:
+                          - imgui.text:
                               content: "Text: String/text data"
 
-                    - separator
-                    - collapsing-header:
+                    - imgui.separator
+                    - imgui.collapsing-header:
                         label: Node Templates
                         body:
-                          - text:
+                          - imgui.text:
                               content: "Pre-configured node types:"
-                          - separator
-                          - row:
+                          - imgui.separator
+                          - imgui.row:
                               body:
-                                - button:
+                                - imgui.button:
                                     label: Test Node
                                     tooltip: Generic test node
-                                - button:
+                                - imgui.button:
                                     label: InputBox
                                     tooltip: Input collection node
-                                - button:
+                                - imgui.button:
                                     label: OutputBox
                                     tooltip: Output collection node
-                          - separator
-                          - text:
+                          - imgui.separator
+                          - imgui.text:
                               content: "Each node can have multiple typed inputs and outputs."
-                          - text:
+                          - imgui.text:
                               content: "Connections are validated based on type compatibility."
 
               # Tab 4: Advanced
-              - tab-item:
+              - imgui.tab-item:
                   label: Advanced
                   body:
-                    - text:
+                    - imgui.text:
                         content: "Advanced Features & Settings"
-                    - separator
-                    - collapsing-header:
+                    - imgui.separator
+                    - imgui.collapsing-header:
                         label: Display Options
                         body:
-                          - checkbox:
+                          - imgui.checkbox:
                               label: Show Grid
                               value: $editor-state@/show-grid
                               tooltip: Display background grid
-                          - checkbox:
+                          - imgui.checkbox:
                               label: Show Tooltips
                               value: $editor-state@/show-tooltips
                               tooltip: Show hover tooltips
-                          - checkbox:
+                          - imgui.checkbox:
                               label: Anti-Alias Curves
                               tooltip: Smooth connection curves
-                          - slider-float:
+                          - imgui.slider-float:
                               label: Zoom Level
                               min: 0.1
                               max: 3.0
                               value: $editor-state@/zoom-level
                               tooltip: Adjust view zoom
 
-                    - collapsing-header:
+                    - imgui.collapsing-header:
                         label: Performance
                         body:
-                          - checkbox:
+                          - imgui.checkbox:
                               label: Enable Caching
                               tooltip: Cache node outputs
-                          - checkbox:
+                          - imgui.checkbox:
                               label: Parallel Processing
                               tooltip: Use multiple threads
-                          - slider-int:
+                          - imgui.slider-int:
                               label: Update Rate
                               min: 10
                               max: 60
                               tooltip: Updates per second
 
-                    - separator
-                    - collapsing-header:
+                    - imgui.separator
+                    - imgui.collapsing-header:
                         label: File Operations
                         body:
-                          - button:
+                          - imgui.button:
                               label: Save Graph
                               tooltip: Save to JSON file
-                          - button:
+                          - imgui.button:
                               label: Load Graph
                               tooltip: Load from JSON file
-                          - button:
+                          - imgui.button:
                               label: Export Image
                               tooltip: Save as image
-                          - button:
+                          - imgui.button:
                               label: Copy Selection
                               tooltip: Copy selected nodes

@@ -3,7 +3,7 @@ import:
 
 widgets:
   main-window:
-    type: window
+    type: imgui.window
     label: "ImGuizmo Demo"
     size: [800, 600]
     body:

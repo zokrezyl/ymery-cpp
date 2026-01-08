@@ -11,46 +11,46 @@ widgets:
     type: composite
     foreach-child:
       body:
-        - tree-node:
+        - imgui.tree-node:
             label: "@label"
             openable: "@openable"
             opened: "@opened"
             style:
               openable:
-                text: [0.5, 0.7, 1.0, 1.0]
+                imgui.text: [0.5, 0.7, 1.0, 1.0]
               opened:
-                text: [0.2, 1.0, 0.2, 1.0]
+                imgui.text: [0.2, 1.0, 0.2, 1.0]
             body:
-              - kernel.kernel-recursive:
+              - kernel-recursive:
             metadata-tooltip:
               body:
-                - separator-text: "Metadata"
+                - imgui.separator-text: "Metadata"
                 - foreach-key:
                     body:
-                      - text:
+                      - imgui.text:
                           label: "@key: @value"
 
   demo:
     type: composite
     main-data: kernel
     body:
-      - text:
+      - imgui.text:
           label: "Kernel Provider Hub"
           style:
-            text: [0.7, 0.9, 0.7, 1.0]
-      - separator
-      - text:
+            imgui.text: [0.7, 0.9, 0.7, 1.0]
+      - imgui.separator
+      - imgui.text:
           label: "Central routing to data providers"
-      - separator
+      - imgui.separator
 
-      - separator-text: "Providers"
-      - text:
+      - imgui.separator-text: "Providers"
+      - imgui.text:
           label: "Click nodes to expand, hover for metadata"
-      - separator
+      - imgui.separator
 
       - data-path: /providers
-        kernel.kernel-recursive:
+        kernel-recursive:
 
-      - separator-text: "Settings"
+      - imgui.separator-text: "Settings"
       - data-path: /settings
-        kernel.kernel-recursive:
+        kernel-recursive:

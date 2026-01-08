@@ -20,7 +20,7 @@ import:
 
 widgets:
   main-window:
-    type: hello-imgui-main-window
+    type: imgui.hello-imgui-main-window
     runner-params:
       app-window-params:
         window-geometry:
@@ -30,60 +30,60 @@ widgets:
     fps-idle: 0
     body:
       # Menu
-      - hello-imgui-menu:
+      - imgui.hello-imgui-menu:
           body:
-            - menu:
+            - imgui.menu:
                 label: "File"
                 body:
-                  - menu-item:
+                  - imgui.menu-item:
                       label: "Exit"
-            - menu:
+            - imgui.menu:
                 label: "View"
                 body:
-                  - separator-text: "UI Plugins"
-                  - menu-item:
+                  - imgui.separator-text: "UI Plugins"
+                  - imgui.menu-item:
                       label: "ImGui Widgets"
-                  - menu-item:
+                  - imgui.menu-item:
                       label: "ImCoolBar"
-                  - menu-item:
+                  - imgui.menu-item:
                       label: "ImGui Knobs"
-                  - menu-item:
+                  - imgui.menu-item:
                       label: "ImGui Toggle"
-                  - menu-item:
+                  - imgui.menu-item:
                       label: "ImSpinner"
-                  - menu-item:
+                  - imgui.menu-item:
                       label: "ImAnim"
-                  - separator-text: "3D & Plotting"
-                  - menu-item:
+                  - imgui.separator-text: "3D & Plotting"
+                  - imgui.menu-item:
                       label: "ImGuizmo"
-                  - menu-item:
+                  - imgui.menu-item:
                       label: "ImPlot"
-                  - menu-item:
+                  - imgui.menu-item:
                       label: "ImPlot3D"
-                  - separator-text: "Node Editors"
-                  - menu-item:
+                  - imgui.separator-text: "Node Editors"
+                  - imgui.menu-item:
                       label: "ImNodes"
-                  - separator-text: "Data Sources"
-                  - menu-item:
+                  - imgui.separator-text: "Data Sources"
+                  - imgui.menu-item:
                       label: "Filesystem"
-                  - menu-item:
+                  - imgui.menu-item:
                       label: "Kernel"
-                  - menu-item:
+                  - imgui.menu-item:
                       label: "Waveform"
 
-      - hello-imgui-app-menu-items:
+      - imgui.hello-imgui-app-menu-items:
           body:
-            - menu-item:
+            - imgui.menu-item:
                 label: "About Ymery"
 
       # Docking layout
-      - docking-split:
+      - imgui.docking-split:
           initial-dock: "MainDockSpace"
           new-dock: "BottomPanel"
           direction: "down"
           ratio: 0.2
 
-      - docking-split:
+      - imgui.docking-split:
           initial-dock: "MainDockSpace"
           new-dock: "LeftPanel"
           direction: "left"
@@ -92,49 +92,49 @@ widgets:
       # ============================================================================
       # UI WIDGET PLUGINS
       # ============================================================================
-      - dockable-window:
+      - imgui.dockable-window:
           label: "ImGui"
           dock-space-name: "MainDockSpace"
           tooltip: "Core Dear ImGui widgets"
           body:
             - shared.imgui.demo:
 
-      - dockable-window:
+      - imgui.dockable-window:
           label: "ImCoolBar"
           dock-space-name: "MainDockSpace"
           tooltip: "Animated dock-like toolbar"
           body:
             - shared.imcoolbar.demo:
 
-      - dockable-window:
+      - imgui.dockable-window:
           label: "ImGui Knobs"
           dock-space-name: "MainDockSpace"
           tooltip: "Rotary control widgets"
           body:
             - shared.imgui-knobs.demo:
 
-      - dockable-window:
+      - imgui.dockable-window:
           label: "ImGui Toggle"
           dock-space-name: "MainDockSpace"
           tooltip: "Animated toggle switches"
           body:
             - shared.imgui-toggle.demo:
 
-      - dockable-window:
+      - imgui.dockable-window:
           label: "ImSpinner"
           dock-space-name: "MainDockSpace"
           tooltip: "Loading animations"
           body:
             - shared.imspinner.demo:
 
-      - dockable-window:
+      - imgui.dockable-window:
           label: "ImAnim"
           dock-space-name: "MainDockSpace"
           tooltip: "Animation engine"
           body:
             - shared.im-anim.demo:
 
-      - dockable-window:
+      - imgui.dockable-window:
           label: "Markdown"
           dock-space-name: "MainDockSpace"
           tooltip: "Markdown rendering"
@@ -144,21 +144,21 @@ widgets:
       # ============================================================================
       # 3D & PLOTTING PLUGINS
       # ============================================================================
-      - dockable-window:
+      - imgui.dockable-window:
           label: "ImGuizmo"
           dock-space-name: "MainDockSpace"
           tooltip: "3D manipulation gizmos"
           body:
             - shared.imguizmo.demo:
 
-      - dockable-window:
+      - imgui.dockable-window:
           label: "ImPlot"
           dock-space-name: "MainDockSpace"
           tooltip: "2D plotting"
           body:
             - shared.implot.demo:
 
-      - dockable-window:
+      - imgui.dockable-window:
           label: "ImPlot3D"
           dock-space-name: "MainDockSpace"
           tooltip: "3D plotting"
@@ -168,7 +168,7 @@ widgets:
       # ============================================================================
       # NODE EDITOR PLUGINS
       # ============================================================================
-      - dockable-window:
+      - imgui.dockable-window:
           label: "ImNodes"
           dock-space-name: "MainDockSpace"
           tooltip: "Node-based visual programming"
@@ -178,21 +178,21 @@ widgets:
       # ============================================================================
       # DATA SOURCE PLUGINS
       # ============================================================================
-      - dockable-window:
+      - imgui.dockable-window:
           label: "Filesystem"
           dock-space-name: "LeftPanel"
           tooltip: "Filesystem browser"
           body:
             - shared.filesystem.demo:
 
-      - dockable-window:
+      - imgui.dockable-window:
           label: "Kernel"
           dock-space-name: "LeftPanel"
           tooltip: "Kernel provider hub"
           body:
             - shared.kernel.demo:
 
-      - dockable-window:
+      - imgui.dockable-window:
           label: "Waveform"
           dock-space-name: "MainDockSpace"
           tooltip: "Real-time waveform visualization"
@@ -202,17 +202,17 @@ widgets:
       # ============================================================================
       # BOTTOM PANEL - Logs
       # ============================================================================
-      - dockable-window:
+      - imgui.dockable-window:
           label: "Logs"
           dock-space-name: "BottomPanel"
           body:
-            - logs-view:
+            - debug.logs-view:
 
-      - dockable-window:
+      - imgui.dockable-window:
           label: "Errors"
           dock-space-name: "BottomPanel"
           body:
-            - errors-view:
+            - debug.errors-view:
 
 app:
   root-widget: main-window

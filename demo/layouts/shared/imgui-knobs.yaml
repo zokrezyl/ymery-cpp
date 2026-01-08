@@ -35,106 +35,106 @@ widgets:
                 label: 50
     main-data: local
     body:
-      - text:
+      - imgui.text:
           label: "ImGui Knobs - Rotary Controls"
           style:
-            text: [0.7, 0.9, 0.7, 1.0]
-      - separator
-      - text:
+            imgui.text: [0.7, 0.9, 0.7, 1.0]
+      - imgui.separator
+      - imgui.text:
           label: "Various knob styles for value adjustment"
-      - separator
+      - imgui.separator
 
-      - separator-text: "Float Knobs"
+      - imgui.separator-text: "Float Knobs"
 
-      - row:
+      - imgui.row:
           body:
-            - group:
+            - imgui.group:
                 body:
-                  - text:
+                  - imgui.text:
                       label: "Tick"
                   - data-path: knob-tick
-                    knob:
+                    imgui-knobs.knob:
                       label: "Tick"
                       variant: tick
                       min: 0.0
                       max: 1.0
                       size: 50
-            - group:
+            - imgui.group:
                 body:
-                  - text:
+                  - imgui.text:
                       label: "Dot"
                   - data-path: knob-dot
-                    knob:
+                    imgui-knobs.knob:
                       label: "Dot"
                       variant: dot
                       min: 0.0
                       max: 1.0
                       size: 50
-            - group:
+            - imgui.group:
                 body:
-                  - text:
+                  - imgui.text:
                       label: "Wiper"
                   - data-path: knob-wiper
-                    knob:
+                    imgui-knobs.knob:
                       label: "Wiper"
                       variant: wiper
                       min: 0.0
                       max: 1.0
                       size: 50
-            - group:
+            - imgui.group:
                 body:
-                  - text:
+                  - imgui.text:
                       label: "Wiper Dot"
                   - data-path: knob-wiper-dot
-                    knob:
+                    imgui-knobs.knob:
                       label: "WiperDot"
                       variant: wiper_dot
                       min: 0.0
                       max: 1.0
                       size: 50
 
-      - separator
+      - imgui.separator
 
-      - row:
+      - imgui.row:
           body:
-            - group:
+            - imgui.group:
                 body:
-                  - text:
+                  - imgui.text:
                       label: "Wiper Only"
                   - data-path: knob-wiper-only
-                    knob:
+                    imgui-knobs.knob:
                       label: "WiperOnly"
                       variant: wiper_only
                       min: 0.0
                       max: 1.0
                       size: 50
-            - group:
+            - imgui.group:
                 body:
-                  - text:
+                  - imgui.text:
                       label: "Stepped"
                   - data-path: knob-stepped
-                    knob:
+                    imgui-knobs.knob:
                       label: "Stepped"
                       variant: stepped
                       min: 0.0
                       max: 1.0
                       size: 50
-            - group:
+            - imgui.group:
                 body:
-                  - text:
+                  - imgui.text:
                       label: "Space"
                   - data-path: knob-space
-                    knob:
+                    imgui-knobs.knob:
                       label: "Space"
                       variant: space
                       min: 0.0
                       max: 1.0
                       size: 50
 
-      - separator-text: "Integer Knob"
+      - imgui.separator-text: "Integer Knob"
 
       - data-path: knob-int
-        knob-int:
+        imgui-knobs.knob:
           label: "Volume"
           variant: wiper
           min: 0

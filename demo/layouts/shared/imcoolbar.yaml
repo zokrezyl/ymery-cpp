@@ -5,30 +5,30 @@ widgets:
   demo:
     type: composite
     body:
-      - text:
+      - imgui.text:
           label: "ImCoolBar - Animated Dock Toolbar"
           style:
-            text: [0.7, 0.9, 0.7, 1.0]
-      - separator
-      - text:
+            imgui.text: [0.7, 0.9, 0.7, 1.0]
+      - imgui.separator
+      - imgui.text:
           label: "Hover over icons to see magnification effect"
-      - separator
+      - imgui.separator
 
-      - coolbar:
+      - imcoolbar.coolbar:
           anchor: bottom
           body:
-            - coolbar-item:
+            - imcoolbar.coolbar-item:
                 label: "Home"
                 tooltip: "Go to home"
-            - coolbar-item:
+            - imcoolbar.coolbar-item:
                 label: "Files"
                 tooltip: "Open file browser"
-            - coolbar-item:
+            - imcoolbar.coolbar-item:
                 label: "Edit"
                 tooltip: "Edit mode"
-            - coolbar-item:
+            - imcoolbar.coolbar-item:
                 label: "View"
                 tooltip: "View options"
-            - coolbar-item:
+            - imcoolbar.coolbar-item:
                 label: "Settings"
                 tooltip: "Application settings"

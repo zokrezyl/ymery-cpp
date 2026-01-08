@@ -6,22 +6,22 @@ widgets:
   # KERNEL TREE VIEW for dockable window
   # ============================================================================
   kernel-tree-view:
-    type: composite
+    type: imgui.composite
     body:
-      - text:
+      - imgui.text:
           label: "Waveform Tree Browser"
           style:
-            text: [0.7, 0.9, 0.7, 1.0]
-      - separator
-      - text: "Click nodes to select, hover to see metadata"
-      - separator
-      - text: "Selection: "
-      - same-line
-      - text:
+            imgui.text: [0.7, 0.9, 0.7, 1.0]
+      - imgui.separator
+      - imgui.text: "Click nodes to select, hover to see metadata"
+      - imgui.separator
+      - imgui.text: "Selection: "
+      - imgui.same-line
+      - imgui.text:
           label: "@node-selection"
           style:
-            text: [0.2, 1.0, 0.2, 1.0]
-      - separator
+            imgui.text: [0.2, 1.0, 0.2, 1.0]
+      - imgui.separator
       - data-path: /
         widgets.kernel-recursive:
 
@@ -29,13 +29,13 @@ widgets:
   # IMPLOT WRAPPER for dockable window
   # ============================================================================
   implot-wrapper:
-    type: composite
+    type: imgui.composite
     body:
-      - text:
+      - imgui.text:
           label: "Waveform Plots"
           style:
-            text: [0.7, 0.7, 0.9, 1.0]
-      - separator
+            imgui.text: [0.7, 0.7, 0.9, 1.0]
+      - imgui.separator
       - implot-group:
           label: "Waveforms"
           rows: 3
@@ -45,27 +45,27 @@ widgets:
             - implot:
                 label: "Sine Wave"
                 body:
-                  - implot-layer:
+                  - implot.implot-layer:
                       label: "Sine"
                     data-path: /opened/sine/0
             - implot:
                 label: "Square Wave"
                 body:
-                  - implot-layer:
+                  - implot.implot-layer:
                       label: "Square"
                     data-path: /opened/square/0
             - implot:
                 label: "Triangle Wave"
                 body:
-                  - implot-layer:
+                  - implot.implot-layer:
                       label: "Triangle"
                     data-path: /opened/triangle/0
 
   # ============================================================================
   # LOGS VIEW for dockable window (spdlog messages)
   # ============================================================================
-  logs-view:
-    type: logs-view
+  debug.logs-view:
+    type: debug.logs-view
     auto-scroll: true
     show-timestamp: true
     show-level: true
@@ -73,8 +73,8 @@ widgets:
   # ============================================================================
   # ERRORS VIEW for dockable window (Result Errors)
   # ============================================================================
-  errors-view:
-    type: errors-view
+  debug.errors-view:
+    type: debug.errors-view
     auto-scroll: true
     show-timestamp: true
     show-location: true
@@ -83,32 +83,32 @@ widgets:
   # CONTROLS VIEW for dockable window
   # ============================================================================
   controls-view:
-    type: composite
+    type: imgui.composite
     body:
-      - text:
+      - imgui.text:
           label: "Controls"
           style:
-            text: [0.9, 0.7, 0.7, 1.0]
-      - separator
-      - button:
+            imgui.text: [0.9, 0.7, 0.7, 1.0]
+      - imgui.separator
+      - imgui.button:
           label: "Start Recording"
-      - button:
+      - imgui.button:
           label: "Stop Recording"
-      - separator
-      - text: "Volume:"
+      - imgui.separator
+      - imgui.text: "Volume:"
       - data-path: volume
-        slider-float:
+        imgui.slider-float:
           min: 0.0
           max: 1.0
-      - separator
-      - text: "Sample Rate:"
+      - imgui.separator
+      - imgui.text: "Sample Rate:"
       - data-path: sample-rate
-        combo:
+        imgui.combo:
           items:
             - "44100 Hz"
             - "48000 Hz"
             - "96000 Hz"
-      - separator
+      - imgui.separator
       - data-path: monitoring
-        checkbox:
+        imgui.checkbox:
           label: "Enable Monitoring"

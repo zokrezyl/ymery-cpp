@@ -8,55 +8,55 @@ widgets:
   demo:
     type: composite
     body:
-      - collapsing-header:
+      - imgui.collapsing-header:
           label: "Basic Widgets"
           flags: [default-open]
           body:
-            - imgui.basic:
-      - collapsing-header:
+            - basic:
+      - imgui.collapsing-header:
           label: "Text Widgets"
           body:
-            - imgui.text-demo:
-      - collapsing-header:
+            - text-demo:
+      - imgui.collapsing-header:
           label: "Input Widgets"
           body:
-            - imgui.inputs:
-      - collapsing-header:
+            - inputs:
+      - imgui.collapsing-header:
           label: "Sliders & Drags"
           body:
-            - imgui.sliders:
-      - collapsing-header:
+            - sliders:
+      - imgui.collapsing-header:
           label: "Color Widgets"
           body:
-            - imgui.colors:
-      - collapsing-header:
+            - colors:
+      - imgui.collapsing-header:
           label: "Selection Widgets"
           body:
-            - imgui.selections:
-      - collapsing-header:
+            - selections:
+      - imgui.collapsing-header:
           label: "Layout Widgets"
           body:
-            - imgui.layout:
-      - collapsing-header:
+            - layout:
+      - imgui.collapsing-header:
           label: "Tables"
           body:
-            - imgui.tables:
-      - collapsing-header:
+            - tables:
+      - imgui.collapsing-header:
           label: "Trees & Headers"
           body:
-            - imgui.trees:
-      - collapsing-header:
+            - trees:
+      - imgui.collapsing-header:
           label: "Tabs"
           body:
-            - imgui.tabs:
-      - collapsing-header:
+            - tabs:
+      - imgui.collapsing-header:
           label: "Popups & Modals"
           body:
-            - imgui.popups:
-      - collapsing-header:
+            - popups:
+      - imgui.collapsing-header:
           label: "Tooltips"
           body:
-            - imgui.tooltips:
+            - tooltips:
 
   # ============================================================================
   # BASIC WIDGETS
@@ -68,7 +68,7 @@ widgets:
         type: data-tree
         arg:
           children:
-            checkbox:
+            imgui.checkbox:
               metadata:
                 label: true
             radio:
@@ -76,43 +76,43 @@ widgets:
                 label: 0
     main-data: local
     body:
-      - separator-text: "Buttons"
-      - row:
+      - imgui.separator-text: "Buttons"
+      - imgui.row:
           body:
-            - button:
+            - imgui.button:
                 label: "Button"
                 tooltip: "Click to trigger an action"
-            - button:
+            - imgui.button:
                 label: "Styled"
                 tooltip: "Button with custom colors"
                 style:
-                  button: [0.2, 0.6, 0.2, 1.0]
+                  imgui.button: [0.2, 0.6, 0.2, 1.0]
                   button-hovered: [0.3, 0.7, 0.3, 1.0]
                   button-active: [0.1, 0.5, 0.1, 1.0]
-            - button:
+            - imgui.button:
                 label: "Small"
                 small: true
                 tooltip: "Small button variant"
 
-      - separator-text: "Checkbox"
+      - imgui.separator-text: "Checkbox"
       - data-path: checkbox
-        checkbox:
+        imgui.checkbox:
           label: "Enable feature"
           tooltip: "Toggle this option on or off"
 
-      - separator-text: "Radio Buttons"
+      - imgui.separator-text: "Radio Buttons"
       - data-path: radio
-        radio-button:
+        imgui.radio-button:
           label: "Option A"
           value: 0
           tooltip: "Select option A"
       - data-path: radio
-        radio-button:
+        imgui.radio-button:
           label: "Option B"
           value: 1
           tooltip: "Select option B"
       - data-path: radio
-        radio-button:
+        imgui.radio-button:
           label: "Option C"
           value: 2
           tooltip: "Select option C"
@@ -123,25 +123,25 @@ widgets:
   text-demo:
     type: composite
     body:
-      - separator-text: "Text Display"
-      - text:
+      - imgui.separator-text: "Text Display"
+      - imgui.text:
           label: "Simple text label"
-      - text:
+      - imgui.text:
           label: "Colored text"
           style:
-            text: [0.2, 0.8, 0.2, 1.0]
+            imgui.text: [0.2, 0.8, 0.2, 1.0]
 
-      - separator-text: "Bullet Text"
-      - bullet-text:
+      - imgui.separator-text: "Bullet Text"
+      - imgui.bullet-text:
           label: "First bullet item"
-      - bullet-text:
+      - imgui.bullet-text:
           label: "Second bullet item"
-      - bullet-text:
+      - imgui.bullet-text:
           label: "Third bullet item"
 
-      - separator-text: "Separator Text"
-      - separator-text: "Section Header"
-      - text:
+      - imgui.separator-text: "Separator Text"
+      - imgui.separator-text: "Section Header"
+      - imgui.text:
           label: "Content below separator"
 
   # ============================================================================
@@ -154,30 +154,30 @@ widgets:
         type: data-tree
         arg:
           children:
-            input-text:
+            imgui.input-text:
               metadata:
                 label: "Hello, world!"
-            input-int:
+            imgui.input-int:
               metadata:
                 label: 42
-            input-float:
+            imgui.input-float:
               metadata:
                 label: 3.14159
     main-data: local
     body:
-      - separator-text: "Text Input"
+      - imgui.separator-text: "Text Input"
       - data-path: input-text
-        input-text:
+        imgui.input-text:
           tooltip: "Enter text value"
 
-      - separator-text: "Integer Input"
+      - imgui.separator-text: "Integer Input"
       - data-path: input-int
-        input-int:
+        imgui.input-int:
           tooltip: "Enter integer value"
 
-      - separator-text: "Float Input"
+      - imgui.separator-text: "Float Input"
       - data-path: input-float
-        input-float:
+        imgui.input-float:
           tooltip: "Enter floating point value"
 
   # ============================================================================
@@ -190,43 +190,43 @@ widgets:
         type: data-tree
         arg:
           children:
-            slider-int:
+            imgui.slider-int:
               metadata:
                 label: 50
-            slider-float:
+            imgui.slider-float:
               metadata:
                 label: 0.5
-            drag-int:
+            imgui.drag-int:
               metadata:
                 label: 25
-            drag-float:
+            imgui.drag-float:
               metadata:
                 label: 0.25
     main-data: local
     body:
-      - separator-text: "Sliders"
+      - imgui.separator-text: "Sliders"
       - data-path: slider-int
-        slider-int:
+        imgui.slider-int:
           label: "Integer Slider"
           min: 0
           max: 100
           tooltip: "Drag to adjust integer value (0-100)"
       - data-path: slider-float
-        slider-float:
+        imgui.slider-float:
           label: "Float Slider"
           min: 0.0
           max: 1.0
           tooltip: "Drag to adjust float value (0.0-1.0)"
 
-      - separator-text: "Drags"
+      - imgui.separator-text: "Drags"
       - data-path: drag-int
-        drag-int:
+        imgui.drag-int:
           label: "Integer Drag"
           min: 0
           max: 100
           tooltip: "Drag to adjust integer"
       - data-path: drag-float
-        drag-float:
+        imgui.drag-float:
           label: "Float Drag"
           min: 0.0
           max: 1.0
@@ -250,21 +250,21 @@ widgets:
                 label: [0.2, 0.4, 0.8, 0.75]
     main-data: local
     body:
-      - separator-text: "Color Edit"
+      - imgui.separator-text: "Color Edit"
       - data-path: color-rgb
-        color-edit:
+        imgui.color-edit:
           label: "RGB Color"
           format: rgb
           tooltip: "Pick an RGB color"
       - data-path: color-rgba
-        color-edit:
+        imgui.color-edit:
           label: "RGBA Color"
           format: rgba
           tooltip: "Pick an RGBA color with alpha"
 
-      - separator-text: "Color Button"
+      - imgui.separator-text: "Color Button"
       - data-path: color-rgb
-        color-button:
+        imgui.color-button:
           label: "Color Preview"
           tooltip: "Shows current color"
 
@@ -278,10 +278,10 @@ widgets:
         type: data-tree
         arg:
           children:
-            combo:
+            imgui.combo:
               metadata:
                 label: 0
-            listbox:
+            imgui.listbox:
               metadata:
                 label: 1
             selectable-a:
@@ -295,9 +295,9 @@ widgets:
                 label: false
     main-data: local
     body:
-      - separator-text: "Combo Box"
+      - imgui.separator-text: "Combo Box"
       - data-path: combo
-        combo:
+        imgui.combo:
           label: "Select Theme"
           items:
             - "Dark"
@@ -306,9 +306,9 @@ widgets:
             - "Custom"
           tooltip: "Choose a theme from dropdown"
 
-      - separator-text: "List Box"
+      - imgui.separator-text: "List Box"
       - data-path: listbox
-        listbox:
+        imgui.listbox:
           label: "Select Item"
           items:
             - "Item One"
@@ -319,17 +319,17 @@ widgets:
           height: 4
           tooltip: "Scrollable list selection"
 
-      - separator-text: "Selectables"
+      - imgui.separator-text: "Selectables"
       - data-path: selectable-a
-        selectable:
+        imgui.selectable:
           label: "Selectable A"
           tooltip: "Click to toggle selection"
       - data-path: selectable-b
-        selectable:
+        imgui.selectable:
           label: "Selectable B"
           tooltip: "Click to toggle selection"
       - data-path: selectable-c
-        selectable:
+        imgui.selectable:
           label: "Selectable C"
           tooltip: "Click to toggle selection"
 
@@ -339,81 +339,81 @@ widgets:
   layout:
     type: composite
     body:
-      - separator-text: "Same Line"
-      - button:
+      - imgui.separator-text: "Same Line"
+      - imgui.button:
           label: "Button 1"
-      - same-line
-      - button:
+      - imgui.same-line
+      - imgui.button:
           label: "Button 2"
-      - same-line
-      - button:
+      - imgui.same-line
+      - imgui.button:
           label: "Button 3"
 
-      - separator-text: "Group"
-      - group:
+      - imgui.separator-text: "Group"
+      - imgui.group:
           body:
-            - text:
+            - imgui.text:
                 label: "Grouped content"
-            - button:
+            - imgui.button:
                 label: "Grouped Button"
 
-      - separator-text: "Indent"
-      - text:
+      - imgui.separator-text: "Indent"
+      - imgui.text:
           label: "Not indented"
-      - indent:
+      - imgui.indent:
           body:
-            - text:
+            - imgui.text:
                 label: "Indented level 1"
-            - indent:
+            - imgui.indent:
                 body:
-                  - text:
+                  - imgui.text:
                       label: "Indented level 2"
 
-      - separator-text: "Spacing"
-      - text:
+      - imgui.separator-text: "Spacing"
+      - imgui.text:
           label: "Before spacing"
-      - spacing
-      - spacing
-      - text:
+      - imgui.spacing
+      - imgui.spacing
+      - imgui.text:
           label: "After spacing"
 
-      - separator-text: "Child Window (Scrollable)"
-      - child:
+      - imgui.separator-text: "Child Window (Scrollable)"
+      - imgui.child:
           size: [0, 100]
           border: true
           body:
-            - text:
+            - imgui.text:
                 label: "Scrollable content"
-            - text:
+            - imgui.text:
                 label: "Line 1"
-            - text:
+            - imgui.text:
                 label: "Line 2"
-            - text:
+            - imgui.text:
                 label: "Line 3"
-            - text:
+            - imgui.text:
                 label: "Line 4"
-            - text:
+            - imgui.text:
                 label: "Line 5"
-            - text:
+            - imgui.text:
                 label: "Line 6"
 
-      - separator-text: "Columns"
-      - column:
+      - imgui.separator-text: "Columns"
+      - imgui.column:
           count: 3
           body:
-            - text:
+            - imgui.text:
                 label: "Column 1"
-            - button:
+            - imgui.button:
                 label: "Btn 1"
-            - next-column
-            - text:
+            - imgui.next-column
+            - imgui.text:
                 label: "Column 2"
-            - button:
+            - imgui.button:
                 label: "Btn 2"
-            - next-column
-            - text:
+            - imgui.next-column
+            - imgui.text:
                 label: "Column 3"
-            - button:
+            - imgui.button:
                 label: "Btn 3"
 
   # ============================================================================
@@ -422,47 +422,47 @@ widgets:
   tables:
     type: composite
     body:
-      - separator-text: "Basic Table"
-      - table:
+      - imgui.separator-text: "Basic Table"
+      - imgui.table:
           label: "Demo Table"
           flags: [borders, row-bg, sizing-stretch-prop]
           body:
-            - table-column:
+            - imgui.table-column:
                 label: "Name"
-            - table-column:
+            - imgui.table-column:
                 label: "Value"
-            - table-column:
+            - imgui.table-column:
                 label: "Status"
-            - table-row:
+            - imgui.table-row:
                 body:
-                  - text:
+                  - imgui.text:
                       label: "Item A"
-                  - text:
+                  - imgui.text:
                       label: "100"
-                  - text:
+                  - imgui.text:
                       label: "Active"
                       style:
-                        text: [0.2, 0.8, 0.2, 1.0]
-            - table-row:
+                        imgui.text: [0.2, 0.8, 0.2, 1.0]
+            - imgui.table-row:
                 body:
-                  - text:
+                  - imgui.text:
                       label: "Item B"
-                  - text:
+                  - imgui.text:
                       label: "75"
-                  - text:
+                  - imgui.text:
                       label: "Pending"
                       style:
-                        text: [0.8, 0.8, 0.2, 1.0]
-            - table-row:
+                        imgui.text: [0.8, 0.8, 0.2, 1.0]
+            - imgui.table-row:
                 body:
-                  - text:
+                  - imgui.text:
                       label: "Item C"
-                  - text:
+                  - imgui.text:
                       label: "50"
-                  - text:
+                  - imgui.text:
                       label: "Inactive"
                       style:
-                        text: [0.8, 0.2, 0.2, 1.0]
+                        imgui.text: [0.8, 0.2, 0.2, 1.0]
 
   # ============================================================================
   # TREES & HEADERS
@@ -470,40 +470,40 @@ widgets:
   trees:
     type: composite
     body:
-      - separator-text: "Collapsing Headers"
-      - collapsing-header:
+      - imgui.separator-text: "Collapsing Headers"
+      - imgui.collapsing-header:
           label: "Section A"
           flags: [default-open]
           body:
-            - text:
+            - imgui.text:
                 label: "Content in Section A"
-            - button:
+            - imgui.button:
                 label: "Action A"
-      - collapsing-header:
+      - imgui.collapsing-header:
           label: "Section B"
           body:
-            - text:
+            - imgui.text:
                 label: "Content in Section B"
 
-      - separator-text: "Tree Nodes"
-      - tree-node:
+      - imgui.separator-text: "Tree Nodes"
+      - imgui.tree-node:
           label: "Root Node"
           flags: [default-open]
           body:
-            - tree-node:
+            - imgui.tree-node:
                 label: "Child 1"
                 body:
-                  - text:
+                  - imgui.text:
                       label: "Leaf item 1.1"
-                  - text:
+                  - imgui.text:
                       label: "Leaf item 1.2"
-            - tree-node:
+            - imgui.tree-node:
                 label: "Child 2"
                 body:
-                  - tree-node:
+                  - imgui.tree-node:
                       label: "Grandchild 2.1"
                       body:
-                        - text:
+                        - imgui.text:
                             label: "Deep leaf"
 
   # ============================================================================
@@ -512,29 +512,29 @@ widgets:
   tabs:
     type: composite
     body:
-      - tab-bar:
+      - imgui.tab-bar:
           body:
-            - tab-item:
+            - imgui.tab-item:
                 label: "First Tab"
                 tooltip: "First tab content"
                 body:
-                  - text:
+                  - imgui.text:
                       label: "Content of first tab"
-                  - button:
+                  - imgui.button:
                       label: "Tab 1 Button"
-            - tab-item:
+            - imgui.tab-item:
                 label: "Second Tab"
                 tooltip: "Second tab content"
                 body:
-                  - text:
+                  - imgui.text:
                       label: "Content of second tab"
-                  - checkbox:
+                  - imgui.checkbox:
                       label: "Tab 2 Checkbox"
-            - tab-item:
+            - imgui.tab-item:
                 label: "Third Tab"
                 tooltip: "Third tab content"
                 body:
-                  - text:
+                  - imgui.text:
                       label: "Content of third tab"
 
   # ============================================================================
@@ -543,40 +543,40 @@ widgets:
   popups:
     type: composite
     body:
-      - separator-text: "Regular Popup"
-      - button:
+      - imgui.separator-text: "Regular Popup"
+      - imgui.button:
           label: "Open Popup"
           body:
-            - popup:
+            - imgui.popup:
                 label: "my-popup"
                 body:
-                  - text:
+                  - imgui.text:
                       label: "This is a popup!"
-                  - separator
-                  - button:
+                  - imgui.separator
+                  - imgui.button:
                       label: "Close"
                       body:
-                        - close-current-popup
-            - open-popup:
+                        - imgui.close-current-popup
+            - imgui.open-popup:
                 label: "my-popup"
 
-      - separator-text: "Modal Dialog"
-      - button:
+      - imgui.separator-text: "Modal Dialog"
+      - imgui.button:
           label: "Open Modal"
           body:
-            - popup-modal:
+            - imgui.popup-modal:
                 label: "Modal Dialog"
                 body:
-                  - text:
+                  - imgui.text:
                       label: "This is a modal dialog."
-                  - text:
+                  - imgui.text:
                       label: "You must close it to continue."
-                  - separator
-                  - button:
+                  - imgui.separator
+                  - imgui.button:
                       label: "OK"
                       body:
-                        - close-current-popup
-            - open-popup:
+                        - imgui.close-current-popup
+            - imgui.open-popup:
                 label: "Modal Dialog"
 
   # ============================================================================
@@ -585,28 +585,28 @@ widgets:
   tooltips:
     type: composite
     body:
-      - separator-text: "Simple Tooltips"
-      - button:
+      - imgui.separator-text: "Simple Tooltips"
+      - imgui.button:
           label: "Hover me"
           tooltip: "This is a simple tooltip"
-      - text:
+      - imgui.text:
           label: "Text with tooltip"
           tooltip: "Tooltip on text element"
 
-      - separator-text: "Rich Tooltip"
-      - button:
+      - imgui.separator-text: "Rich Tooltip"
+      - imgui.button:
           label: "Rich Tooltip"
           body:
             - tooltip:
                 body:
-                  - text:
+                  - imgui.text:
                       label: "Rich Tooltip Content"
                       style:
-                        text: [0.2, 0.8, 0.8, 1.0]
-                  - separator
-                  - bullet-text:
+                        imgui.text: [0.2, 0.8, 0.8, 1.0]
+                  - imgui.separator
+                  - imgui.bullet-text:
                       label: "Feature one"
-                  - bullet-text:
+                  - imgui.bullet-text:
                       label: "Feature two"
-                  - bullet-text:
+                  - imgui.bullet-text:
                       label: "Feature three"

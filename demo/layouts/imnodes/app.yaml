@@ -3,7 +3,7 @@ import:
 
 widgets:
   main-window:
-    type: window
+    type: imgui.window
     label: "ImNodes Demo"
     size: [900, 600]
     body:

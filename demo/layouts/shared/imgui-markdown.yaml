@@ -5,29 +5,29 @@ widgets:
   demo:
     type: composite
     body:
-      - text:
+      - imgui.text:
           label: "ImGui Markdown - Rich Text"
           style:
-            text: [0.7, 0.9, 0.7, 1.0]
-      - separator
-      - text:
+            imgui.text: [0.7, 0.9, 0.7, 1.0]
+      - imgui.separator
+      - imgui.text:
           label: "Markdown rendering in Dear ImGui"
-      - separator
+      - imgui.separator
 
-      - separator-text: "Headers"
-      - markdown: |
+      - imgui.separator-text: "Headers"
+      - imgui-markdown.markdown: |
           # Heading 1
           ## Heading 2
           ### Heading 3
 
-      - separator-text: "Text Formatting"
-      - markdown: |
+      - imgui.separator-text: "Text Formatting"
+      - imgui-markdown.markdown: |
           Regular text, **bold text**, and *italic text*.
 
           You can also use ~~strikethrough~~ and `inline code`.
 
-      - separator-text: "Lists"
-      - markdown: |
+      - imgui.separator-text: "Lists"
+      - imgui-markdown.markdown: |
           Unordered list:
           * First item
           * Second item
@@ -38,8 +38,8 @@ widgets:
           2. Step two
           3. Step three
 
-      - separator-text: "Links and Code"
-      - markdown: |
+      - imgui.separator-text: "Links and Code"
+      - imgui-markdown.markdown: |
           Visit [ImGui](https://github.com/ocornut/imgui) for more information.
 
           ```cpp
@@ -48,13 +48,13 @@ widgets:
           }
           ```
 
-      - separator-text: "Blockquotes"
-      - markdown: |
+      - imgui.separator-text: "Blockquotes"
+      - imgui-markdown.markdown: |
           > This is a blockquote.
           > It can span multiple lines.
 
-      - separator-text: "Horizontal Rule"
-      - markdown: |
+      - imgui.separator-text: "Horizontal Rule"
+      - imgui-markdown.markdown: |
           Above the line
 
           ---

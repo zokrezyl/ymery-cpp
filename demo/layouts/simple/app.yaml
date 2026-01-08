@@ -19,63 +19,63 @@ import:
 
 widgets:
   main-window:
-    type: window
+    type: imgui.window
     label: "Ymery Plugin Showcase"
     size: [1200, 800]
     body:
-      - text:
+      - imgui.text:
           label: "Ymery Plugin Showcase"
           style:
-            text: [0.9, 0.9, 0.2, 1.0]
-      - separator
-      - text:
+            imgui.text: [0.9, 0.9, 0.2, 1.0]
+      - imgui.separator
+      - imgui.text:
           label: "Expand sections below to explore each plugin"
-      - separator
+      - imgui.separator
 
       # ============================================================================
       # UI WIDGET PLUGINS
       # ============================================================================
-      - collapsing-header:
+      - imgui.collapsing-header:
           label: "UI Widget Plugins"
           flags: [default-open]
           body:
-            - tree-node:
+            - imgui.tree-node:
                 label: "ImGui - Core Widgets"
                 tooltip: "Buttons, inputs, sliders, tables, popups..."
                 body:
                   - shared.imgui.demo:
 
-            - tree-node:
+            - imgui.tree-node:
                 label: "ImCoolBar - Animated Toolbar"
                 tooltip: "Dock-like animated toolbar"
                 body:
                   - shared.imcoolbar.demo:
 
-            - tree-node:
+            - imgui.tree-node:
                 label: "ImGui Knobs - Rotary Controls"
                 tooltip: "Various knob styles for value adjustment"
                 body:
                   - shared.imgui-knobs.demo:
 
-            - tree-node:
+            - imgui.tree-node:
                 label: "ImGui Toggle - Switch Controls"
                 tooltip: "Animated toggle switches"
                 body:
                   - shared.imgui-toggle.demo:
 
-            - tree-node:
+            - imgui.tree-node:
                 label: "ImSpinner - Loading Animations"
                 tooltip: "Various spinner styles"
                 body:
                   - shared.imspinner.demo:
 
-            - tree-node:
+            - imgui.tree-node:
                 label: "ImAnim - Animation Engine"
                 tooltip: "Tweens, springs, oscillators, easings"
                 body:
                   - shared.im-anim.demo:
 
-            - tree-node:
+            - imgui.tree-node:
                 label: "ImGui Markdown - Rich Text"
                 tooltip: "Markdown rendering"
                 body:
@@ -84,22 +84,22 @@ widgets:
       # ============================================================================
       # 3D & PLOTTING PLUGINS
       # ============================================================================
-      - collapsing-header:
+      - imgui.collapsing-header:
           label: "3D & Plotting Plugins"
           body:
-            - tree-node:
+            - imgui.tree-node:
                 label: "ImGuizmo - 3D Gizmos"
                 tooltip: "Translation, rotation, scale gizmos"
                 body:
                   - shared.imguizmo.demo:
 
-            - tree-node:
+            - imgui.tree-node:
                 label: "ImPlot - 2D Plotting"
                 tooltip: "Line charts, scatter plots, bar charts"
                 body:
                   - shared.implot.demo:
 
-            - tree-node:
+            - imgui.tree-node:
                 label: "ImPlot3D - 3D Plotting"
                 tooltip: "3D surface and scatter plots"
                 body:
@@ -108,10 +108,10 @@ widgets:
       # ============================================================================
       # NODE EDITOR PLUGINS
       # ============================================================================
-      - collapsing-header:
+      - imgui.collapsing-header:
           label: "Node Editor Plugins"
           body:
-            - tree-node:
+            - imgui.tree-node:
                 label: "ImNodes - Visual Programming"
                 tooltip: "Node-based visual programming"
                 body:
@@ -120,22 +120,22 @@ widgets:
       # ============================================================================
       # DATA SOURCE PLUGINS
       # ============================================================================
-      - collapsing-header:
+      - imgui.collapsing-header:
           label: "Data Source Plugins"
           body:
-            - tree-node:
+            - imgui.tree-node:
                 label: "Filesystem Browser"
                 tooltip: "Tree-based filesystem navigation"
                 body:
                   - shared.filesystem.demo:
 
-            - tree-node:
+            - imgui.tree-node:
                 label: "Kernel Provider Hub"
                 tooltip: "Central routing to data providers"
                 body:
                   - shared.kernel.demo:
 
-            - tree-node:
+            - imgui.tree-node:
                 label: "Waveform Visualization"
                 tooltip: "Real-time waveform display"
                 body:

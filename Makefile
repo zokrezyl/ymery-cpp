@@ -227,6 +227,16 @@ build-webasm-webgpu-release:
 test-webasm-webgpu-release: build-webasm-webgpu-release
 	cd build-webasm-webgpu-release && ctest --output-on-failure
 
+.PHONY: serve-webasm-webgpu-release
+serve-webasm-webgpu-release: build-webasm-webgpu-release
+	@echo "Serving at http://localhost:8080/ymery.html"
+	cd build-webasm-webgpu-release && python3 -m http.server 8080
+
+.PHONY: browser-test-webasm-webgpu-release
+browser-test-webasm-webgpu-release: build-webasm-webgpu-release
+	@echo "Running headless browser test..."
+	nix develop .#web --command bash -c "node test/webasm-test.mjs http://localhost:8080/ymery.html"
+
 # =============================================================================
 # WebAssembly WebGPU Debug
 # =============================================================================

@@ -81,15 +81,26 @@
               pkgs.ninja
               pkgsUnstable.nodejs
               pkgs.python3
+              # For headless browser testing
+              pkgs.chromium
+              pkgs.nodePackages.npm
             ];
 
             # Use XDG cache or /tmp for emscripten cache to avoid permission issues
             EM_CACHE = "/tmp/ymery-em-cache";
+            # Tell puppeteer to use system chromium
+            PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = "true";
+            PUPPETEER_EXECUTABLE_PATH = "${pkgs.chromium}/bin/chromium";
 
             shellHook = ''
               mkdir -p "$EM_CACHE"
               echo "Emscripten cache: $EM_CACHE"
               echo "Emscripten version: $(emcc --version | head -1)"
+              # Install puppeteer-core locally if not present
+              if [ ! -d "node_modules/puppeteer-core" ]; then
+                echo "Installing puppeteer-core..."
+                npm install --save-dev puppeteer-core 2>/dev/null || true
+              fi
             '';
           };
 

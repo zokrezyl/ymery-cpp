@@ -1,32 +1,32 @@
 widgets:
   # Widget type definitions
   window:
-    type: window
+    type: imgui.window
   text:
-    type: text
+    type: imgui.text
   separator:
-    type: separator
+    type: imgui.separator
   node-editor:
-    type: node-editor
+    type: imgui-node-editor.node-editor
   node:
-    type: node
+    type: imgui-node-editor.node
   node-pin:
-    type: node-pin
+    type: imgui-node-editor.node-pin
 
   # Main window widget
   main-window:
-    type: window
+    type: imgui.window
     label: Node Editor Demo
     body:
-      - text:
+      - imgui.text:
           content: "Node Editor Demo"
           tooltip: "Node graph editor for visual programming"
-      - separator
-      - text:
+      - imgui.separator
+      - imgui.text:
           content: "This demo showcases the node editor widget."
-      - text:
+      - imgui.text:
           content: "Drag nodes to move them. Connect pins by dragging."
-      - separator
+      - imgui.separator
       - node-editor:
           label: Test Editor
           size: [800, 500]

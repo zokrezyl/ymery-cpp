@@ -100,27 +100,27 @@ app:
         grid-visible: true
 
   body:
-    window:
+    imgui.window:
       title: Node Graph Editor Demo
       body:
-        - tab-bar:
+        - imgui.tab-bar:
             body:
               # Tab 1: Interactive Node Graph
-              - tab-item:
+              - imgui.tab-item:
                   label: Node Graph
                   body:
-                    - text:
+                    - imgui.text:
                         content: "Interactive Node Graph Editor"
                         tooltip: "Visual node-based programming interface"
-                    - separator
-                    - text:
+                    - imgui.separator
+                    - imgui.text:
                         content: "Drag nodes to move them, use scroll wheel to pan."
-                    - separator
-                    - node-graph:
+                    - imgui.separator
+                    - node-graph.node-graph:
                         label: Main Graph
                         grid-size: 64
                         show-grid: true
-                        nodes:
+                        nodes.nodes:
                           - id: 1
                             type: Input
                             title: "Start"
@@ -183,118 +183,118 @@ app:
                             to: 6
                           - from: 6
                             to: 7
-                    - separator
-                    - row:
+                    - imgui.separator
+                    - imgui.row:
                         body:
-                          - button:
+                          - imgui.button:
                               label: Add Input Node
                               tooltip: Add a new input node
-                          - button:
+                          - imgui.button:
                               label: Add Process Node
                               tooltip: Add a processing node
-                          - button:
+                          - imgui.button:
                               label: Add Output Node
                               tooltip: Add an output node
-                          - button:
+                          - imgui.button:
                               label: Delete Selected
                               tooltip: Delete selected node
 
               # Tab 2: Graph Inspector
-              - tab-item:
+              - imgui.tab-item:
                   label: Inspector
                   body:
-                    - text:
+                    - imgui.text:
                         content: "Node Graph Inspector (Data-Bag Bound)"
-                    - separator
-                    - collapsing-header:
+                    - imgui.separator
+                    - imgui.collapsing-header:
                         label: Nodes
                         body:
-                          - tree-node:
+                          - imgui.tree-node:
                               label: All Nodes
                               data-path: $graph-nodes@/
                               body:
-                                - row:
+                                - imgui.row:
                                     body:
-                                      - text:
+                                      - imgui.text:
                                           content: "Type:"
-                                      - text:
+                                      - imgui.text:
                                           content: "@type"
-                                - row:
+                                - imgui.row:
                                     body:
-                                      - text:
+                                      - imgui.text:
                                           content: "Position:"
-                                      - text:
+                                      - imgui.text:
                                           content: "(@position-x, @position-y)"
-                                - separator
+                                - imgui.separator
 
-                    - collapsing-header:
+                    - imgui.collapsing-header:
                         label: Graph Settings
                         body:
-                          - row:
+                          - imgui.row:
                               body:
-                                - text:
+                                - imgui.text:
                                     content: "Total Nodes:"
-                                - text:
+                                - imgui.text:
                                     content: $graph-stats@/total-nodes
-                          - row:
+                          - imgui.row:
                               body:
-                                - text:
+                                - imgui.text:
                                     content: "Grid Size:"
-                                - text:
+                                - imgui.text:
                                     content: $graph-stats@/grid-size
-                          - row:
+                          - imgui.row:
                               body:
-                                - text:
+                                - imgui.text:
                                     content: "Grid Visible:"
-                                - text:
+                                - imgui.text:
                                     content: $graph-stats@/grid-visible
 
               # Tab 3: Settings
-              - tab-item:
+              - imgui.tab-item:
                   label: Settings
                   body:
-                    - text:
+                    - imgui.text:
                         content: "Node Graph Settings"
-                    - separator
-                    - collapsing-header:
+                    - imgui.separator
+                    - imgui.collapsing-header:
                         label: Appearance
                         body:
-                          - slider-float:
+                          - imgui.slider-float:
                               label: Grid Size
                               min: 16.0
                               max: 128.0
                               value: $graph-stats@/grid-size
                               tooltip: Adjust the grid cell size
-                          - checkbox:
+                          - imgui.checkbox:
                               label: Show Grid
                               value: $graph-stats@/grid-visible
                               tooltip: Toggle grid visibility
 
-                    - collapsing-header:
+                    - imgui.collapsing-header:
                         label: Node Library
                         body:
-                          - text:
+                          - imgui.text:
                               content: "Predefined node types:"
-                          - separator
-                          - row:
+                          - imgui.separator
+                          - imgui.row:
                               body:
-                                - button:
+                                - imgui.button:
                                     label: Input
                                     tooltip: Input node
-                                - button:
+                                - imgui.button:
                                     label: Process
                                     tooltip: Processing node
-                                - button:
+                                - imgui.button:
                                     label: Output
                                     tooltip: Output node
-                          - row:
+                          - imgui.row:
                               body:
-                                - button:
+                                - imgui.button:
                                     label: Math Op
                                     tooltip: Mathematical operation
-                                - button:
+                                - imgui.button:
                                     label: Condition
                                     tooltip: Conditional logic
-                                - button:
+                                - imgui.button:
                                     label: Loop
                                     tooltip: Loop control

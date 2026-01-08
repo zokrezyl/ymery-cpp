@@ -3,7 +3,7 @@ import:
 
 widgets:
   main-window:
-    type: window
+    type: imgui.window
     label: "ImGui Markdown Demo"
     size: [700, 600]
     body:

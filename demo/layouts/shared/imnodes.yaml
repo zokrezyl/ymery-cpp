@@ -9,7 +9,7 @@ widgets:
         type: data-tree
         arg:
           children:
-            nodes:
+            nodes.nodes:
               children:
                 node-1:
                   metadata:
@@ -52,57 +52,57 @@ widgets:
                     label: 2
     main-data: local
     body:
-      - text:
+      - imgui.text:
           label: "ImNodes - Node Editor"
           style:
-            text: [0.7, 0.9, 0.7, 1.0]
-      - separator
-      - text:
+            imgui.text: [0.7, 0.9, 0.7, 1.0]
+      - imgui.separator
+      - imgui.text:
           label: "Visual node-based programming interface"
-      - separator
+      - imgui.separator
 
-      - tab-bar:
+      - imgui.tab-bar:
           body:
-            - tab-item:
+            - imgui.tab-item:
                 label: "Node Editor"
                 body:
-                  - imnodes:
+                  - imnodes.editor:
                       size: [-1, 400]
                     data-path: nodes
                     links-path: links
 
-            - tab-item:
+            - imgui.tab-item:
                 label: "Node Data"
                 body:
-                  - text:
+                  - imgui.text:
                       label: "Node Definitions"
-                  - separator
+                  - imgui.separator
                   - data-path: nodes
-                    builtin.tree-view:
+                    imgui.text:
 
-            - tab-item:
+            - imgui.tab-item:
                 label: "Statistics"
                 body:
-                  - text:
+                  - imgui.text:
                       label: "Graph Statistics"
-                  - separator
-                  - text:
+                  - imgui.separator
+                  - imgui.text:
                       label: "Nodes: "
-                  - same-line
+                  - imgui.same-line
                   - data-path: stats/node-count
-                    text:
-                  - text:
+                    imgui.text:
+                  - imgui.text:
                       label: "Links: "
-                  - same-line
+                  - imgui.same-line
                   - data-path: stats/link-count
-                    text:
+                    imgui.text:
 
-      - separator-text: "Features"
-      - bullet-text:
+      - imgui.separator-text: "Features"
+      - imgui.bullet-text:
           label: "Drag nodes to reposition"
-      - bullet-text:
+      - imgui.bullet-text:
           label: "Connect pins by dragging"
-      - bullet-text:
+      - imgui.bullet-text:
           label: "Delete links with middle-click"
-      - bullet-text:
+      - imgui.bullet-text:
           label: "Box selection for multiple nodes"

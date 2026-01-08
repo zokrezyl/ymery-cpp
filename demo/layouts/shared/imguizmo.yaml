@@ -5,54 +5,54 @@ widgets:
   demo:
     type: composite
     body:
-      - text:
+      - imgui.text:
           label: "ImGuizmo - 3D Manipulation Gizmos"
           style:
-            text: [0.7, 0.9, 0.7, 1.0]
-      - separator
-      - text:
+            imgui.text: [0.7, 0.9, 0.7, 1.0]
+      - imgui.separator
+      - imgui.text:
           label: "Interactive 3D transform controls"
-      - separator
+      - imgui.separator
 
-      - separator-text: "Gizmo Operations"
+      - imgui.separator-text: "Gizmo Operations"
 
-      - column:
+      - imgui.column:
           count: 3
           body:
-            - group:
+            - imgui.group:
                 body:
-                  - text:
+                  - imgui.text:
                       label: "Translate"
-                  - gizmo:
+                  - imguizmo.gizmo:
                       operation: translate
                       mode: local
                       size: 200
 
-            - next-column
+            - imgui.next-column
 
-            - group:
+            - imgui.group:
                 body:
-                  - text:
+                  - imgui.text:
                       label: "Rotate"
-                  - gizmo:
+                  - imguizmo.gizmo:
                       operation: rotate
                       mode: local
                       size: 200
 
-            - next-column
+            - imgui.next-column
 
-            - group:
+            - imgui.group:
                 body:
-                  - text:
+                  - imgui.text:
                       label: "Scale"
-                  - gizmo:
+                  - imguizmo.gizmo:
                       operation: scale
                       mode: local
                       size: 200
 
-      - separator-text: "Combined View"
+      - imgui.separator-text: "Combined View"
 
-      - gizmo:
+      - imguizmo.gizmo:
           operation: translate
           mode: world
           size: 300

@@ -5,47 +5,47 @@ widgets:
   demo:
     type: composite
     body:
-      - text:
+      - imgui.text:
           label: "YAML Layout Editor"
           style:
-            text: [0.7, 0.9, 0.7, 1.0]
-      - separator
-      - text:
+            imgui.text: [0.7, 0.9, 0.7, 1.0]
+      - imgui.separator
+      - imgui.text:
           label: "Edit YAML layouts with live preview and code generation"
-      - separator
+      - imgui.separator
 
-      - tab-bar:
+      - imgui.tab-bar:
           body:
-            - tab-item:
+            - imgui.tab-item:
                 label: "Widget Tree"
                 tooltip: "Browse widget hierarchies"
                 body:
-                  - editor-widget-tree:
+                  - editor.editor-widget-tree:
 
-            - tab-item:
+            - imgui.tab-item:
                 label: "Editor"
                 tooltip: "YAML editor with syntax highlighting"
                 body:
-                  - editor:
+                  - editor.editor:
 
-            - tab-item:
+            - imgui.tab-item:
                 label: "Code Preview"
                 tooltip: "Generated C++ code"
                 body:
-                  - code-preview:
+                  - editor.code-preview:
 
-            - tab-item:
+            - imgui.tab-item:
                 label: "Preview"
                 tooltip: "Live widget preview"
                 body:
-                  - preview:
+                  - editor.preview:
 
-      - separator-text: "Features"
-      - bullet-text:
+      - imgui.separator-text: "Features"
+      - imgui.bullet-text:
           label: "Live YAML validation"
-      - bullet-text:
+      - imgui.bullet-text:
           label: "Widget hierarchy browser"
-      - bullet-text:
+      - imgui.bullet-text:
           label: "C++ code generation"
-      - bullet-text:
+      - imgui.bullet-text:
           label: "Real-time preview updates"

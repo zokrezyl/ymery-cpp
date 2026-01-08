@@ -5,40 +5,37 @@ widgets:
   demo:
     type: composite
     body:
-      - text:
+      - imgui.text:
           label: "ImAnim - Animation Engine"
           style:
-            text: [0.7, 0.9, 0.7, 1.0]
-      - text:
+            imgui.text: [0.7, 0.9, 0.7, 1.0]
+      - imgui.text:
           label: "https://github.com/soufianekhiat/ImAnim"
-      - separator
+      - imgui.separator
 
-      - collapsing-header:
+      - imgui.collapsing-header:
           label: "Float Tween (Progress Bar)"
           body:
-            - im-anim:
-                demo: float-tween
+            - im-anim.float-tween:
                 label: "Ease Out Cubic"
                 target: 100.0
                 duration: 2.0
                 easing: 5
 
-      - collapsing-header:
+      - imgui.collapsing-header:
           label: "Vec2 Tween (Moving Dot)"
           body:
-            - im-anim:
-                demo: vec2-tween
+            - im-anim.vec2-tween:
                 label: "2D Position Animation"
                 target-x: 150.0
                 target-y: 150.0
                 duration: 1.5
                 easing: 5
 
-      - collapsing-header:
+      - imgui.collapsing-header:
           label: "Color Tween (OKLAB Blending)"
           body:
-            - im-anim:
-                demo: color-tween
+            - im-anim.color-tween:
                 label: "Perceptual Color Blend"
                 target-r: 0.2
                 target-g: 0.8
@@ -46,52 +43,47 @@ widgets:
                 duration: 2.0
                 easing: 5
 
-      - collapsing-header:
+      - imgui.collapsing-header:
           label: "Oscillator (Sine Wave)"
           body:
-            - im-anim:
-                demo: oscillate
+            - im-anim.oscillate:
                 label: "Sine Oscillation"
                 wave: 0
                 amplitude: 40.0
                 frequency: 1.0
 
-      - collapsing-header:
+      - imgui.collapsing-header:
           label: "Oscillator (Triangle Wave)"
           body:
-            - im-anim:
-                demo: oscillate
+            - im-anim.oscillate:
                 label: "Triangle Oscillation"
                 wave: 1
                 amplitude: 40.0
                 frequency: 0.8
 
-      - collapsing-header:
+      - imgui.collapsing-header:
           label: "Shake Effect"
           body:
-            - im-anim:
-                demo: shake
+            - im-anim.shake:
                 label: "Decaying Shake"
                 intensity: 30.0
                 frequency: 20.0
                 decay: 0.8
 
-      - collapsing-header:
+      - imgui.collapsing-header:
           label: "Spring Physics"
           body:
-            - im-anim:
-                demo: spring
+            - im-anim.spring:
                 label: "Spring Animation"
                 target: 100.0
                 mass: 1.0
                 stiffness: 180.0
                 damping: 12.0
 
-      - collapsing-header:
+      - imgui.collapsing-header:
           label: "All Easing Functions Comparison"
           body:
-            - im-anim:
-                demo: easing-compare
+            - im-anim.easing-compare:
                 label: "30+ Easing Functions"
                 target: 100.0
                 duration: 3.0

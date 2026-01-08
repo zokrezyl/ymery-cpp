@@ -3,7 +3,7 @@ import:
 
 widgets:
   main-window:
-    type: window
+    type: imgui.window
     label: "ImGui Knobs Demo"
     size: [700, 500]
     body:

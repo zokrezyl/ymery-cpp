@@ -3,7 +3,7 @@ import:
 
 widgets:
   main-window:
-    type: window
+    type: imgui.window
     label: "ImCoolBar Demo"
     size: [600, 400]
     body:

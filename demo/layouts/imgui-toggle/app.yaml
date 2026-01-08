@@ -3,7 +3,7 @@ import:
 
 widgets:
   main-window:
-    type: window
+    type: imgui.window
     label: "ImGui Toggle Demo"
     size: [500, 400]
     body:

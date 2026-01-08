@@ -3,180 +3,180 @@ widgets:
   # DRAGGABLE BUTTON DEMO POPUP
   # ============================================================================
   draggable-demo-popup:
-    type: popup
+    type: imgui.popup
     body:
-      - text: "Draggable Button Menu"
-      - separator
-      - menu-item:
+      - imgui.text: "Draggable Button Menu"
+      - imgui.separator
+      - imgui.menu-item:
           label: "Action 1"
-      - menu-item:
+      - imgui.menu-item:
           label: "Action 2"
-      - menu-item:
+      - imgui.menu-item:
           label: "Action 3"
-      - separator
-      - text: "Drag the button to reposition it!"
+      - imgui.separator
+      - imgui.text: "Drag the button to reposition it!"
 
   # ============================================================================
   # TEXT WIDGET DEMOS
   # ============================================================================
   text-demo:
-    type: composite
+    type: imgui.composite
     body:
-      - separator-text: "TEXT WIDGET DEMOS"
+      - imgui.separator-text: "TEXT WIDGET DEMOS"
       - builtin.collapsing-header:
           label: "Text - Static"
           flags: [default-open]
           body:
-            - text: "This is static text"
+            - imgui.text: "This is static text"
       - builtin.collapsing-header:
           label: "Text - With Red Color Style"
           body:
             - data-path: text-single
-              text:
+              imgui.text:
                 style:
-                  text: [1.0, 0.0, 0.0, 1.0]
-      - collapsing-header:
+                  imgui.text: [1.0, 0.0, 0.0, 1.0]
+      - imgui.collapsing-header:
           label: "Text - With Blue Color Style"
           body:
             - data-path: text-single
-              text:
+              imgui.text:
                 style:
-                  text: [0.0, 0.5, 1.0, 1.0]
-      - collapsing-header:
+                  imgui.text: [0.0, 0.5, 1.0, 1.0]
+      - imgui.collapsing-header:
           label: "Text - With Yellow Color Style"
           body:
             - data-path: text-single
-              text:
+              imgui.text:
                 style:
-                  text: [1.0, 1.0, 0.0, 1.0]
-      - collapsing-header:
+                  imgui.text: [1.0, 1.0, 0.0, 1.0]
+      - imgui.collapsing-header:
           label: "Text - Dynamic Single Value"
           body:
             - data-path: text-single
-              text:
+              imgui.text:
       - data-path: text-dict
-        collapsing-header:
+        imgui.collapsing-header:
           label: "Text - Dynamic Dict (renders keys)"
           body:
             foreach-child:
-              - text
+              - imgui.text
 
   # ============================================================================
   # BULLET TEXT WIDGET DEMOS
   # ============================================================================
   bullet-demo:
-    type: composite
+    type: imgui.composite
     body:
-      - separator-text: "BULLET TEXT WIDGET DEMOS"
-      - collapsing-header:
+      - imgui.separator-text: "BULLET TEXT WIDGET DEMOS"
+      - imgui.collapsing-header:
           label: "BulletText - Static"
           flags: [default-open]
           body:
-            - bullet-text: "Static bullet point"
-      - collapsing-header:
+            - imgui.bullet-text: "Static bullet point"
+      - imgui.collapsing-header:
           label: "BulletText - Dynamic Single Value"
           body:
             - data-path: bullet-single
-              bullet-text:
+              imgui.bullet-text:
       - data-path: bullet-dict
-        collapsing-header:
+        imgui.collapsing-header:
           label: "BulletText - Dynamic Dict (renders keys)"
           body:
             foreach-child:
-              - bullet-text
+              - imgui.bullet-text
 
   # ============================================================================
   # SEPARATOR TEXT WIDGET DEMOS
   # ============================================================================
   separator-demo:
-    type: composite
+    type: imgui.composite
     body:
-      - separator-text: "SEPARATOR TEXT WIDGET DEMOS"
-      - collapsing-header:
+      - imgui.separator-text: "SEPARATOR TEXT WIDGET DEMOS"
+      - imgui.collapsing-header:
           label: "SeparatorText - Static"
           flags: [default-open]
           body:
-            - separator-text: "Static Section Header"
-      - collapsing-header:
+            - imgui.separator-text: "Static Section Header"
+      - imgui.collapsing-header:
           label: "SeparatorText - Dynamic Single Value"
           body:
             - data-path: separator-single
-              separator-text:
+              imgui.separator-text:
       - data-path: separator-dict
-        collapsing-header:
+        imgui.collapsing-header:
           label: "SeparatorText - Dynamic Dict (renders keys)"
           body:
             foreach-child:
-              - separator-text
+              - imgui.separator-text
 
   # ============================================================================
   # BUTTON WIDGET DEMOS
   # ============================================================================
   button-demo:
-    type: composite
+    type: imgui.composite
     body:
-      - separator-text: "BUTTON WIDGET DEMOS"
-      - collapsing-header:
+      - imgui.separator-text: "BUTTON WIDGET DEMOS"
+      - imgui.collapsing-header:
           label: "Button - Static"
           flags: [default-open]
           body:
-            - button:
+            - imgui.button:
                 label: "Static Button"
-      - collapsing-header:
+      - imgui.collapsing-header:
           label: "Button - With Red Style"
           body:
-            - button:
+            - imgui.button:
                 label: "Red Button"
                 style:
-                  button: [0.8, 0.1, 0.1, 1.0]
+                  imgui.button: [0.8, 0.1, 0.1, 1.0]
                   button-hovered: [1.0, 0.2, 0.2, 1.0]
                   button-active: [0.6, 0.05, 0.05, 1.0]
-      - collapsing-header:
+      - imgui.collapsing-header:
           label: "Button - With Green Style"
           body:
-            - button:
+            - imgui.button:
                 label: "Green Button"
                 style:
-                  button: [0.1, 0.7, 0.1, 1.0]
+                  imgui.button: [0.1, 0.7, 0.1, 1.0]
                   button-hovered: [0.2, 0.9, 0.2, 1.0]
                   button-active: [0.05, 0.5, 0.05, 1.0]
-      - collapsing-header:
+      - imgui.collapsing-header:
           label: "Button - Dynamic Single Value"
           body:
-            - button:
+            - imgui.button:
               data-path: button-single
-      - collapsing-header:
+      - imgui.collapsing-header:
           label: "Button - Dynamic Dict (renders keys)"
           body:
             foreach-child:
-              - button
+              - imgui.button
         data-path: button-dict
 
   # ============================================================================
   # POPUP WIDGET DEMOS
   # ============================================================================
   regular-popup-demo-content:
-    type: popup
+    type: imgui.popup
     body:
-      - text: "This is a regular popup"
-      - separator
-      - text: "You can interact with other widgets"
+      - imgui.text: "This is a regular popup"
+      - imgui.separator
+      - imgui.text: "You can interact with other widgets"
 
   popup-modal-demo-content:
-    type: popup-modal
+    type: imgui.popup-modal
     body:
-      - text: "This is a Modal Popup!"
-      - separator
-      - text: "Modal popups block interaction with other windows."
-      - separator
-      - text: "Click outside or press ESC to close"
-      - button:
+      - imgui.text: "This is a Modal Popup!"
+      - imgui.separator
+      - imgui.text: "Modal popups block interaction with other windows."
+      - imgui.separator
+      - imgui.text: "Click outside or press ESC to close"
+      - imgui.button:
           label: Ok
           on-click:
             dispatch-event:
               event: click
-      - same-line
-      - button:
+      - imgui.same-line
+      - imgui.button:
           label: Cancel
           on-click:
             dispatch-event:
@@ -184,20 +184,20 @@ widgets:
         
 
   popup-demo:
-    type: composite
+    type: imgui.composite
     body:
-      - separator-text: "POPUP WIDGET DEMOS"
-      - collapsing-header:
+      - imgui.separator-text: "POPUP WIDGET DEMOS"
+      - imgui.collapsing-header:
           label: "PopupModal - Blocks other windows"
           flags: [default-open]
           body:
-            - button:
+            - imgui.button:
                 label: "Open Modal Popup"
                 body: popup-modal-demo-content
-      - collapsing-header:
+      - imgui.collapsing-header:
           label: "Popup - Regular (non-modal)"
           body:
-            - button:
+            - imgui.button:
                 label: "Open Regular Popup"
                 body: regular-popup-demo-content
 
@@ -205,34 +205,34 @@ widgets:
   # TREE NODE WIDGET DEMOS
   # ============================================================================
   tree-recursive:
-    type: composite
+    type: imgui.composite
     body:
       - foreach-child:
-          - tree-node:
+          - imgui.tree-node:
               body: tree-recursive
 
   tree-demo:
-    type: composite
+    type: imgui.composite
     body:
-      - separator-text: "TREE NODE WIDGET DEMOS"
-      - collapsing-header:
+      - imgui.separator-text: "TREE NODE WIDGET DEMOS"
+      - imgui.collapsing-header:
           label: "TreeNode - Static"
           flags: [default-open]
           body:
-            - tree-node:
+            - imgui.tree-node:
                 label: "Static Tree Node"
                 body:
-                  - text: "Content inside static tree node"
-      - collapsing-header:
+                  - imgui.text: "Content inside static tree node"
+      - imgui.collapsing-header:
           label: "TreeNode - Dynamic Single Value"
           body:
-            - tree-node:
+            - imgui.tree-node:
                 body: tree-recursive
               data-path: tree-single
-      - collapsing-header:
+      - imgui.collapsing-header:
           label: "TreeNode - Dynamic Dict (renders keys)"
           body:
-            - tree-node:
+            - imgui.tree-node:
                 body: tree-recursive
               data-path: tree-dict
 
@@ -240,31 +240,31 @@ widgets:
   # COLLAPSING HEADER WIDGET DEMOS
   # ============================================================================
   collapsing-header-recursive:
-    type: composite
+    type: imgui.composite
     body:
       - foreach-child:
-          - collapsing-header:
+          - imgui.collapsing-header:
               body: collapsing-header-recursive
 
   collapsing-header-demo:
-    type: composite
+    type: imgui.composite
     body:
-      - separator-text: "COLLAPSING HEADER WIDGET DEMOS"
-      - collapsing-header:
+      - imgui.separator-text: "COLLAPSING HEADER WIDGET DEMOS"
+      - imgui.collapsing-header:
           label: "CollapsingHeader - Static"
           flags: [default-open]
           body:
-            - text: "Content in static collapsing header"
-      - collapsing-header:
+            - imgui.text: "Content in static collapsing header"
+      - imgui.collapsing-header:
           label: "CollapsingHeader - Dynamic Single Value"
           body:
-            - collapsing-header:
+            - imgui.collapsing-header:
                 body: collapsing-header-recursive
               data-path: collapse-single
-      - collapsing-header:
+      - imgui.collapsing-header:
           label: "CollapsingHeader - Dynamic Dict (renders keys)"
           body:
-            - collapsing-header:
+            - imgui.collapsing-header:
                 body: collapsing-header-recursive
               data-path: collapse-dict
 
@@ -272,35 +272,35 @@ widgets:
   # MENU WIDGET DEMOS
   # ============================================================================
   menu-recursive:
-    type: composite
+    type: imgui.composite
     body:
       - foreach-child:
-          - menu:
+          - imgui.menu:
               body: menu-recursive
 
   menu-demo:
-    type: composite
+    type: imgui.composite
     body:
-      - separator-text: "MENU WIDGET DEMOS"
-      - collapsing-header:
+      - imgui.separator-text: "MENU WIDGET DEMOS"
+      - imgui.collapsing-header:
           label: "Menu - Static"
           flags: [default-open]
           body:
-            - menu:
+            - imgui.menu:
                 label: "Static Menu"
                 body:
-                  - menu-item: "Menu item 1"
-                  - menu-item: "Menu item 2"
-      - collapsing-header:
+                  - imgui.menu-item: "Menu item 1"
+                  - imgui.menu-item: "Menu item 2"
+      - imgui.collapsing-header:
           label: "Menu - Dynamic Single Value"
           body:
-            - menu:
+            - imgui.menu:
                 body: menu-recursive
               data-path: menu-single
-      - collapsing-header:
+      - imgui.collapsing-header:
           label: "Menu - Dynamic Dict (renders keys)"
           body:
-            - menu:
+            - imgui.menu:
                 body: menu-recursive
               data-path: menu-dict
 
@@ -308,94 +308,94 @@ widgets:
   # MENU ITEM WIDGET DEMOS
   # ============================================================================
   menuitem-demo:
-    type: composite
+    type: imgui.composite
     body:
-      - separator-text: "MENU ITEM WIDGET DEMOS"
-      - collapsing-header:
+      - imgui.separator-text: "MENU ITEM WIDGET DEMOS"
+      - imgui.collapsing-header:
           label: "MenuItem - Static"
           flags: [default-open]
           body:
-            - menu:
+            - imgui.menu:
                 label: "Container Menu"
                 body:
-                  - menu-item: "Static Menu Item"
-      - collapsing-header:
+                  - imgui.menu-item: "Static Menu Item"
+      - imgui.collapsing-header:
           label: "MenuItem - Dynamic Single Value"
           body:
-            - menu:
+            - imgui.menu:
                 label: "Container Menu"
                 body:
-                  - menu-item:
+                  - imgui.menu-item:
                     data-path: menuitem-single
-      - collapsing-header:
+      - imgui.collapsing-header:
           label: "MenuItem - Dynamic Dict (renders keys)"
           body:
-            - menu:
+            - imgui.menu:
                 label: "Container Menu"
                 body:
                   foreach-child:
-                    - menu-item
+                    - imgui.menu-item
               data-path: menuitem-dict
 
   # ============================================================================
   # INPUT WIDGETS DEMOS
   # ============================================================================
   input-demo:
-    type: composite
+    type: imgui.composite
     body:
-      - separator-text: "INPUT WIDGETS DEMOS"
-      - collapsing-header:
+      - imgui.separator-text: "INPUT WIDGETS DEMOS"
+      - imgui.collapsing-header:
           label: "Input Widgets (single values only)"
           flags: [default-open]
           body:
-            - text: "Text Input:"
+            - imgui.text: "Text Input:"
             - data-path: input-text
-              input-text:
-            - separator
-            - text: "Integer Input:"
+              imgui.input-text:
+            - imgui.separator
+            - imgui.text: "Integer Input:"
             - data-path: input-int
-              input-int:
-            - separator
-            - text: "Integer Slider:"
+              imgui.input-int:
+            - imgui.separator
+            - imgui.text: "Integer Slider:"
             - data-path: slider-int
-              slider-int:
+              imgui.slider-int:
                 min: 0
                 max: 100
-            - separator
-            - text: "Float Slider:"
+            - imgui.separator
+            - imgui.text: "Float Slider:"
             - data-path: slider-float
-              slider-float:
+              imgui.slider-float:
                 min: 0.0
                 max: 1.0
-            - separator
-            - text: "Combo:"
+            - imgui.separator
+            - imgui.text: "Combo:"
             - data-path: combo
-              combo:
+              imgui.combo:
                 items:
                   - Option A
                   - Option B
                   - Option C
-            - separator
-            - text: "Checkbox:"
+            - imgui.separator
+            - imgui.text: "Checkbox:"
             - data-path: checkbox
-              checkbox:
-      - collapsing-header:
+              imgui.checkbox:
+      - imgui.collapsing-header:
           label: "Input Widgets - With Custom Styles"
           body:
-            - text:
+            - imgui.text:
                 style:
-                  text: [0.0, 1.0, 1.0, 1.0]
-            - text: "Styled Text Input (cyan frame):"
+                  imgui.text: [0.0, 1.0, 1.0, 1.0]
+            - imgui.text: "Styled Text Input (cyan frame):"
             - data-path: input-text
-              input-text:
+              imgui.input-text:
                 style:
                   frame-bg: [0.0, 0.3, 0.3, 0.5]
                   frame-bg-hovered: [0.0, 0.4, 0.4, 0.7]
                   frame-bg-active: [0.0, 0.5, 0.5, 0.9]
-            - separator
-            - text: "Styled Slider (orange):"
+            - imgui.separator
+            - imgui.text: "Styled Slider (orange):"
             - data-path: slider-float
-              slider-float:
+              imgui.slider-float:
                 min: 0.0
                 max: 1.0
                 style:
@@ -407,68 +407,68 @@ widgets:
   # INDENT WIDGET DEMO
   # ============================================================================
   indent-demo:
-    type: composite
+    type: imgui.composite
     body:
-      - separator-text: "INDENT WIDGET DEMO"
-      - collapsing-header:
+      - imgui.separator-text: "INDENT WIDGET DEMO"
+      - imgui.collapsing-header:
           label: "Indent - Basic"
           flags: [default-open]
           body:
-            - text: "Normal text"
-            - indent:
+            - imgui.text: "Normal text"
+            - imgui.indent:
                 body:
-                  - text: "Indented text level 1"
-                  - indent:
+                  - imgui.text: "Indented text level 1"
+                  - imgui.indent:
                       body:
-                        - text: "Indented text level 2"
-            - text: "Back to normal"
+                        - imgui.text: "Indented text level 2"
+            - imgui.text: "Back to normal"
 
   # ============================================================================
   # MAIN DEMO ROOT
   # ============================================================================
   widgets-demo:
-    type: composite
+    type: imgui.composite
     body:
-      - text: "WIDGET SYSTEM COMPREHENSIVE DEMO"
-      - separator
-      - text: "Each section shows: Static, Dynamic Single, Dynamic Dict"
-      - separator
-      - collapsing-header:
+      - imgui.text: "WIDGET SYSTEM COMPREHENSIVE DEMO"
+      - imgui.separator
+      - imgui.text: "Each section shows: Static, Dynamic Single, Dynamic Dict"
+      - imgui.separator
+      - imgui.collapsing-header:
           label: "Text Widgets"
           body: text-demo
-      - collapsing-header:
+      - imgui.collapsing-header:
           label: "Bullet Text Widgets"
           body: bullet-demo
-      - collapsing-header:
+      - imgui.collapsing-header:
           label: "Separator Text Widgets"
           body: separator-demo
-      - collapsing-header:
+      - imgui.collapsing-header:
           label: "Button Widgets"
           body: button-demo
-      - collapsing-header:
+      - imgui.collapsing-header:
           label: "Popup Widgets"
           body: popup-demo
-      - collapsing-header:
+      - imgui.collapsing-header:
           label: "Tree Node Widgets"
           body: tree-demo
-      - collapsing-header:
+      - imgui.collapsing-header:
           label: "Collapsing Header Widgets"
           body: collapsing-header-demo
-      - collapsing-header:
+      - imgui.collapsing-header:
           label: "Menu Widgets"
           body: menu-demo
-      - collapsing-header:
+      - imgui.collapsing-header:
           label: "Menu Item Widgets"
           body: menuitem-demo
-      - collapsing-header:
+      - imgui.collapsing-header:
           label: "Input Widgets"
           body: input-demo
-      - collapsing-header:
+      - imgui.collapsing-header:
           label: "Indent Widget"
           body: indent-demo
 
   widgets-demo-popup:
-    type: popup
+    type: imgui.popup
     data:
       local:
         type: data-tree
@@ -602,28 +602,28 @@ widgets:
                 close:
                   metadata:
                     label: "Close"
-            input-text:
+            imgui.input-text:
               metadata:
                 label: "Editable text"
-            input-int:
+            imgui.input-int:
               metadata:
                 label: "42"
-            slider-int:
+            imgui.slider-int:
               metadata:
                 label: "50"
-            slider-float:
+            imgui.slider-float:
               metadata:
                 label: "0.5"
-            combo:
+            imgui.combo:
               metadata:
                 label: "Option A"
-            checkbox:
+            imgui.checkbox:
               metadata:
                 label: "True"
-            color-edit:
+            imgui.color-edit:
               metadata:
                 label: [1.0, 0.5, 0.2, 1.0]
-            color-button:
+            imgui.color-button:
               metadata:
                 label: [0.2, 0.7, 1.0, 1.0]
     main-data: local
@@ -633,7 +633,7 @@ widgets:
   # FOREACH-KEY DEMO
   # ============================================================================
   foreach-key-demo-popup:
-    type: popup
+    type: imgui.popup
     data:
       local:
         type: data-tree
@@ -645,30 +645,30 @@ widgets:
             count: 42
     main-data: local
     body:
-      - text: "foreach-key Demo - Displays metadata keys and values"
-      - separator
-      - text: "Simple form (shows values only):"
+      - imgui.text: "foreach-key Demo - Displays metadata keys and values"
+      - imgui.separator
+      - imgui.text: "Simple form (shows values only):"
       - foreach-key: text
-      - separator
-      - text: "Complex form (shows keys and values):"
+      - imgui.separator
+      - imgui.text: "Complex form (shows keys and values):"
       - foreach-key:
-          - text: "$key"
-          - text: "$value"
-          - separator
+          - imgui.text: "$key"
+          - imgui.text: "$value"
+          - imgui.separator
 
   metadata-tooltip:
-    type: tooltip
+    type: imgui.tooltip
     body:
-      - text: "Metadata:"
-      - separator
+      - imgui.text: "Metadata:"
+      - imgui.separator
       - foreach-key:
-          - text: "$key: $value"
+          - imgui.text: "$key: $value"
 
   kernel-recursive:
-    type: composite
+    type: imgui.composite
     body:
       - foreach-child:
-          - tree-node:
+          - imgui.tree-node:
               body: kernel-recursive
               on-click: default
               on-hover:
@@ -676,12 +676,12 @@ widgets:
               selection: "$selection@/selection"
               style-mapping:
                 openable:
-                  text: [0.2, 0.8, 0.2, 1.0]
+                  imgui.text: [0.2, 0.8, 0.2, 1.0]
                 opened:
-                  text: [0.8, 0.8, 0.2, 1.0]
+                  imgui.text: [0.8, 0.8, 0.2, 1.0]
 
   kernel-demo-popup:
-    type: popup
+    type: imgui.popup
     data:
       kernel:
         type: kernel
@@ -692,169 +692,169 @@ widgets:
             selection: ""
     main-data: kernel
     body:
-      - text: "Kernel TreeLike Demo - Click nodes to select, hover to see metadata"
-      - separator
-      - text: "Selection: "
-      - same-line
-      - text:
+      - imgui.text: "Kernel TreeLike Demo - Click nodes to select, hover to see metadata"
+      - imgui.separator
+      - imgui.text: "Selection: "
+      - imgui.same-line
+      - imgui.text:
           label: "$selection@/selection"
           style:
-            text: [0.2, 1.0, 0.2, 1.0]
-      - separator
+            imgui.text: [0.2, 1.0, 0.2, 1.0]
+      - imgui.separator
       - data-path: $kernel
         kernel-recursive:
 
   implot-demo-popup:
-    type: popup
+    type: imgui.popup
     data:
       kernel:
         type: kernel
     main-data: kernel
     body:
-      - text: "Implot Waveform Demo"
-      - separator
+      - imgui.text: "Implot Waveform Demo"
+      - imgui.separator
       - implot:
           label: "Waveforms"
           body:
-            - implot-layer:
+            - implot.implot-layer:
                 label: "Sine"
               data-path: /providers/waveform-st/available/sine/0
-            - implot-layer:
+            - implot.implot-layer:
                 label: "Square"
               data-path: /providers/waveform-st/available/square/0
-            - implot-layer:
+            - implot.implot-layer:
                 label: "Triangle"
               data-path: /providers/waveform-st/available/triangle/0
 
   table-demo-popup:
-    type: popup
+    type: imgui.popup
     body:
-      - text: "Table Widget Demo"
-      - separator
-      - table:
+      - imgui.text: "Table Widget Demo"
+      - imgui.separator
+      - imgui.table:
           label: "Demo Table"
           columns: 3
           flags: [borders, row-bg, sizing-stretch-prop]
           body:
-            - row:
+            - imgui.row:
                 flags: [headers]
                 body:
-                  - column:
+                  - imgui.column:
                       body:
-                        - text: "Column 1"
-                  - column:
+                        - imgui.text: "Column 1"
+                  - imgui.column:
                       body:
-                        - text: "Column 2"
-                  - column:
+                        - imgui.text: "Column 2"
+                  - imgui.column:
                       body:
-                        - text: "Column 3"
-            - row:
+                        - imgui.text: "Column 3"
+            - imgui.row:
                 body:
-                  - column:
+                  - imgui.column:
                       body:
-                        - text: "Row 1, Col 1"
-                  - column:
+                        - imgui.text: "Row 1, Col 1"
+                  - imgui.column:
                       body:
-                        - text: "Row 1, Col 2"
-                  - column:
+                        - imgui.text: "Row 1, Col 2"
+                  - imgui.column:
                       body:
-                        - text: "Row 1, Col 3"
-            - row:
+                        - imgui.text: "Row 1, Col 3"
+            - imgui.row:
                 body:
-                  - column:
+                  - imgui.column:
                       body:
-                        - text: "Row 2, Col 1"
-                  - column:
+                        - imgui.text: "Row 2, Col 1"
+                  - imgui.column:
                       body:
-                        - text: "Row 2, Col 2"
-                  - column:
+                        - imgui.text: "Row 2, Col 2"
+                  - imgui.column:
                       body:
-                        - text: "Row 2, Col 3"
-            - row:
+                        - imgui.text: "Row 2, Col 3"
+            - imgui.row:
                 body:
-                  - column:
+                  - imgui.column:
                       body:
-                        - text: "Row 3, Col 1"
-                  - column:
+                        - imgui.text: "Row 3, Col 1"
+                  - imgui.column:
                       body:
-                        - text: "Row 3, Col 2"
-                  - column:
+                        - imgui.text: "Row 3, Col 2"
+                  - imgui.column:
                       body:
-                        - text: "Row 3, Col 3"
+                        - imgui.text: "Row 3, Col 3"
 
   tab-demo-popup:
-    type: popup
+    type: imgui.popup
     data:
       local:
         type: data-tree
         arg:
           children:
-            input-text:
+            imgui.input-text:
               metadata:
                 label: "Editable text"
-            slider-int:
+            imgui.slider-int:
               metadata:
                 label: "50"
-            color-edit:
+            imgui.color-edit:
               metadata:
                 label: [1.0, 0.5, 0.2, 1.0]
-            color-button:
+            imgui.color-button:
               metadata:
                 label: [0.2, 0.7, 1.0, 1.0]
     main-data: local
     body:
-      - text: "Tab Widget Demo"
-      - separator
-      - tab-bar:
+      - imgui.text: "Tab Widget Demo"
+      - imgui.separator
+      - imgui.tab-bar:
           label: "Demo Tabs"
           body:
-            - tab-item:
+            - imgui.tab-item:
                 label: "Tab 1"
                 body:
-                  - text: "Content of Tab 1"
-                  - separator
-                  - text: "This is the first tab"
-                  - bullet-text: "Feature A"
-                  - bullet-text: "Feature B"
-                  - bullet-text: "Feature C"
-            - tab-item:
+                  - imgui.text: "Content of Tab 1"
+                  - imgui.separator
+                  - imgui.text: "This is the first tab"
+                  - imgui.bullet-text: "Feature A"
+                  - imgui.bullet-text: "Feature B"
+                  - imgui.bullet-text: "Feature C"
+            - imgui.tab-item:
                 label: "Tab 2"
                 body:
-                  - text: "Content of Tab 2"
-                  - separator
+                  - imgui.text: "Content of Tab 2"
+                  - imgui.separator
                   - data-path: input-text
-                    text: "Text Input:"
+                    imgui.text: "Text Input:"
                   - data-path: input-text
-                    input-text:
-                  - separator
-                  - text: "Slider:"
+                    imgui.input-text:
+                  - imgui.separator
+                  - imgui.text: "Slider:"
                   - data-path: slider-int
-                    slider-int:
+                    imgui.slider-int:
                       min: 0
                       max: 100
-            - tab-item:
+            - imgui.tab-item:
                 label: "Tab 3"
                 body:
-                  - text: "Content of Tab 3"
-                  - separator
-                  - button:
+                  - imgui.text: "Content of Tab 3"
+                  - imgui.separator
+                  - imgui.button:
                       label: "Button 1"
-                  - button:
+                  - imgui.button:
                       label: "Button 2"
-                  - button:
+                  - imgui.button:
                       label: "Button 3"
-            - tab-item:
+            - imgui.tab-item:
                 label: "Colors"
                 body:
-                  - text: "Color Widgets Demo"
-                  - separator
-                  - text: "Color Edit (RGBA):"
+                  - imgui.text: "Color Widgets Demo"
+                  - imgui.separator
+                  - imgui.text: "Color Edit (RGBA):"
                   - data-path: color-edit
-                    color-edit:
-                  - separator
-                  - text: "Color Button:"
+                    imgui.color-edit:
+                  - imgui.separator
+                  - imgui.text: "Color Button:"
                   - data-path: color-button
-                    color-button:
-                  - same-line
-                  - text: "Click to see color"
+                    imgui.color-button:
+                  - imgui.same-line
+                  - imgui.text: "Click to see color"
 

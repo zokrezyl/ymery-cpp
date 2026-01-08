@@ -3,107 +3,107 @@ import:
 
 widgets:
   main-window:
-    type: docking-main-window
+    type: imgui.docking-main-window
     title: "Ymery Layout Editor"
     body:
       # Menu bar
-      - main-menu-bar:
+      - imgui.main-menu-bar:
           body:
-            - menu:
+            - imgui.menu:
                 label: "File"
                 body:
-                  - menu-item:
+                  - imgui.menu-item:
                       label: "New"
-                  - separator
-                  - menu-item:
+                  - imgui.separator
+                  - imgui.menu-item:
                       label: "Export YAML..."
-                  - separator
-                  - menu-item:
+                  - imgui.separator
+                  - imgui.menu-item:
                       label: "Exit"
-            - menu:
+            - imgui.menu:
                 label: "Edit"
                 body:
-                  - menu-item:
+                  - imgui.menu-item:
                       label: "Clear All"
-            - menu:
+            - imgui.menu:
                 label: "View"
                 body:
-                  - menu-item:
+                  - imgui.menu-item:
                       label: "Widget Browser"
-                  - menu-item:
+                  - imgui.menu-item:
                       label: "Editor"
-                  - menu-item:
+                  - imgui.menu-item:
                       label: "Code"
-                  - menu-item:
+                  - imgui.menu-item:
                       label: "Preview"
-                  - menu-item:
+                  - imgui.menu-item:
                       label: "Errors"
-                  - menu-item:
+                  - imgui.menu-item:
                       label: "Logs"
 
       # Docking layout
-      - docking-split:
+      - imgui.docking-split:
           initial-dock: "MainDockSpace"
           new-dock: "BottomPanel"
           direction: "down"
           ratio: 0.20
 
-      - docking-split:
+      - imgui.docking-split:
           initial-dock: "MainDockSpace"
           new-dock: "TopPanel"
           direction: "up"
           ratio: 0.35
 
-      - docking-split:
+      - imgui.docking-split:
           initial-dock: "TopPanel"
           new-dock: "TopLeft"
           direction: "left"
           ratio: 0.25
 
-      - docking-split:
+      - imgui.docking-split:
           initial-dock: "TopPanel"
           new-dock: "TopRight"
           direction: "right"
           ratio: 0.40
 
       # Upper row
-      - dockable-window:
+      - imgui.dockable-window:
           label: "Widget Browser"
           dock-space-name: "TopLeft"
           body:
-            - editor-widget-tree:
+            - editor.editor-widget-tree:
 
-      - dockable-window:
+      - imgui.dockable-window:
           label: "Editor"
           dock-space-name: "TopPanel"
           body:
-            - editor:
+            - editor.editor:
 
-      - dockable-window:
+      - imgui.dockable-window:
           label: "Code"
           dock-space-name: "TopRight"
           body:
-            - code-preview:
+            - editor.code-preview:
 
       # Middle - Preview
-      - dockable-window:
+      - imgui.dockable-window:
           label: "Preview"
           dock-space-name: "MainDockSpace"
           body:
-            - preview:
+            - editor.preview:
 
       # Bottom - Errors and Logs
-      - dockable-window:
+      - imgui.dockable-window:
           label: "Errors"
           dock-space-name: "BottomPanel"
           body:
-            - errors-view:
+            - debug.errors-view:
 
-      - dockable-window:
+      - imgui.dockable-window:
           label: "Logs"
           dock-space-name: "BottomPanel"
           body:
-            - logs-view:
+            - debug.logs-view:
 
 app:
   root-widget: main-window

@@ -371,11 +371,11 @@ CPMAddPackage(
 )
 
 if(imanim_ADDED)
-    add_library(imanim STATIC
+    add_library(im-anim STATIC
         ${imanim_SOURCE_DIR}/im_anim.cpp
     )
-    target_include_directories(imanim PUBLIC ${imanim_SOURCE_DIR})
-    target_link_libraries(imanim PUBLIC imgui)
+    target_include_directories(im-anim PUBLIC ${imanim_SOURCE_DIR})
+    target_link_libraries(im-anim PUBLIC imgui)
 endif()
 
 # ImGuiColorTextEdit - Syntax highlighting text editor
@@ -654,7 +654,7 @@ if(NOT YMERY_ANDROID)
         # Use custom shell template with demo selector
         set_target_properties(ymery PROPERTIES
             SUFFIX ".html"
-            LINK_FLAGS "--use-port=contrib.glfw3 --use-port=emdawnwebgpu -sWASM=1 -sALLOW_MEMORY_GROWTH=1 -sALLOW_TABLE_GROWTH -sNO_EXIT_RUNTIME=0 -sASSERTIONS=1 -sASYNCIFY -fexceptions -sMAIN_MODULE=1 --preload-file ${CMAKE_SOURCE_DIR}/demo@/demo --preload-file ${CMAKE_BINARY_DIR}/plugins@/plugins --shell-file ${CMAKE_SOURCE_DIR}/build-tools/web/shell.html"
+            LINK_FLAGS "--use-port=contrib.glfw3 --use-port=emdawnwebgpu -sWASM=1 -sALLOW_MEMORY_GROWTH=1 -sALLOW_TABLE_GROWTH=1 -sNO_EXIT_RUNTIME=0 -sASSERTIONS=1 -sASYNCIFY -sASYNCIFY_STACK_SIZE=10485760 -fexceptions -sMAIN_MODULE=1 --preload-file ${CMAKE_SOURCE_DIR}/demo@/demo --preload-file ${CMAKE_BINARY_DIR}/plugins@/plugins --shell-file ${CMAKE_SOURCE_DIR}/build-tools/web/shell.html"
         )
         target_compile_definitions(ymery PRIVATE YMERY_WEB=1)
         # Delay linking until after plugins are built (see add_dependencies below after plugin subdirectory)
@@ -717,20 +717,16 @@ add_subdirectory(src/ymery/plugins)
 if(YMERY_WEB AND NOT YMERY_ANDROID)
     # List of all plugin targets (must be kept in sync with plugins/frontend/CMakeLists.txt and plugins/backend/CMakeLists.txt)
     set(ALL_PLUGIN_TARGETS
-        # Frontend widget plugins
-        text button popup popup-modal tooltip input-text input-int input-float
-        slider-int slider-float drag-int drag-float checkbox combo color-edit
-        color-button separator separator-text spacing bullet-text window column
-        row group tree-node collapsing-header tab-bar tab-item child menu-bar
-        main-menu-bar menu menu-item same-line listbox selectable radio-button
-        indent table table-row table-column imgui-main-window hello-imgui-main-window
-        hello-imgui-menu hello-imgui-app-menu-items
-        markdown implot_plugin implot-group_plugin implot-layer_plugin
-        knob knob-int spinner spinners_demo toggle coolbar gizmo plot3d
-        imnodes_plugin node_graph_plugin nodes_plugin
-        editor-widget-tree editor code-preview editor-properties preview data-editor
-        docking-main-window docking-split dockable-window
-        piano hex-editor logs-view errors-view shader-toy
+        # Consolidated frontend plugins (one plugin per GitHub source repo)
+        imgui_plugin imspinner_plugin implot_plugin
+        imgui_knobs_plugin imgui_toggle_plugin imcoolbar_plugin
+        implot3d_plugin imnodes_plugin im-anim_plugin imguizmo_plugin
+        imgui_markdown_plugin
+        # Feature-area frontend plugins
+        editor_plugin docking_plugin debug_plugin
+        # Standalone frontend plugins
+        node_graph_plugin nodes_plugin
+        piano_plugin hex_editor_plugin shader_toy_plugin
         # Backend plugins
         simple-data-tree data-tree kernel waveform
         filesystem filesystem-provider
