@@ -158,9 +158,14 @@ Result<void> App::dispose() {
 #ifdef YMERY_WEB
 // Emscripten main loop callback
 static App* _em_app = nullptr;
+static int _em_frame_count = 0;
 static void em_main_loop() {
     if (_em_app) {
+        if (_em_frame_count < 5) {
+            spdlog::info("em_main_loop frame {}", _em_frame_count);
+        }
         _em_app->frame();
+        _em_frame_count++;
     }
 }
 #endif
@@ -170,8 +175,11 @@ Result<void> App::run() {
 
 #ifdef YMERY_WEB
     // Emscripten: use browser's requestAnimationFrame
+    spdlog::info("Setting up emscripten main loop");
     _em_app = this;
+    spdlog::info("Calling emscripten_set_main_loop");
     emscripten_set_main_loop(em_main_loop, 0, true);
+    spdlog::info("emscripten_set_main_loop returned");
 #else
     // Native: traditional while loop
     int frame_count = 0;
@@ -191,20 +199,45 @@ Result<void> App::run() {
 }
 
 Result<void> App::frame() {
+#ifdef YMERY_WEB
+    if (_em_frame_count < 5) {
+        spdlog::info("App::frame() starting, frame {}", _em_frame_count);
+    }
+#endif
     if (auto begin_res = _begin_frame(); !begin_res) {
         return Err<void>("App::frame: _begin_frame failed", begin_res);
     }
+#ifdef YMERY_WEB
+    if (_em_frame_count < 5) {
+        spdlog::info("App::frame() _begin_frame done");
+    }
+#endif
 
     // Render root widget
     if (_root_widget) {
+#ifdef YMERY_WEB
+        if (_em_frame_count < 5) {
+            spdlog::info("App::frame() rendering root widget");
+        }
+#endif
         if (auto render_res = _root_widget->render(); !render_res) {
             // Log but continue
         }
+#ifdef YMERY_WEB
+        if (_em_frame_count < 5) {
+            spdlog::info("App::frame() root widget rendered");
+        }
+#endif
     }
 
     if (auto end_res = _end_frame(); !end_res) {
         return Err<void>("App::frame: _end_frame failed", end_res);
     }
+#ifdef YMERY_WEB
+    if (_em_frame_count < 5) {
+        spdlog::info("App::frame() done");
+    }
+#endif
 
     return Ok();
 }

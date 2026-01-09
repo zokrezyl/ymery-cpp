@@ -1,6 +1,6 @@
 # imgui-toggle plugin - Toggle switch controls
 add_library(imgui_toggle_plugin SHARED main.cpp)
-target_link_libraries(imgui_toggle_plugin PRIVATE ymery_lib imgui_toggle)
+target_link_libraries(imgui_toggle_plugin PRIVATE ymery_lib)
 target_include_directories(imgui_toggle_plugin PRIVATE
     ${CMAKE_SOURCE_DIR}/src
     ${imgui_toggle_SOURCE_DIR}

@@ -274,14 +274,18 @@ Result<void> PluginManager::_ensure_plugins_discovered() {
 }
 
 Result<void> PluginManager::_ensure_plugin_loaded(const std::string& plugin_name) {
-    // Already loaded?
+    spdlog::info("_ensure_plugin_loaded called for: {}", plugin_name);
+
+    // Already loaded as frontend plugin?
     if (_new_plugins.find(plugin_name) != _new_plugins.end()) {
+        spdlog::info("Plugin {} already loaded (frontend)", plugin_name);
         return Ok();
     }
 
-    // Check legacy plugins
+    // Already loaded as backend plugin?
     for (const auto& [category, plugins] : _plugins) {
         if (plugins.find(plugin_name) != plugins.end()) {
+            spdlog::info("Plugin {} already loaded (backend)", plugin_name);
             return Ok();
         }
     }
@@ -298,10 +302,11 @@ Result<void> PluginManager::_ensure_plugin_loaded(const std::string& plugin_name
     }
 
     // Load the plugin
-    spdlog::info("PluginManager: lazy loading plugin: {}", plugin_name);
+    spdlog::info("PluginManager: lazy loading plugin: {} from {}", plugin_name, it->second);
     if (auto res = _load_plugin(it->second); !res) {
         return Err<void>("PluginManager: failed to load plugin '" + plugin_name + "'", res);
     }
+    spdlog::info("PluginManager: lazy loading plugin {} COMPLETE", plugin_name);
 
     return Ok();
 }
@@ -312,11 +317,9 @@ Result<void> PluginManager::_load_plugin(const std::string& path) {
     fs::path plugin_path(path);
 
 #ifdef _WIN32
-    // Use wide string on Windows for proper Unicode support
     std::wstring wide_path = plugin_path.wstring();
     PluginHandle handle = ymery_dlopen(wide_path.c_str());
 #else
-    // Unix-like systems (Linux, macOS) and Emscripten (via dlopen with SIDE_MODULE)
     spdlog::info("Calling dlopen for: {}", plugin_path.string());
     PluginHandle handle = ymery_dlopen(plugin_path.string().c_str());
     spdlog::info("dlopen returned: {}", handle ? "success" : "null");
@@ -327,22 +330,26 @@ Result<void> PluginManager::_load_plugin(const std::string& path) {
         return Err<void>(std::string("Failed to load plugin '") + path + "': " + error);
     }
 
-    // Check for legacy plugin exports (name, type)
+    // Check for backend plugin exports (name, type) - these are tree-like/device-manager plugins
     auto name_fn = reinterpret_cast<PluginNameFn>(ymery_dlsym(handle, "name"));
     auto type_fn = reinterpret_cast<PluginTypeFn>(ymery_dlsym(handle, "type"));
 
-    // If no name/type exports, try loading as new-style plugin
+    // If no name/type exports, it's a frontend plugin (new-style with Plugin class)
     if (!name_fn || !type_fn) {
         ymery_dlclose(handle);
         return _load_new_plugin(path);
     }
 
+    // Backend plugin
+    spdlog::info("Loading backend plugin, calling name()...");
     std::string plugin_name = name_fn();
+    spdlog::info("name() returned: {}", plugin_name);
+    spdlog::info("Calling type()...");
     std::string plugin_type = type_fn();
+    spdlog::info("type() returned: {}", plugin_type);
 
-    spdlog::debug("Loaded plugin: {} (type: {})", plugin_name, plugin_type);
+    spdlog::info("Loaded backend plugin: {} (type: {})", plugin_name, plugin_type);
 
-    // Load meta.yaml for this plugin
     Dict meta_dict = load_plugin_meta(path);
 
     PluginMeta meta;
@@ -350,41 +357,18 @@ Result<void> PluginManager::_load_plugin(const std::string& path) {
     meta.class_name = plugin_name;
     meta.meta = meta_dict;
 
-    // Extract category from meta
     if (auto cat_it = meta_dict.find("category"); cat_it != meta_dict.end()) {
         if (auto cat = get_as<std::string>(cat_it->second)) {
             meta.category = *cat;
         }
     }
 
-    if (plugin_type == "widget") {
-        auto raw_fn = reinterpret_cast<PluginWidgetCreateFn>(ymery_dlsym(handle, "create"));
-        if (!raw_fn) {
-            ymery_dlclose(handle);
-            return Err<void>("Widget plugin has no 'create' function: " + path);
-        }
-        // Wrap raw function to convert void* to Result
-        meta.create_fn = WidgetCreateFn([raw_fn](
-            std::shared_ptr<WidgetFactory> factory,
-            std::shared_ptr<Dispatcher> dispatcher,
-            const std::string& name,
-            std::shared_ptr<DataBag> bag
-        ) -> Result<WidgetPtr> {
-            void* ptr = raw_fn(factory, dispatcher, name, bag);
-            auto* result = static_cast<Result<WidgetPtr>*>(ptr);
-            Result<WidgetPtr> ret = std::move(*result);
-            delete result;
-            return ret;
-        });
-        _plugins["widget"][plugin_name] = meta;
-    }
-    else if (plugin_type == "tree-like") {
+    if (plugin_type == "tree-like") {
         auto raw_fn = reinterpret_cast<PluginTreeCreateFn>(ymery_dlsym(handle, "create"));
         if (!raw_fn) {
             ymery_dlclose(handle);
             return Err<void>("Tree-like plugin has no 'create' function: " + path);
         }
-        // Wrap raw function to convert void* to Result
         meta.create_fn = TreeLikeCreateFn([raw_fn](
             std::shared_ptr<Dispatcher> dispatcher,
             std::shared_ptr<PluginManager> pm
@@ -403,7 +387,6 @@ Result<void> PluginManager::_load_plugin(const std::string& path) {
             ymery_dlclose(handle);
             return Err<void>("Device-manager plugin has no 'create' function: " + path);
         }
-        // Wrap raw function to convert void* to Result
         meta.create_fn = TreeLikeCreateFn([raw_fn](
             std::shared_ptr<Dispatcher> dispatcher,
             std::shared_ptr<PluginManager> pm
@@ -417,10 +400,11 @@ Result<void> PluginManager::_load_plugin(const std::string& path) {
         _plugins["device-manager"][plugin_name] = meta;
     }
     else {
-        spdlog::warn("Unknown plugin type '{}' for {}", plugin_type, plugin_name);
+        spdlog::warn("Unknown backend plugin type '{}' for {}", plugin_type, plugin_name);
     }
 
     _handles.push_back(handle);
+    spdlog::info("Backend plugin {} loaded successfully", plugin_name);
     return Ok();
 }
 
@@ -441,21 +425,27 @@ Result<void> PluginManager::_load_new_plugin(const std::string& path) {
     }
 
     // New-style plugins export only 'create()' that returns Plugin*
+    spdlog::info("Looking for 'create' symbol in: {}", path);
     auto create_fn = reinterpret_cast<NewPluginCreateFn>(ymery_dlsym(handle, "create"));
     if (!create_fn) {
         ymery_dlclose(handle);
         return Err<void>("Plugin has no 'create' function: " + path);
     }
+    spdlog::info("Found 'create' function at: {}", (void*)create_fn);
 
     // Create the plugin instance
+    spdlog::info("Calling create() for: {}", path);
     void* raw_plugin = create_fn();
+    spdlog::info("create() returned: {}", raw_plugin);
     if (!raw_plugin) {
         ymery_dlclose(handle);
         return Err<void>("Plugin create() returned null: " + path);
     }
 
     Plugin* plugin = static_cast<Plugin*>(raw_plugin);
+    spdlog::info("Getting plugin name...");
     std::string plugin_name = plugin->name();
+    spdlog::info("Plugin name: {}", plugin_name);
 
     // Wrap in shared_ptr (transfers ownership)
     auto plugin_ptr = std::shared_ptr<Plugin>(plugin);
@@ -649,7 +639,10 @@ Result<WidgetPtr> PluginManager::create_widget(
 
         auto plugin_it = _new_plugins.find(plugin_name);
         if (plugin_it != _new_plugins.end()) {
-            return plugin_it->second->createWidget(widget_name, widget_factory, dispatcher, ns, data_bag);
+            spdlog::info("Creating widget '{}.{}' via plugin", plugin_name, widget_name);
+            auto result = plugin_it->second->createWidget(widget_name, widget_factory, dispatcher, ns, data_bag);
+            spdlog::info("Widget creation returned: {}", result.has_value() ? "success" : "error");
+            return result;
         }
         return Err<WidgetPtr>("PluginManager: plugin '" + plugin_name + "' not found");
     }

@@ -1,4 +1,4 @@
-# Docking Aggregate Demo
+# Docking Demo
 # All plugins showcased in dockable windows
 
 import:
@@ -16,7 +16,6 @@ import:
   - shared.filesystem
   - shared.kernel
   - shared.waveform
-  - shared.editor
 
 widgets:
   main-window:
@@ -77,12 +76,6 @@ widgets:
                 label: "About Ymery"
 
       # Docking layout
-      - imgui.docking-split:
-          initial-dock: "MainDockSpace"
-          new-dock: "BottomPanel"
-          direction: "down"
-          ratio: 0.2
-
       - imgui.docking-split:
           initial-dock: "MainDockSpace"
           new-dock: "LeftPanel"
@@ -198,21 +191,6 @@ widgets:
           tooltip: "Real-time waveform visualization"
           body:
             - shared.waveform.demo:
-
-      # ============================================================================
-      # BOTTOM PANEL - Logs
-      # ============================================================================
-      - imgui.dockable-window:
-          label: "Logs"
-          dock-space-name: "BottomPanel"
-          body:
-            - debug.logs-view:
-
-      - imgui.dockable-window:
-          label: "Errors"
-          dock-space-name: "BottomPanel"
-          body:
-            - debug.errors-view:
 
 app:
   root-widget: main-window

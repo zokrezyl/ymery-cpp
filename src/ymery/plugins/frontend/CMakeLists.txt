@@ -20,6 +20,28 @@ macro(configure_plugin target)
             SUFFIX ".wasm"
             LINK_FLAGS "${EMSCRIPTEN_SIDE_MODULE_FLAGS}"
         )
+        # Add include paths explicitly (needed since we clear LINK_LIBRARIES)
+        target_include_directories(${target} PRIVATE
+            ${yaml-cpp_SOURCE_DIR}/include
+            ${imgui_SOURCE_DIR}
+            ${imgui_SOURCE_DIR}/backends
+            ${implot_SOURCE_DIR}
+            ${spdlog_SOURCE_DIR}/include
+            ${tl_expected_SOURCE_DIR}/include
+            ${imgui_markdown_SOURCE_DIR}
+            ${imgui_knobs_SOURCE_DIR}
+            ${imspinner_SOURCE_DIR}
+            ${imgui_toggle_SOURCE_DIR}
+            ${imcoolbar_SOURCE_DIR}
+            ${imguizmo_SOURCE_DIR}
+            ${implot3d_SOURCE_DIR}
+            ${imgui_color_text_edit_SOURCE_DIR}
+            ${imnodes_SOURCE_DIR}
+            ${imanim_SOURCE_DIR}
+        )
+        # SIDE_MODULE imports symbols from MAIN_MODULE at runtime
+        # Clear link libraries to avoid duplicating code in each plugin
+        set_target_properties(${target} PROPERTIES LINK_LIBRARIES "")
     endif()
 endmacro()
 
@@ -71,3 +93,17 @@ foreach(meta_file ${META_YAML_FILES})
     get_filename_component(meta_name ${meta_file} NAME)
     configure_file(${meta_file} "${CMAKE_BINARY_DIR}/plugins/${meta_name}" COPYONLY)
 endforeach()
+
+# Export all frontend plugin targets to parent scope
+set(YMERY_FRONTEND_PLUGIN_TARGETS
+    # Consolidated plugins (one per GitHub repo)
+    imgui_plugin imspinner_plugin implot_plugin
+    imgui_knobs_plugin imgui_toggle_plugin imcoolbar_plugin
+    implot3d_plugin imnodes_plugin im-anim_plugin imguizmo_plugin
+    imgui_markdown_plugin
+    # Feature-area plugins
+    editor_plugin debug_plugin
+    # Standalone plugins
+    node-graph nodes hex-editor piano shader-toy
+    PARENT_SCOPE
+)

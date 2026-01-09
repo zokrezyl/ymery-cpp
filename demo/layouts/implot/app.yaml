@@ -11,3 +11,4 @@ widgets:
 
 app:
   root-widget: main-window
+  data-tree: waveform

@@ -178,12 +178,11 @@ private:
 
             spdlog::debug("DockingMainWindow: child widget_type = '{}'", widget_type);
 
-            if (widget_type == "menu-bar" || widget_type == "main-menu-bar" ||
-                widget_type == "imgui.menu-bar" || widget_type == "imgui.main-menu-bar") {
+            if (widget_type == "menu-bar" || widget_type == "main-menu-bar") {
                 _menu_bar.widget = child;
                 spdlog::debug("DockingMainWindow: found menu-bar widget");
             }
-            else if (widget_type == "docking-split" || widget_type == "imgui.docking-split") {
+            else if (widget_type == "docking-split") {
                 DockingSplitInfo split;
 
                 if (auto res = child_bag->get("initial-dock"); res && res->has_value()) {
@@ -213,7 +212,7 @@ private:
                     split.initial_dock, split.new_dock, dir_str, split.ratio);
                 _splits.push_back(split);
             }
-            else if (widget_type == "dockable-window" || widget_type == "imgui.dockable-window") {
+            else if (widget_type == "dockable-window") {
                 DockableWindowInfo dw;
 
                 if (auto res = child_bag->get("label"); res && res->has_value()) {

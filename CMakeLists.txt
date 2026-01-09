@@ -247,7 +247,7 @@ if(imgui_ADDED)
     if(YMERY_WEB)
         # Emscripten - use GLFW port and Dawn WebGPU port (emscripten 4.x+)
         target_compile_definitions(imgui PUBLIC YMERY_USE_WEBGPU=1 YMERY_WEB=1)
-        target_compile_options(imgui PUBLIC --use-port=contrib.glfw3 --use-port=emdawnwebgpu)
+        target_compile_options(imgui PUBLIC -sUSE_GLFW=3 --use-port=emdawnwebgpu)
     elseif(YMERY_ANDROID AND YMERY_USE_WEBGPU)
         # Android - WebGPU (wgpu-native)
         target_compile_definitions(imgui PUBLIC YMERY_ANDROID=1 YMERY_USE_WEBGPU=1 IMGUI_IMPL_WEBGPU_BACKEND_WGPU=1)
@@ -646,6 +646,17 @@ if(NOT YMERY_ANDROID)
     target_link_libraries(ymery PRIVATE ymery_lib)
 
     if(YMERY_WEB)
+        # Generate demos.json from demo/layouts directory
+        add_custom_command(
+            OUTPUT ${CMAKE_BINARY_DIR}/demos.json
+            COMMAND bash ${CMAKE_SOURCE_DIR}/build-tools/web/generate-demos-json.sh
+                    ${CMAKE_SOURCE_DIR}/demo/layouts
+                    ${CMAKE_BINARY_DIR}/demos.json
+            DEPENDS ${CMAKE_SOURCE_DIR}/build-tools/web/generate-demos-json.sh
+            COMMENT "Generating demos.json"
+        )
+        add_custom_target(generate_demos_json ALL DEPENDS ${CMAKE_BINARY_DIR}/demos.json)
+
         # Emscripten linker flags (emscripten 4.x+ uses ports)
         # MAIN_MODULE=1 enables dlopen for loading plugin .wasm side modules
         # (MAIN_MODULE=1 exports all symbols including C++ exception handling needed by side modules)
@@ -654,9 +665,10 @@ if(NOT YMERY_ANDROID)
         # Use custom shell template with demo selector
         set_target_properties(ymery PROPERTIES
             SUFFIX ".html"
-            LINK_FLAGS "--use-port=contrib.glfw3 --use-port=emdawnwebgpu -sWASM=1 -sALLOW_MEMORY_GROWTH=1 -sALLOW_TABLE_GROWTH=1 -sNO_EXIT_RUNTIME=0 -sASSERTIONS=1 -sASYNCIFY -sASYNCIFY_STACK_SIZE=10485760 -fexceptions -sMAIN_MODULE=1 --preload-file ${CMAKE_SOURCE_DIR}/demo@/demo --preload-file ${CMAKE_BINARY_DIR}/plugins@/plugins --shell-file ${CMAKE_SOURCE_DIR}/build-tools/web/shell.html"
+            LINK_FLAGS "-sUSE_GLFW=3 --use-port=emdawnwebgpu -sWASM=1 -sALLOW_MEMORY_GROWTH=1 -sALLOW_TABLE_GROWTH=1 -sNO_EXIT_RUNTIME=0 -sASSERTIONS=1 -sASYNCIFY -sASYNCIFY_STACK_SIZE=1048576 -fexceptions -sMAIN_MODULE=1 -sEMULATE_FUNCTION_POINTER_CASTS=1 --preload-file ${CMAKE_SOURCE_DIR}/demo@/demo --preload-file ${CMAKE_BINARY_DIR}/plugins@/plugins --shell-file ${CMAKE_SOURCE_DIR}/build-tools/web/shell.html"
         )
         target_compile_definitions(ymery PRIVATE YMERY_WEB=1)
+        add_dependencies(ymery generate_demos_json)
         # Delay linking until after plugins are built (see add_dependencies below after plugin subdirectory)
     else()
         # Native: enable symbol exports for plugins
@@ -715,23 +727,8 @@ add_subdirectory(src/ymery/plugins)
 # For web builds: ensure ymery.html is linked AFTER all plugins are built
 # This is critical because --preload-file captures the plugins directory at link time
 if(YMERY_WEB AND NOT YMERY_ANDROID)
-    # List of all plugin targets (must be kept in sync with plugins/frontend/CMakeLists.txt and plugins/backend/CMakeLists.txt)
-    set(ALL_PLUGIN_TARGETS
-        # Consolidated frontend plugins (one plugin per GitHub source repo)
-        imgui_plugin imspinner_plugin implot_plugin
-        imgui_knobs_plugin imgui_toggle_plugin imcoolbar_plugin
-        implot3d_plugin imnodes_plugin im-anim_plugin imguizmo_plugin
-        imgui_markdown_plugin
-        # Feature-area frontend plugins
-        editor_plugin docking_plugin debug_plugin
-        # Standalone frontend plugins
-        node_graph_plugin nodes_plugin
-        piano_plugin hex_editor_plugin shader_toy_plugin
-        # Backend plugins
-        simple-data-tree data-tree kernel waveform
-        filesystem filesystem-provider
-    )
-    add_dependencies(ymery ${ALL_PLUGIN_TARGETS})
+    # Plugin targets are collected from plugins/CMakeLists.txt via YMERY_ALL_PLUGIN_TARGETS
+    add_dependencies(ymery ${YMERY_ALL_PLUGIN_TARGETS})
 endif()
 
 # C++ Examples (not for Android)

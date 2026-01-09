@@ -1,14 +1,9 @@
 # Waveform visualization showcase
 # Real-time waveform display with ImPlot
 
-data:
-  waveform:
-    type: kernel
-
 widgets:
   demo:
     type: composite
-    main-data: waveform
     body:
       - imgui.text:
           label: "Waveform Visualization"
@@ -29,7 +24,7 @@ widgets:
                 body:
                   - implot.line:
                       label: "Sine"
-                    data-path: /providers/waveform-st/available/sine/0
+                    data-path: /opened/sine/0
 
       - imgui.collapsing-header:
           label: "Square Wave"
@@ -41,7 +36,7 @@ widgets:
                 body:
                   - implot.line:
                       label: "Square"
-                    data-path: /providers/waveform-st/available/square/0
+                    data-path: /opened/square/0
 
       - imgui.collapsing-header:
           label: "Triangle Wave"
@@ -53,7 +48,7 @@ widgets:
                 body:
                   - implot.line:
                       label: "Triangle"
-                    data-path: /providers/waveform-st/available/triangle/0
+                    data-path: /opened/triangle/0
 
       - imgui.collapsing-header:
           label: "Combined View"
@@ -69,16 +64,16 @@ widgets:
                       body:
                         - implot.line:
                             label: "Sine"
-                          data-path: /providers/waveform-st/available/sine/0
+                          data-path: /opened/sine/0
                   - implot.plot:
                       label: "Square"
                       body:
                         - implot.line:
                             label: "Square"
-                          data-path: /providers/waveform-st/available/square/0
+                          data-path: /opened/square/0
                   - implot.plot:
                       label: "Triangle"
                       body:
                         - implot.line:
                             label: "Triangle"
-                          data-path: /providers/waveform-st/available/triangle/0
+                          data-path: /opened/triangle/0

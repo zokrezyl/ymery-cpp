@@ -309,8 +309,8 @@ Result<Dict> WidgetFactory::_resolve_widget_definition(const std::string& full_n
     // First try the full name as plugin.widget format
     if (_plugin_manager->has_widget(full_name)) {
         Dict def;
-        def["type"] = full_name;
-        spdlog::debug("WidgetFactory::_resolve_widget_definition: using plugin widget '{}' directly", full_name);
+        def["type"] = full_name;  // Keep full name for routing
+        spdlog::debug("WidgetFactory::_resolve_widget_definition: using plugin widget '{}'", full_name);
         return Ok(def);
     }
 
@@ -347,7 +347,22 @@ Result<std::shared_ptr<DataBag>> WidgetFactory::_create_data_bag(
     Dict statics;
     for (const auto& [key, value] : widget_def) {
         if (key != "data-path") {
-            statics[key] = value;
+            // Strip plugin prefix from type (e.g., "imgui.button" -> "button")
+            // so widgets can check type without knowing the plugin namespace
+            if (key == "type") {
+                if (auto type_str = get_as<std::string>(value)) {
+                    size_t dot = type_str->find('.');
+                    if (dot != std::string::npos) {
+                        statics[key] = type_str->substr(dot + 1);
+                    } else {
+                        statics[key] = value;
+                    }
+                } else {
+                    statics[key] = value;
+                }
+            } else {
+                statics[key] = value;
+            }
         }
     }
 

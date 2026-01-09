@@ -37,6 +37,8 @@ protected:
             }
         }
 
+        bool has_data = false;
+
         // Try to get data from "data" property (as a list of values)
         if (auto res = _data_bag->get("data"); res) {
             if (auto list = get_as<List>(*res)) {
@@ -49,26 +51,33 @@ protected:
                 }
                 if (!values.empty()) {
                     ImPlot::PlotLine(label.c_str(), values.data(), static_cast<int>(values.size()));
+                    has_data = true;
                 }
-                return Ok();
             }
         }
 
         // Try to get buffer from data bag (audio buffer)
-        if (auto res = _data_bag->get("buffer"); res) {
-            if (auto buf_ptr = get_as<MediatedAudioBufferPtr>(*res)) {
-                auto buffer = *buf_ptr;
-                if (buffer && buffer->try_lock()) {
-                    auto buffer_data = buffer->data();
-                    if (!buffer_data.empty()) {
-                        double xstart = -static_cast<double>(buffer_data.size());
-                        ImPlot::PlotLine(label.c_str(), buffer_data.data(),
-                                         static_cast<int>(buffer_data.size()),
-                                         1.0, xstart);
+        if (!has_data) {
+            if (auto res = _data_bag->get("buffer"); res) {
+                if (auto buf_ptr = get_as<MediatedAudioBufferPtr>(*res)) {
+                    auto buffer = *buf_ptr;
+                    if (buffer && buffer->try_lock()) {
+                        auto buffer_data = buffer->data();
+                        if (!buffer_data.empty()) {
+                            double xstart = -static_cast<double>(buffer_data.size());
+                            ImPlot::PlotLine(label.c_str(), buffer_data.data(),
+                                             static_cast<int>(buffer_data.size()),
+                                             1.0, xstart);
+                            has_data = true;
+                        }
+                        buffer->unlock();
                     }
-                    buffer->unlock();
                 }
             }
+        }
+
+        if (!has_data) {
+            return Err("implot.line '" + label + "': no data found (expected 'data' list or 'buffer' audio buffer)");
         }
 
         return Ok();

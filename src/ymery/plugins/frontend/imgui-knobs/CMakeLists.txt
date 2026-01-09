@@ -1,6 +1,6 @@
 # imgui-knobs plugin - Rotary knob controls
 add_library(imgui_knobs_plugin SHARED main.cpp)
-target_link_libraries(imgui_knobs_plugin PRIVATE ymery_lib imgui_knobs)
+target_link_libraries(imgui_knobs_plugin PRIVATE ymery_lib)
 target_include_directories(imgui_knobs_plugin PRIVATE
     ${CMAKE_SOURCE_DIR}/src
     ${imgui_knobs_SOURCE_DIR}

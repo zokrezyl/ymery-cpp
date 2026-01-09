@@ -87,6 +87,30 @@
       border-color: #3282b8;
     }
 
+    .run-btn {
+      padding: 8px 20px;
+      border-radius: 6px;
+      border: none;
+      background: linear-gradient(135deg, #0f4c75 0%, #3282b8 100%);
+      color: #fff;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+
+    .run-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(50, 130, 184, 0.4);
+    }
+
+    .run-btn:disabled {
+      background: #444;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
     .github-link {
       color: #aaa;
       text-decoration: none;
@@ -270,6 +294,7 @@
         <select id="demo-select">
           <option value="">-- Select Demo --</option>
         </select>
+        <button id="run-btn" class="run-btn" onclick="runDemo()">Run</button>
       </div>
       <a href="https://github.com/zokrezyl/ymery-cpp" class="github-link" target="_blank">
         <svg height="20" viewBox="0 0 16 16" width="20" fill="currentColor">
@@ -343,14 +368,22 @@
     }
 
     document.getElementById('demo-select').addEventListener('change', function(e) {
-      if (e.target.value && e.target.value !== currentDemo) {
-        currentDemo = e.target.value;
-        // Reload the page with the new demo
-        const url = new URL(window.location);
-        url.searchParams.set('demo', currentDemo);
-        window.location.href = url.toString();
-      }
+      currentDemo = e.target.value;
+      // Enable/disable run button based on selection
+      document.getElementById('run-btn').disabled = !currentDemo;
     });
+
+    function runDemo() {
+      var demo = document.getElementById('demo-select').value;
+      if (!demo) {
+        alert('Please select a demo first');
+        return;
+      }
+      // Reload the page with the new demo
+      const url = new URL(window.location);
+      url.searchParams.set('demo', demo);
+      window.location.href = url.toString();
+    }
 
     // Get demo from URL parameter
     function getDemoFromURL() {
@@ -433,7 +466,7 @@
       arguments: (function() {
         var demo = getDemoFromURL();
         if (demo) {
-          return ['-m', '/demo/layouts/' + demo + '/app.yaml'];
+          return ['-p', '/demo/layouts', '-m', '/demo/layouts/' + demo + '/app.yaml'];
         }
         return [];
       })()
@@ -450,15 +483,35 @@
       };
     };
 
+    // Check if we should run the app
+    var demoFromURL = getDemoFromURL();
+    var shouldRunApp = !!demoFromURL;
+
     // Load demos list on page load
     loadDemos().then(() => {
       // Set selector to current demo from URL
-      var demo = getDemoFromURL();
-      if (demo) {
-        document.getElementById('demo-select').value = demo;
-        currentDemo = demo;
+      if (demoFromURL) {
+        document.getElementById('demo-select').value = demoFromURL;
+        currentDemo = demoFromURL;
+        document.getElementById('run-btn').disabled = false;
+      } else {
+        document.getElementById('run-btn').disabled = true;
+        // Hide loading overlay and show welcome message
+        loadingOverlay.classList.add('hidden');
+        statusElement.innerHTML = 'Select a demo and click Run';
       }
     });
+
+    // Only load the wasm module if a demo is specified
+    if (!shouldRunApp) {
+      // Override Module to prevent auto-loading
+      var Module = {
+        noInitialRun: true,
+        print: function() {},
+        printErr: function() {},
+        setStatus: function() {}
+      };
+    }
   </script>
   {{{ SCRIPT }}}
 </body>
