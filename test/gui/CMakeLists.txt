@@ -56,6 +56,13 @@ target_link_libraries(ymery_lib PUBLIC imgui_test_engine)
 # Test layouts directory
 set(TEST_LAYOUTS_DIR ${CMAKE_SOURCE_DIR}/test/layouts)
 
+# Embedded plugin sources needed for tests that use ymery_lib
+set(EMBEDDED_PLUGIN_SOURCES
+    ${CMAKE_SOURCE_DIR}/src/ymery/plugins/frontend/imgui/main.cpp
+    ${CMAKE_SOURCE_DIR}/src/ymery/plugins/backend/data-tree.cpp
+    ${CMAKE_SOURCE_DIR}/src/ymery/plugins/backend/simple-data-tree.cpp
+)
+
 # GUI test executable
 add_executable(gui_test
     gui_test_main.cpp
@@ -63,6 +70,7 @@ add_executable(gui_test
     basic_widget_tests.cpp
     filesystem_tests.cpp
     ${CMAKE_SOURCE_DIR}/src/ymery/plugins/backend/filesystem/common.cpp
+    ${EMBEDDED_PLUGIN_SOURCES}
 )
 
 target_link_libraries(gui_test PRIVATE
@@ -77,6 +85,7 @@ target_include_directories(gui_test PRIVATE
 
 target_compile_definitions(gui_test PRIVATE
     TEST_LAYOUTS_DIR="${TEST_LAYOUTS_DIR}"
+    YMERY_EMBEDDED_PLUGINS=1
 )
 
 # Register as a test

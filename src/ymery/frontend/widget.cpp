@@ -1,7 +1,7 @@
 #include "widget.hpp"
 #include "widget_factory.hpp"
 #include <imgui.h>
-#include <spdlog/spdlog.h>
+#include <ytrace/ytrace.hpp>
 
 namespace ymery {
 
@@ -116,7 +116,7 @@ Result<void> Widget::render() {
 void Widget::_handle_error(const Result<void>& result) {
     if (!result) {
         std::string err_str = result.error().to_string();
-        spdlog::error("Widget error: {}", err_str);
+        ywarn("Widget error: {}", err_str);
         _error_messages.push_back(err_str);
     }
 }

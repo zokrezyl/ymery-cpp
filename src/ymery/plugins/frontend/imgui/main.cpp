@@ -245,6 +245,16 @@ public:
 
 } // namespace ymery::plugins
 
+// For dynamic loading (native builds with dlopen)
+#ifndef YMERY_EMBEDDED_PLUGINS
 extern "C" void* create() {
     return static_cast<void*>(new ymery::plugins::ImguiPlugin());
+}
+#endif
+
+// For embedded linking - returns Plugin pointer directly
+namespace ymery::embedded {
+    Plugin* create_imgui_plugin() {
+        return new ymery::plugins::ImguiPlugin();
+    }
 }

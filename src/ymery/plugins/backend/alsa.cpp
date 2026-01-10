@@ -8,7 +8,7 @@
 #include <vector>
 #include <string>
 #include <alsa/asoundlib.h>
-#include <spdlog/spdlog.h>
+#include <ytrace/ytrace.hpp>
 
 // Forward declarations for plugin create signature
 namespace ymery { class Dispatcher; class PluginManager; }
@@ -127,7 +127,7 @@ public:
         device->_interleaved_buffer.resize(period_size * num_channels * sample_bytes);
         device->_channel_buffer.resize(period_size);
 
-        spdlog::debug("AlsaDevice: opened {} with {} channels at {}Hz, period={}",
+        ydebug("AlsaDevice: opened {} with {} channels at {}Hz, period={}",
                      device_name, num_channels, device->_sample_rate, device->_period_size);
 
         return device;
@@ -138,7 +138,7 @@ public:
 
         int err = snd_pcm_prepare(_pcm);
         if (err < 0) {
-            spdlog::error("AlsaDevice: prepare failed: {}", snd_strerror(err));
+            ywarn("AlsaDevice: prepare failed: {}", snd_strerror(err));
             return;
         }
 
@@ -183,11 +183,11 @@ private:
             if (frames < 0) {
                 // Handle xrun (buffer overrun)
                 if (frames == -EPIPE) {
-                    spdlog::warn("AlsaDevice: buffer overrun, recovering...");
+                    ywarn("AlsaDevice: buffer overrun, recovering...");
                     snd_pcm_prepare(_pcm);
                     continue;
                 }
-                spdlog::error("AlsaDevice: read error: {}", snd_strerror(frames));
+                ywarn("AlsaDevice: read error: {}", snd_strerror(frames));
                 continue;
             }
 

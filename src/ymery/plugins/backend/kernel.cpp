@@ -7,7 +7,7 @@
 #include <vector>
 #include <string>
 #include <memory>
-#include <spdlog/spdlog.h>
+#include <ytrace/ytrace.hpp>
 
 namespace ymery::plugins {
 
@@ -176,14 +176,14 @@ public:
         if (!windows_res) return Err<void>("Kernel: failed to create RegisteredObjectsManager", windows_res);
         _windows_manager = *windows_res;
 
-        spdlog::debug("Kernel: initialized (dispatcher={}, plugin_manager={})",
+        ydebug("Kernel: initialized (dispatcher={}, plugin_manager={})",
             _dispatcher ? "yes" : "no", _plugin_manager ? "yes" : "no");
 
         // Log available providers at startup
         auto providers = get_available_providers();
-        spdlog::debug("Kernel: available providers: {}", providers.size());
+        ydebug("Kernel: available providers: {}", providers.size());
         for (const auto& p : providers) {
-            spdlog::debug("Kernel:   - {}", p);
+            ydebug("Kernel:   - {}", p);
         }
 
         return Ok();
@@ -202,11 +202,11 @@ public:
 
     Result<std::vector<std::string>> get_children_names(const DataPath& path) override {
         std::string path_str = path.to_string();
-        spdlog::debug("Kernel::get_children_names: path='{}'", path_str);
+        ydebug("Kernel::get_children_names: path='{}'", path_str);
 
         // Root
         if (path_str == "/" || path_str.empty()) {
-            spdlog::debug("Kernel::get_children_names: returning root children");
+            ydebug("Kernel::get_children_names: returning root children");
             return Ok(std::vector<std::string>{"providers", "settings", "windows"});
         }
 
@@ -215,7 +215,7 @@ public:
 
         std::string branch = parts[0];
         DataPath remaining(std::vector<std::string>(parts.begin() + 1, parts.end()));
-        spdlog::debug("Kernel::get_children_names: branch='{}', remaining='{}'", branch, remaining.to_string());
+        ydebug("Kernel::get_children_names: branch='{}', remaining='{}'", branch, remaining.to_string());
 
         if (branch == "providers") {
             return _providers_proxy->get_children_names(remaining);
@@ -301,7 +301,7 @@ public:
 
         // Delegate to sub-managers
         if (branch == "providers") {
-            spdlog::debug("Kernel::get: providers path='{}', remaining='{}'", path_str, remaining.to_string());
+            ydebug("Kernel::get: providers path='{}', remaining='{}'", path_str, remaining.to_string());
             return _providers_proxy->get(remaining);
         } else if (branch == "settings") {
             return _settings_manager->get(remaining);
@@ -403,7 +403,7 @@ public:
         }
 
         _providers[provider_name] = *tree_res;
-        spdlog::debug("Kernel: loaded provider '{}'", provider_name);
+        ydebug("Kernel: loaded provider '{}'", provider_name);
         return Ok(*tree_res);
     }
 

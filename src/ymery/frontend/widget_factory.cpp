@@ -1,7 +1,7 @@
 #include "widget_factory.hpp"
 #include "composite.hpp"
 #include "../plugin_manager.hpp"
-#include <spdlog/spdlog.h>
+#include <ytrace/ytrace.hpp>
 
 namespace ymery {
 
@@ -30,7 +30,7 @@ Result<void> WidgetFactory::init() {
 }
 
 void WidgetFactory::dispose() {
-    spdlog::debug("WidgetFactory::dispose");
+    ydebug("WidgetFactory::dispose");
 
     // Clear widget cache first
     _widget_cache.clear();
@@ -52,7 +52,7 @@ Result<WidgetPtr> WidgetFactory::create_widget(
 ) {
     // Check if spec is a List - create Composite widget
     if (auto spec_list = get_as<List>(spec)) {
-        spdlog::debug("Creating Composite for list of {} widgets", spec_list->size());
+        ydebug("Creating Composite for list of {} widgets", spec_list->size());
 
         // Create a data bag with the body list as statics
         Dict statics;
@@ -91,7 +91,7 @@ Result<WidgetPtr> WidgetFactory::create_widget(
     }
 
     auto [widget_name, inline_props] = *parse_res;
-    spdlog::debug("Creating widget: {}", widget_name);
+    ydebug("Creating widget: {}", widget_name);
 
     // Check if widget is defined in YAML first (before checking plugins)
     const auto& yaml_defs = _lang->widget_definitions();
@@ -149,12 +149,12 @@ Result<WidgetPtr> WidgetFactory::create_widget(
 
     // Handle built-in types first
     if (base_type == "composite") {
-        spdlog::debug("Creating built-in Composite widget with namespace '{}'", child_namespace);
+        ydebug("Creating built-in Composite widget with namespace '{}'", child_namespace);
         return Composite::create(shared_from_this(), _dispatcher, child_namespace, data_bag);
     }
 
     // Create widget from plugin manager - let it fail if widget type unknown
-    spdlog::debug("Creating widget type '{}' from plugin manager", widget_type);
+    ydebug("Creating widget type '{}' from plugin manager", widget_type);
     auto res = _plugin_manager->create_widget(
         widget_type,
         shared_from_this(),
@@ -169,13 +169,13 @@ Result<WidgetPtr> WidgetFactory::create_widget(
 }
 
 Result<WidgetPtr> WidgetFactory::create_root_widget() {
-    spdlog::debug("WidgetFactory::create_root_widget");
+    ydebug("WidgetFactory::create_root_widget");
     const Dict& app_config = _lang->app_config();
-    spdlog::debug("App config has {} keys", app_config.size());
+    ydebug("App config has {} keys", app_config.size());
 
     // Debug: print all keys in app_config
     for (const auto& [key, val] : app_config) {
-        spdlog::debug("App config key: '{}'", key);
+        ydebug("App config key: '{}'", key);
     }
 
     // Simple data trees map with just the main data tree
@@ -188,7 +188,7 @@ Result<WidgetPtr> WidgetFactory::create_root_widget() {
     if (widget_it != app_config.end()) {
         if (auto name = get_as<std::string>(widget_it->second)) {
             widget_name = *name;
-            spdlog::debug("Found 'root-widget' in app config: {}", widget_name);
+            ydebug("Found 'root-widget' in app config: {}", widget_name);
         }
     }
 
@@ -196,7 +196,7 @@ Result<WidgetPtr> WidgetFactory::create_root_widget() {
     if (widget_name.empty()) {
         auto body_it = app_config.find("body");
         if (body_it != app_config.end()) {
-            spdlog::debug("Found 'body' in app config (fallback)");
+            ydebug("Found 'body' in app config (fallback)");
             // Create root data bag
             auto root_data_bag_res = DataBag::create(
                 _dispatcher,
@@ -285,7 +285,7 @@ Result<std::pair<std::string, Dict>> WidgetFactory::_parse_widget_spec(
         auto dp_it = spec_dict->find("data-path");
         if (dp_it != spec_dict->end()) {
             inline_props["data-path"] = dp_it->second;
-            spdlog::debug("_parse_widget_spec: found sibling data-path for '{}'", name);
+            ydebug("_parse_widget_spec: found sibling data-path for '{}'", name);
         }
 
         return Ok(std::make_pair(name, inline_props));
@@ -310,7 +310,7 @@ Result<Dict> WidgetFactory::_resolve_widget_definition(const std::string& full_n
     if (_plugin_manager->has_widget(full_name)) {
         Dict def;
         def["type"] = full_name;  // Keep full name for routing
-        spdlog::debug("WidgetFactory::_resolve_widget_definition: using plugin widget '{}'", full_name);
+        ydebug("WidgetFactory::_resolve_widget_definition: using plugin widget '{}'", full_name);
         return Ok(def);
     }
 
@@ -321,7 +321,7 @@ Result<Dict> WidgetFactory::_resolve_widget_definition(const std::string& full_n
         if (_plugin_manager->has_widget(widget_name)) {
             Dict def;
             def["type"] = widget_name;
-            spdlog::debug("WidgetFactory::_resolve_widget_definition: using legacy plugin widget '{}' directly", widget_name);
+            ydebug("WidgetFactory::_resolve_widget_definition: using legacy plugin widget '{}' directly", widget_name);
             return Ok(def);
         }
     }
@@ -341,7 +341,7 @@ Result<std::shared_ptr<DataBag>> WidgetFactory::_create_data_bag(
         if (!keys_str.empty()) keys_str += ", ";
         keys_str += k;
     }
-    spdlog::debug("_create_data_bag: widget_def keys=[{}]", keys_str);
+    ydebug("_create_data_bag: widget_def keys=[{}]", keys_str);
 
     // Create statics from widget definition (excluding data-path)
     Dict statics;
@@ -374,7 +374,7 @@ Result<std::shared_ptr<DataBag>> WidgetFactory::_create_data_bag(
         if (dp_it != widget_def.end()) {
             if (auto path_str = get_as<std::string>(dp_it->second)) {
                 data_path_spec = *path_str;
-                spdlog::debug("_create_data_bag: inheriting with data-path='{}'", data_path_spec);
+                ydebug("_create_data_bag: inheriting with data-path='{}'", data_path_spec);
             }
         }
 

@@ -3,7 +3,7 @@
 #include "docking-common.hpp"
 #include <imgui.h>
 #include <imgui_internal.h>
-#include <spdlog/spdlog.h>
+#include <ytrace/ytrace.hpp>
 #include <vector>
 #include <map>
 
@@ -151,7 +151,7 @@ private:
                 }
             }
 
-            spdlog::debug("HelloImguiMainWindow: child widget_type = '{}'", widget_type);
+            ydebug("HelloImguiMainWindow: child widget_type = '{}'", widget_type);
 
             if (widget_type == "hello-imgui-menu" || widget_type == "hello-imgui-app-menu-items" ||
                 widget_type == "menu-bar" || widget_type == "main-menu-bar") {
@@ -184,7 +184,7 @@ private:
                 else if (dir_str == "up") split.direction = ImGuiDir_Up;
                 else split.direction = ImGuiDir_Down;
 
-                spdlog::debug("HelloImguiMainWindow: split initial='{}' new='{}' ratio={}",
+                ydebug("HelloImguiMainWindow: split initial='{}' new='{}' ratio={}",
                     split.initial_dock, split.new_dock, split.ratio);
                 _splits.push_back(split);
             }
@@ -201,7 +201,7 @@ private:
                 }
                 dw.widget = child;
 
-                spdlog::debug("HelloImguiMainWindow: dockable-window label='{}' dock='{}'",
+                ydebug("HelloImguiMainWindow: dockable-window label='{}' dock='{}'",
                     dw.label, dw.dock_space_name);
                 _dockable_windows.push_back(dw);
             }
@@ -210,7 +210,7 @@ private:
             }
         }
 
-        spdlog::debug("HelloImguiMainWindow: {} splits, {} dockable_windows, {} menus, {} regular",
+        ydebug("HelloImguiMainWindow: {} splits, {} dockable_windows, {} menus, {} regular",
             _splits.size(), _dockable_windows.size(), _menu_widgets.size(), _regular_widgets.size());
     }
 };

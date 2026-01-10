@@ -1,7 +1,7 @@
 #include "composite.hpp"
 #include "widget_factory.hpp"
 #include <imgui.h>
-#include <spdlog/spdlog.h>
+#include <ytrace/ytrace.hpp>
 
 namespace ymery {
 
@@ -22,11 +22,11 @@ Result<std::shared_ptr<Composite>> Composite::create(
         auto body_res = data_bag->get_static("body");
         if (body_res && body_res->has_value()) {
             if (auto body_list = get_as<List>(*body_res)) {
-                spdlog::debug("Composite::create: body has {} items", body_list->size());
+                ydebug("Composite::create: body has {} items", body_list->size());
                 for (const auto& item : *body_list) {
                     if (auto dict = get_as<Dict>(item)) {
                         for (const auto& [k, v] : *dict) {
-                            spdlog::debug("  body item key: '{}'", k);
+                            ydebug("  body item key: '{}'", k);
                         }
                     }
                 }
@@ -138,14 +138,14 @@ Result<void> Composite::_ensure_children() {
     // Get body spec from statics
     auto body_res = _data_bag->get_static("body");
     if (!body_res) {
-        spdlog::debug("No 'body' static found");
+        ydebug("No 'body' static found");
         _children_initialized = true;
         return Ok();
     }
 
     auto body_val = *body_res;
     if (!body_val.has_value()) {
-        spdlog::debug("'body' has no value");
+        ydebug("'body' has no value");
         _children_initialized = true;
         return Ok();
     }
@@ -156,14 +156,14 @@ Result<void> Composite::_ensure_children() {
         body_list = *children_list;
     } else if (auto body_str = get_as<std::string>(body_val)) {
         // Body is a string - convert to single-item list
-        spdlog::debug("Composite: body is string '{}', converting to list", *body_str);
+        ydebug("Composite: body is string '{}', converting to list", *body_str);
         body_list.push_back(body_val);
     } else if (auto body_dict = get_as<Dict>(body_val)) {
         // Body is a dict - convert to single-item list
-        spdlog::debug("Composite: body is dict, converting to list");
+        ydebug("Composite: body is dict, converting to list");
         body_list.push_back(body_val);
     } else {
-        spdlog::warn("'body' is not a list, string, or dict");
+        ywarn("'body' is not a list, string, or dict");
         _children_initialized = true;
         return Ok();
     }
@@ -191,7 +191,7 @@ Result<void> Composite::_ensure_children() {
         auto children_res = _data_bag->get_children_names();
         if (!children_res) {
             // Error getting children - keep existing widgets to preserve state
-            spdlog::debug("Composite: get_children_names failed, keeping existing widgets");
+            ydebug("Composite: get_children_names failed, keeping existing widgets");
             return Ok();
         }
         auto current_names = *children_res;
@@ -200,7 +200,7 @@ Result<void> Composite::_ensure_children() {
             // No change - keep existing widgets
             return Ok();
         }
-        spdlog::debug("Composite: foreach-child data changed, rebuilding ({} -> {} children)",
+        ydebug("Composite: foreach-child data changed, rebuilding ({} -> {} children)",
                      _foreach_child_names.size(), current_names.size());
         // Data changed - clear and rebuild
         for (auto& child : _children) {
@@ -210,31 +210,31 @@ Result<void> Composite::_ensure_children() {
         _foreach_child_names.clear();
     }
 
-    spdlog::debug("Composite::_ensure_children: {} body specs, has_foreach_child={}", children_list->size(), has_foreach_child);
+    ydebug("Composite::_ensure_children: {} body specs, has_foreach_child={}", children_list->size(), has_foreach_child);
 
     // Create each child widget
     for (const auto& child_spec : *children_list) {
         // Check for foreach-child
         if (auto dict = get_as<Dict>(child_spec)) {
-            spdlog::debug("Composite: body item is dict with {} keys", dict->size());
+            ydebug("Composite: body item is dict with {} keys", dict->size());
             for (const auto& [k, v] : *dict) {
-                spdlog::debug("  key: '{}'", k);
+                ydebug("  key: '{}'", k);
             }
             auto foreach_it = dict->find("foreach-child");
             if (foreach_it != dict->end()) {
-                spdlog::debug("foreach-child: FOUND! Getting children from data bag");
+                ydebug("foreach-child: FOUND! Getting children from data bag");
                 // Get data path for debugging
                 if (auto path_res = _data_bag->get_data_path_str(); path_res) {
-                    spdlog::debug("foreach-child: current data path = '{}'", *path_res);
+                    ydebug("foreach-child: current data path = '{}'", *path_res);
                 }
                 // Get children names from data tree
                 auto children_res = _data_bag->get_children_names();
                 if (!children_res) {
-                    spdlog::warn("foreach-child: failed to get children names: {}", error_msg(children_res));
+                    ywarn("foreach-child: failed to get children names: {}", error_msg(children_res));
                     continue;
                 }
                 auto child_names = *children_res;
-                spdlog::debug("foreach-child: found {} children", child_names.size());
+                ydebug("foreach-child: found {} children", child_names.size());
 
                 // Get the widget spec inside foreach-child
                 auto foreach_val = foreach_it->second;
@@ -252,7 +252,7 @@ Result<void> Composite::_ensure_children() {
 
                 // Create a widget for each child - like Python, add data-path to widget spec
                 for (const auto& child_name : child_names) {
-                    spdlog::debug("foreach-child: creating widget for '{}'", child_name);
+                    ydebug("foreach-child: creating widget for '{}'", child_name);
 
                     // Clone widget_spec and add data-path (like Python composite.py lines 174-187)
                     Value child_spec;
@@ -302,10 +302,10 @@ Result<void> Composite::_ensure_children() {
             continue;
         }
         _children.push_back(*widget_res);
-        spdlog::debug("Composite::_ensure_children: created child widget");
+        ydebug("Composite::_ensure_children: created child widget");
     }
 
-    spdlog::debug("Created {} children", _children.size());
+    ydebug("Created {} children", _children.size());
     _children_initialized = true;
     return Ok();
 }

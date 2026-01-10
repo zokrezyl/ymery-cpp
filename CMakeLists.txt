@@ -97,6 +97,22 @@ CPMAddPackage(
     VERSION 1.14.1
 )
 
+# ytrace - tracing with spdlog backend
+CPMAddPackage(
+    NAME ytrace
+    GITHUB_REPOSITORY zokrezyl/ytrace
+    GIT_TAG main
+    OPTIONS
+        "YTRACE_BUILD_TOOLS ON"
+        "YTRACE_BUILD_EXAMPLES OFF"
+        "YTRACE_ENABLE_YLOG ON"
+        "YTRACE_ENABLE_YTRACE ON"
+        "YTRACE_ENABLE_YDEBUG ON"
+        "YTRACE_ENABLE_YINFO ON"
+        "YTRACE_ENABLE_YWARN ON"
+        "YTRACE_ENABLE_YFUNC ON"
+)
+
 CPMAddPackage(
     NAME yaml-cpp
     GITHUB_REPOSITORY jbeder/yaml-cpp
@@ -247,7 +263,7 @@ if(imgui_ADDED)
     if(YMERY_WEB)
         # Emscripten - use GLFW port and Dawn WebGPU port (emscripten 4.x+)
         target_compile_definitions(imgui PUBLIC YMERY_USE_WEBGPU=1 YMERY_WEB=1)
-        target_compile_options(imgui PUBLIC -sUSE_GLFW=3 --use-port=emdawnwebgpu)
+        target_compile_options(imgui PUBLIC --use-port=contrib.glfw3 --use-port=emdawnwebgpu)
     elseif(YMERY_ANDROID AND YMERY_USE_WEBGPU)
         # Android - WebGPU (wgpu-native)
         target_compile_definitions(imgui PUBLIC YMERY_ANDROID=1 YMERY_USE_WEBGPU=1 IMGUI_IMPL_WEBGPU_BACKEND_WGPU=1)
@@ -539,7 +555,11 @@ endif()
 
 target_include_directories(ymery_lib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${ytrace_SOURCE_DIR}/include
 )
+
+# Enable ytrace with spdlog backend for proper fmt formatting
+target_compile_definitions(ymery_lib PUBLIC YTRACE_USE_SPDLOG=1)
 
 if(YMERY_WEB)
     target_link_libraries(ymery_lib PUBLIC
@@ -642,8 +662,18 @@ endif()
 
 # Main executable (not for Android - needs native activity)
 if(NOT YMERY_ANDROID)
-    add_executable(ymery src/main.cpp)
+    # Include only core embedded plugins (imgui + tree-like backends)
+    # Other plugins (implot, im-anim, etc.) are loaded dynamically as .wasm modules
+    add_executable(ymery
+        src/main.cpp
+        src/ymery/plugins/frontend/imgui/main.cpp
+        src/ymery/plugins/backend/data-tree.cpp
+        src/ymery/plugins/backend/simple-data-tree.cpp
+    )
     target_link_libraries(ymery PRIVATE ymery_lib)
+    target_include_directories(ymery PRIVATE ${CMAKE_SOURCE_DIR}/src)
+    # Define YMERY_EMBEDDED_PLUGINS to exclude extern "C" symbols that would clash
+    target_compile_definitions(ymery PRIVATE YMERY_EMBEDDED_PLUGINS=1)
 
     if(YMERY_WEB)
         # Generate demos.json from demo/layouts directory
@@ -658,14 +688,13 @@ if(NOT YMERY_ANDROID)
         add_custom_target(generate_demos_json ALL DEPENDS ${CMAKE_BINARY_DIR}/demos.json)
 
         # Emscripten linker flags (emscripten 4.x+ uses ports)
-        # MAIN_MODULE=1 enables dlopen for loading plugin .wasm side modules
-        # (MAIN_MODULE=1 exports all symbols including C++ exception handling needed by side modules)
+        # MAIN_MODULE=1 enables dlopen for loading plugin .wasm side modules (exports all symbols)
         # ALLOW_TABLE_GROWTH allows function pointer tables to grow for side module function pointers
         # Preload demo directory and plugins into virtual filesystem
         # Use custom shell template with demo selector
         set_target_properties(ymery PROPERTIES
             SUFFIX ".html"
-            LINK_FLAGS "-sUSE_GLFW=3 --use-port=emdawnwebgpu -sWASM=1 -sALLOW_MEMORY_GROWTH=1 -sALLOW_TABLE_GROWTH=1 -sNO_EXIT_RUNTIME=0 -sASSERTIONS=1 -sASYNCIFY -sASYNCIFY_STACK_SIZE=1048576 -fexceptions -sMAIN_MODULE=1 -sEMULATE_FUNCTION_POINTER_CASTS=1 --preload-file ${CMAKE_SOURCE_DIR}/demo@/demo --preload-file ${CMAKE_BINARY_DIR}/plugins@/plugins --shell-file ${CMAKE_SOURCE_DIR}/build-tools/web/shell.html"
+            LINK_FLAGS "--use-port=contrib.glfw3 --use-port=emdawnwebgpu -sWASM=1 -sMAIN_MODULE=1 -sALLOW_MEMORY_GROWTH=1 -sALLOW_TABLE_GROWTH=1 -sNO_EXIT_RUNTIME=0 -sASSERTIONS=1 -sASYNCIFY -sASYNCIFY_STACK_SIZE=1048576 -fexceptions --preload-file ${CMAKE_SOURCE_DIR}/demo@/demo --preload-file ${CMAKE_BINARY_DIR}/plugins@/plugins --shell-file ${CMAKE_SOURCE_DIR}/build-tools/web/shell.html"
         )
         target_compile_definitions(ymery PRIVATE YMERY_WEB=1)
         add_dependencies(ymery generate_demos_json)
@@ -684,7 +713,11 @@ if(NOT YMERY_WEB AND NOT YMERY_ANDROID)
         src/ymery/editor/widget_tree.cpp
         src/ymery/editor/layout_model.cpp
         src/ymery/editor/editor_canvas.cpp
+        src/ymery/plugins/frontend/imgui/main.cpp
+        src/ymery/plugins/backend/data-tree.cpp
+        src/ymery/plugins/backend/simple-data-tree.cpp
     )
+    target_compile_definitions(ymery-editor PRIVATE YMERY_EMBEDDED_PLUGINS=1)
     target_include_directories(ymery-editor PRIVATE
         ${CMAKE_SOURCE_DIR}/src
         ${CMAKE_SOURCE_DIR}/third_party/imgui

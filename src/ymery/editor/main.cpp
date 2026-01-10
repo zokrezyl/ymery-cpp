@@ -1,5 +1,5 @@
 #include "editor_app.hpp"
-#include <spdlog/spdlog.h>
+#include <ytrace/ytrace.hpp>
 #include <iostream>
 #include <string>
 #include <filesystem>
@@ -40,17 +40,16 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    spdlog::set_level(spdlog::level::info);
-    spdlog::info("Starting Ymery Widget Editor");
+    yinfo("Starting Ymery Widget Editor");
 
     auto app = ymery::editor::EditorApp::create(config);
     if (!app) {
-        spdlog::error("Failed to create editor application");
+        ywarn("Failed to create editor application");
         return 1;
     }
 
     app->run();
 
-    spdlog::info("Ymery Widget Editor exiting");
+    yinfo("Ymery Widget Editor exiting");
     return 0;
 }

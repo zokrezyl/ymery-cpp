@@ -25,7 +25,7 @@
 #include <GLFW/glfw3.h>
 #endif
 
-#include <spdlog/spdlog.h>
+#include <ytrace/ytrace.hpp>
 
 #if defined(YMERY_USE_WEBGPU) && !defined(YMERY_ANDROID)
 #ifdef __APPLE__
@@ -86,12 +86,12 @@ static WGPUTextureFormat s_wgpu_preferred_format = WGPUTextureFormat_BGRA8Unorm;
 
 static void wgpu_error_callback(WGPUDevice const* device, WGPUErrorType type, WGPUStringView message, void* userdata1, void* userdata2) {
     std::string msg(message.data, message.length);
-    spdlog::error("WebGPU Error ({}): {}", static_cast<int>(type), msg);
+    ywarn("WebGPU Error ({}): {}", static_cast<int>(type), msg);
 }
 
 static void wgpu_device_lost_callback(WGPUDevice const* device, WGPUDeviceLostReason reason, WGPUStringView message, void* userdata1, void* userdata2) {
     std::string msg(message.data, message.length);
-    spdlog::error("WebGPU Device Lost ({}): {}", static_cast<int>(reason), msg);
+    ywarn("WebGPU Device Lost ({}): {}", static_cast<int>(reason), msg);
 }
 
 static void configure_wgpu_surface(int width, int height) {
@@ -112,7 +112,7 @@ static void configure_wgpu_surface(int width, int height) {
 #endif
 
 static void glfw_error_callback(int error, const char* description) {
-    spdlog::error("GLFW Error {}: {}", error, description);
+    ywarn("GLFW Error {}: {}", error, description);
 }
 #endif // !YMERY_ANDROID
 
@@ -146,7 +146,7 @@ EditorApp::~EditorApp() {
 }
 
 bool EditorApp::init(const EditorConfig& config) {
-    spdlog::debug("EditorApp::init starting");
+    ydebug("EditorApp::init starting");
 
 #ifdef YMERY_ANDROID
     // Android/EGL initialization
@@ -246,7 +246,7 @@ bool EditorApp::init(const EditorConfig& config) {
     glfwSetErrorCallback(glfw_error_callback);
 
     if (!glfwInit()) {
-        spdlog::error("glfwInit failed");
+        ywarn("glfwInit failed");
         return false;
     }
 
@@ -264,7 +264,7 @@ bool EditorApp::init(const EditorConfig& config) {
 
     if (!_window) {
         glfwTerminate();
-        spdlog::error("glfwCreateWindow failed");
+        ywarn("glfwCreateWindow failed");
         return false;
     }
 
@@ -272,7 +272,7 @@ bool EditorApp::init(const EditorConfig& config) {
     WGPUInstanceDescriptor instance_desc = {};
     s_wgpu_instance = wgpuCreateInstance(&instance_desc);
     if (!s_wgpu_instance) {
-        spdlog::error("wgpuCreateInstance failed");
+        ywarn("wgpuCreateInstance failed");
         return false;
     }
 
@@ -318,7 +318,7 @@ bool EditorApp::init(const EditorConfig& config) {
 
     s_wgpu_surface = wgpuInstanceCreateSurface(s_wgpu_instance, &surface_desc);
     if (!s_wgpu_surface) {
-        spdlog::error("wgpuInstanceCreateSurface failed");
+        ywarn("wgpuInstanceCreateSurface failed");
         return false;
     }
 
@@ -340,7 +340,7 @@ bool EditorApp::init(const EditorConfig& config) {
             data->adapter = adapter;
         } else {
             std::string msg(message.data, message.length);
-            spdlog::error("Failed to get WebGPU adapter: {}", msg);
+            ywarn("Failed to get WebGPU adapter: {}", msg);
         }
         data->done = true;
     };
@@ -351,7 +351,7 @@ bool EditorApp::init(const EditorConfig& config) {
 
     s_wgpu_adapter = adapter_data.adapter;
     if (!s_wgpu_adapter) {
-        spdlog::error("Failed to get WebGPU adapter");
+        ywarn("Failed to get WebGPU adapter");
         return false;
     }
 
@@ -373,7 +373,7 @@ bool EditorApp::init(const EditorConfig& config) {
             data->device = device;
         } else {
             std::string msg(message.data, message.length);
-            spdlog::error("Failed to get WebGPU device: {}", msg);
+            ywarn("Failed to get WebGPU device: {}", msg);
         }
         data->done = true;
     };
@@ -384,7 +384,7 @@ bool EditorApp::init(const EditorConfig& config) {
 
     s_wgpu_device = device_data.device;
     if (!s_wgpu_device) {
-        spdlog::error("Failed to get WebGPU device");
+        ywarn("Failed to get WebGPU device");
         return false;
     }
 
@@ -434,7 +434,7 @@ bool EditorApp::init(const EditorConfig& config) {
 
     if (!_window) {
         glfwTerminate();
-        spdlog::error("glfwCreateWindow failed");
+        ywarn("glfwCreateWindow failed");
         return false;
     }
 
@@ -460,9 +460,9 @@ bool EditorApp::init(const EditorConfig& config) {
         auto pm_res = ymery::PluginManager::create(config.plugins_path);
         if (pm_res) {
             _plugin_manager = *pm_res;
-            spdlog::debug("Plugin manager created with path: {}", config.plugins_path);
+            ydebug("Plugin manager created with path: {}", config.plugins_path);
         } else {
-            spdlog::warn("Failed to create plugin manager: {}", ymery::error_msg(pm_res));
+            ywarn("Failed to create plugin manager: {}", ymery::error_msg(pm_res));
         }
     }
 
@@ -470,7 +470,7 @@ bool EditorApp::init(const EditorConfig& config) {
     _widget_tree = std::make_unique<WidgetTree>();
     _canvas = std::make_unique<EditorCanvas>(_model, *_widget_tree, _plugin_manager);
 
-    spdlog::debug("EditorApp initialized successfully");
+    ydebug("EditorApp initialized successfully");
     return true;
 }
 
@@ -522,13 +522,13 @@ void EditorApp::dispose() {
 }
 
 void EditorApp::run() {
-    spdlog::debug("EditorApp::run starting main loop");
+    ydebug("EditorApp::run starting main loop");
 
     while (!_should_close) {
         frame();
     }
 
-    spdlog::debug("EditorApp::run exiting");
+    ydebug("EditorApp::run exiting");
 }
 
 void EditorApp::frame() {
@@ -590,7 +590,7 @@ void EditorApp::end_frame() {
     wgpuSurfaceGetCurrentTexture(s_wgpu_surface, &surface_texture);
     if (surface_texture.status != WGPUSurfaceGetCurrentTextureStatus_SuccessOptimal &&
         surface_texture.status != WGPUSurfaceGetCurrentTextureStatus_SuccessSuboptimal) {
-        spdlog::error("Failed to get surface texture");
+        ywarn("Failed to get surface texture");
         return;
     }
 
@@ -654,7 +654,7 @@ void EditorApp::render_menu_bar() {
             ImGui::Separator();
             if (ImGui::MenuItem("Export YAML...")) {
                 std::string yaml = _model.to_yaml();
-                spdlog::debug("Generated YAML:\n{}", yaml);
+                ydebug("Generated YAML:\n{}", yaml);
                 // TODO: Save dialog
             }
             ImGui::Separator();
@@ -706,40 +706,40 @@ void EditorApp::render_dockspace() {
 
     // Create the dockspace
     ImGuiID dockspace_id = ImGui::GetID("EditorDockSpace");
-    spdlog::debug("EDITOR: DockSpace dockspace_id={}", dockspace_id);
+    ydebug("EDITOR: DockSpace dockspace_id={}", dockspace_id);
     ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
 
     // First time setup: create default layout
     static bool first_time = true;
-    spdlog::debug("EDITOR: first_time={}", first_time);
+    ydebug("EDITOR: first_time={}", first_time);
     if (first_time) {
         first_time = false;
 
-        spdlog::debug("EDITOR: DockBuilderRemoveNode({})", dockspace_id);
+        ydebug("EDITOR: DockBuilderRemoveNode({})", dockspace_id);
         ImGui::DockBuilderRemoveNode(dockspace_id);
-        spdlog::debug("EDITOR: DockBuilderAddNode({})", dockspace_id);
+        ydebug("EDITOR: DockBuilderAddNode({})", dockspace_id);
         ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_None);
-        spdlog::debug("EDITOR: DockBuilderSetNodeSize({}, {}x{})", dockspace_id, viewport->WorkSize.x, viewport->WorkSize.y);
+        ydebug("EDITOR: DockBuilderSetNodeSize({}, {}x{})", dockspace_id, viewport->WorkSize.x, viewport->WorkSize.y);
         ImGui::DockBuilderSetNodeSize(dockspace_id, viewport->WorkSize);
 
         // Split into left and right
         ImGuiID dock_left, dock_right;
         ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Left, 0.25f, &dock_left, &dock_right);
-        spdlog::debug("EDITOR: SplitNode({}, Left, 0.25) -> dock_left={}, dock_right={}", dockspace_id, dock_left, dock_right);
+        ydebug("EDITOR: SplitNode({}, Left, 0.25) -> dock_left={}, dock_right={}", dockspace_id, dock_left, dock_right);
 
         // Split right into top (Layout View) and bottom (Preview)
         ImGuiID dock_right_top, dock_right_bottom;
         ImGui::DockBuilderSplitNode(dock_right, ImGuiDir_Up, 0.5f, &dock_right_top, &dock_right_bottom);
-        spdlog::debug("EDITOR: SplitNode({}, Up, 0.5) -> dock_right_top={}, dock_right_bottom={}", dock_right, dock_right_top, dock_right_bottom);
+        ydebug("EDITOR: SplitNode({}, Up, 0.5) -> dock_right_top={}, dock_right_bottom={}", dock_right, dock_right_top, dock_right_bottom);
 
-        spdlog::debug("EDITOR: DockBuilderDockWindow('Widget Browser', {})", dock_left);
+        ydebug("EDITOR: DockBuilderDockWindow('Widget Browser', {})", dock_left);
         ImGui::DockBuilderDockWindow("Widget Browser", dock_left);
-        spdlog::debug("EDITOR: DockBuilderDockWindow('Layout View', {})", dock_right_top);
+        ydebug("EDITOR: DockBuilderDockWindow('Layout View', {})", dock_right_top);
         ImGui::DockBuilderDockWindow("Layout View", dock_right_top);
-        spdlog::debug("EDITOR: DockBuilderDockWindow('Preview', {})", dock_right_bottom);
+        ydebug("EDITOR: DockBuilderDockWindow('Preview', {})", dock_right_bottom);
         ImGui::DockBuilderDockWindow("Preview", dock_right_bottom);
 
-        spdlog::debug("EDITOR: DockBuilderFinish({})", dockspace_id);
+        ydebug("EDITOR: DockBuilderFinish({})", dockspace_id);
         ImGui::DockBuilderFinish(dockspace_id);
     }
 

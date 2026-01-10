@@ -15,7 +15,7 @@
 #include <emscripten/html5.h>
 #include <webgpu/webgpu.h>
 
-#include <spdlog/spdlog.h>
+#include <ytrace/ytrace.hpp>
 
 namespace ymery {
 
@@ -24,16 +24,16 @@ static WebApp* g_web_app = nullptr;
 
 // GLFW error callback
 static void glfw_error_callback(int error, const char* description) {
-    spdlog::error("GLFW Error {}: {}", error, description);
+    ywarn("GLFW Error {}: {}", error, description);
 }
 
 // WebGPU error callback
 static void wgpu_error_callback(WGPUErrorType type, const char* message, void* userdata) {
-    spdlog::error("WebGPU Error ({}): {}", static_cast<int>(type), message ? message : "unknown");
+    ywarn("WebGPU Error ({}): {}", static_cast<int>(type), message ? message : "unknown");
 }
 
 static void wgpu_device_lost_callback(WGPUDeviceLostReason reason, const char* message, void* userdata) {
-    spdlog::error("WebGPU Device Lost ({}): {}", static_cast<int>(reason), message ? message : "unknown");
+    ywarn("WebGPU Device Lost ({}): {}", static_cast<int>(reason), message ? message : "unknown");
 }
 
 // Emscripten main loop callback
@@ -55,14 +55,14 @@ Result<std::shared_ptr<WebApp>> WebApp::create(const WebAppConfig& config) {
 }
 
 Result<void> WebApp::_init() {
-    spdlog::debug("WebApp::_init starting");
+    ydebug("WebApp::_init starting");
 
     // Initialize graphics backend
     if (auto gfx_res = _init_graphics(); !gfx_res) {
-        spdlog::error("WebApp::_init: graphics init failed");
+        ywarn("WebApp::_init: graphics init failed");
         return Err<void>("WebApp::_init: graphics init failed", gfx_res);
     }
-    spdlog::debug("Graphics initialized");
+    ydebug("Graphics initialized");
 
     // Create dispatcher
     auto disp_res = Dispatcher::create();
@@ -99,14 +99,14 @@ Result<void> WebApp::_init() {
     if (tree_it != app_config.end()) {
         if (auto t = get_as<std::string>(tree_it->second)) {
             tree_type = *t;
-            spdlog::debug("Using data-tree type from config: {}", tree_type);
+            ydebug("Using data-tree type from config: {}", tree_type);
         }
     }
 
     // Create data tree from plugin
     auto tree_res = _plugin_manager->create_tree(tree_type, _dispatcher);
     if (!tree_res) {
-        spdlog::warn("Could not create {} from plugin: {}", tree_type, error_msg(tree_res));
+        ywarn("Could not create {} from plugin: {}", tree_type, error_msg(tree_res));
         return Err<void>("WebApp::_init: no tree-like plugin available", tree_res);
     }
     _data_tree = *tree_res;
@@ -119,14 +119,14 @@ Result<void> WebApp::_init() {
     _widget_factory = *wf_res;
 
     // Create root widget
-    spdlog::debug("Creating root widget");
+    ydebug("Creating root widget");
     auto root_res = _widget_factory->create_root_widget();
     if (!root_res) {
-        spdlog::error("WebApp::_init: root widget create failed: {}", error_msg(root_res));
+        ywarn("WebApp::_init: root widget create failed: {}", error_msg(root_res));
         return Err<void>("WebApp::_init: root widget create failed", root_res);
     }
     _root_widget = *root_res;
-    spdlog::debug("Root widget created successfully");
+    ydebug("Root widget created successfully");
 
     return Ok();
 }
@@ -148,7 +148,7 @@ Result<void> WebApp::dispose() {
 }
 
 Result<void> WebApp::run() {
-    spdlog::debug("WebApp::run starting main loop");
+    ydebug("WebApp::run starting main loop");
 
     g_web_app = this;
     emscripten_set_main_loop(em_main_loop_callback, 0, true);
@@ -254,7 +254,7 @@ Result<void> WebApp::_init_graphics() {
             if (status == WGPURequestAdapterStatus_Success) {
                 data->adapter = adapter;
             } else {
-                spdlog::error("Failed to get WebGPU adapter: {}", message ? message : "unknown");
+                ywarn("Failed to get WebGPU adapter: {}", message ? message : "unknown");
             }
             data->done = true;
         }, &adapter_data);
@@ -284,7 +284,7 @@ Result<void> WebApp::_init_graphics() {
             if (status == WGPURequestDeviceStatus_Success) {
                 data->device = device;
             } else {
-                spdlog::error("Failed to get WebGPU device: {}", message ? message : "unknown");
+                ywarn("Failed to get WebGPU device: {}", message ? message : "unknown");
             }
             data->done = true;
         }, &device_data);

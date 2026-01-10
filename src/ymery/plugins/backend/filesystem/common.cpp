@@ -4,7 +4,7 @@
 #include <fstream>
 #include <set>
 #include <sstream>
-#include <spdlog/spdlog.h>
+#include <ytrace/ytrace.hpp>
 
 namespace fs = std::filesystem;
 
@@ -250,7 +250,7 @@ Result<std::vector<std::string>> FilesystemManager::_get_available_children(cons
         std::sort(children.begin(), children.end());
     } catch (const fs::filesystem_error& e) {
         // Permission denied or other error
-        spdlog::debug("FilesystemManager: cannot list {}: {}", fs_path, e.what());
+        ydebug("FilesystemManager: cannot list {}: {}", fs_path, e.what());
     }
 
     return Ok(children);

@@ -8,7 +8,7 @@
 #include "imgui_test_engine/imgui_te_context.h"
 
 #include "ymery/plugins/backend/filesystem/common.hpp"
-#include <spdlog/spdlog.h>
+#include <ytrace/ytrace.hpp>
 #include <filesystem>
 
 void RegisterFilesystemTests(ImGuiTestEngine* engine) {
@@ -33,18 +33,18 @@ void RegisterFilesystemTests(ImGuiTestEngine* engine) {
         // Test get_children_names for root
         auto root_children = fs->get_children_names(ymery::DataPath("/"));
         IM_CHECK(root_children.has_value());
-        spdlog::info("Root children: {}", (*root_children).size());
+        yinfo("Root children: {}", (*root_children).size());
         for (const auto& c : *root_children) {
-            spdlog::info("  - {}", c);
+            yinfo("  - {}", c);
         }
         IM_CHECK_EQ((*root_children).size(), 2u);  // available, opened
 
         // Test get_children_names for /available
         auto avail_children = fs->get_children_names(ymery::DataPath("/available"));
         IM_CHECK(avail_children.has_value());
-        spdlog::info("Available children: {}", (*avail_children).size());
+        yinfo("Available children: {}", (*avail_children).size());
         for (const auto& c : *avail_children) {
-            spdlog::info("  - {}", c);
+            yinfo("  - {}", c);
         }
         IM_CHECK_EQ((*avail_children).size(), 4u);  // fs-root, home, mounts, bookmarks
     };
@@ -69,10 +69,10 @@ void RegisterFilesystemTests(ImGuiTestEngine* engine) {
         IM_CHECK(meta.has_value());
 
         auto& m = *meta;
-        spdlog::info("Metadata for /available:");
+        yinfo("Metadata for /available:");
         for (const auto& [k, v] : m) {
             if (auto s = ymery::get_as<std::string>(v)) {
-                spdlog::info("  {}: {}", k, *s);
+                yinfo("  {}: {}", k, *s);
             }
         }
 
@@ -85,10 +85,10 @@ void RegisterFilesystemTests(ImGuiTestEngine* engine) {
         IM_CHECK(fsroot_meta.has_value());
 
         auto& fm = *fsroot_meta;
-        spdlog::info("Metadata for /available/fs-root:");
+        yinfo("Metadata for /available/fs-root:");
         for (const auto& [k, v] : fm) {
             if (auto s = ymery::get_as<std::string>(v)) {
-                spdlog::info("  {}: {}", k, *s);
+                yinfo("  {}: {}", k, *s);
             }
         }
     };

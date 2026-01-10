@@ -31,7 +31,7 @@
 #include <GLFW/glfw3.h>
 #endif
 
-#include <spdlog/spdlog.h>
+#include <ytrace/ytrace.hpp>
 
 #ifdef YMERY_WEB
 #include <emscripten.h>
@@ -128,14 +128,14 @@ Result<std::shared_ptr<App>> App::create(struct android_app* android_app, const 
 #endif
 
 Result<void> App::init() {
-    spdlog::debug("App::init starting");
+    ydebug("App::init starting");
 
     // Initialize graphics backend (platform-specific)
     if (auto gfx_res = _init_graphics(); !gfx_res) {
-        spdlog::error("App::init: graphics init failed");
+        ywarn("App::init: graphics init failed");
         return Err<void>("App::init: graphics init failed", gfx_res);
     }
-    spdlog::debug("Graphics initialized");
+    ydebug("Graphics initialized");
 
     // Initialize core components (platform-independent, implemented in app-core.cpp)
     if (auto core_res = _init_core(); !core_res) {
@@ -162,7 +162,7 @@ static int _em_frame_count = 0;
 static void em_main_loop() {
     if (_em_app) {
         if (_em_frame_count < 5) {
-            spdlog::info("em_main_loop frame {}", _em_frame_count);
+            yinfo("em_main_loop frame {}", _em_frame_count);
         }
         _em_app->frame();
         _em_frame_count++;
@@ -171,28 +171,28 @@ static void em_main_loop() {
 #endif
 
 Result<void> App::run() {
-    spdlog::info("App::run starting main loop");
+    yinfo("App::run starting main loop");
 
 #ifdef YMERY_WEB
     // Emscripten: use browser's requestAnimationFrame
-    spdlog::info("Setting up emscripten main loop");
+    yinfo("Setting up emscripten main loop");
     _em_app = this;
-    spdlog::info("Calling emscripten_set_main_loop");
+    yinfo("Calling emscripten_set_main_loop");
     emscripten_set_main_loop(em_main_loop, 0, true);
-    spdlog::info("emscripten_set_main_loop returned");
+    yinfo("emscripten_set_main_loop returned");
 #else
     // Native: traditional while loop
     int frame_count = 0;
     while (!_should_close) {
         if (auto res = frame(); !res) {
-            spdlog::warn("Frame error: {}", error_msg(res));
+            ywarn("Frame error: {}", error_msg(res));
         }
         if (frame_count < 3) {
-            spdlog::debug("Frame {} completed", frame_count);
+            ydebug("Frame {} completed", frame_count);
         }
         frame_count++;
     }
-    spdlog::info("App::run exiting after {} frames", frame_count);
+    yinfo("App::run exiting after {} frames", frame_count);
 #endif
 
     return Ok();
@@ -201,7 +201,7 @@ Result<void> App::run() {
 Result<void> App::frame() {
 #ifdef YMERY_WEB
     if (_em_frame_count < 5) {
-        spdlog::info("App::frame() starting, frame {}", _em_frame_count);
+        yinfo("App::frame() starting, frame {}", _em_frame_count);
     }
 #endif
     if (auto begin_res = _begin_frame(); !begin_res) {
@@ -209,7 +209,7 @@ Result<void> App::frame() {
     }
 #ifdef YMERY_WEB
     if (_em_frame_count < 5) {
-        spdlog::info("App::frame() _begin_frame done");
+        yinfo("App::frame() _begin_frame done");
     }
 #endif
 
@@ -217,7 +217,7 @@ Result<void> App::frame() {
     if (_root_widget) {
 #ifdef YMERY_WEB
         if (_em_frame_count < 5) {
-            spdlog::info("App::frame() rendering root widget");
+            yinfo("App::frame() rendering root widget");
         }
 #endif
         if (auto render_res = _root_widget->render(); !render_res) {
@@ -225,7 +225,7 @@ Result<void> App::frame() {
         }
 #ifdef YMERY_WEB
         if (_em_frame_count < 5) {
-            spdlog::info("App::frame() root widget rendered");
+            yinfo("App::frame() root widget rendered");
         }
 #endif
     }
@@ -235,7 +235,7 @@ Result<void> App::frame() {
     }
 #ifdef YMERY_WEB
     if (_em_frame_count < 5) {
-        spdlog::info("App::frame() done");
+        yinfo("App::frame() done");
     }
 #endif
 
@@ -646,12 +646,12 @@ Result<void> App::_end_frame() {
 // WebGPU callbacks (v22+ API with WGPUStringView)
 static void wgpu_error_callback(WGPUDevice const* device, WGPUErrorType type, WGPUStringView message, void* userdata1, void* userdata2) {
     std::string msg(message.data, message.length);
-    spdlog::error("WebGPU Error ({}): {}", static_cast<int>(type), msg);
+    ywarn("WebGPU Error ({}): {}", static_cast<int>(type), msg);
 }
 
 static void wgpu_device_lost_callback(WGPUDevice const* device, WGPUDeviceLostReason reason, WGPUStringView message, void* userdata1, void* userdata2) {
     std::string msg(message.data, message.length);
-    spdlog::error("WebGPU Device Lost ({}): {}", static_cast<int>(reason), msg);
+    ywarn("WebGPU Device Lost ({}): {}", static_cast<int>(reason), msg);
 }
 
 static void configure_wgpu_surface(int width, int height) {
@@ -671,14 +671,14 @@ static void configure_wgpu_surface(int width, int height) {
 }
 
 Result<void> App::_init_graphics() {
-    spdlog::debug("_init_graphics starting (WebGPU desktop/web)");
+    ydebug("_init_graphics starting (WebGPU desktop/web)");
     glfwSetErrorCallback(glfw_error_callback);
 
-    spdlog::debug("Calling glfwInit");
+    ydebug("Calling glfwInit");
     if (!glfwInit()) {
         return Err<void>("App::_init_graphics: glfwInit failed");
     }
-    spdlog::debug("glfwInit succeeded");
+    ydebug("glfwInit succeeded");
 
     // No OpenGL context for WebGPU
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -776,7 +776,7 @@ Result<void> App::_init_graphics() {
     if (!_wgpu_surface) {
         return Err<void>("App::_init_graphics: wgpuInstanceCreateSurface failed");
     }
-    spdlog::debug("Surface created, requesting adapter");
+    ydebug("Surface created, requesting adapter");
 
     // Request adapter
     WGPURequestAdapterOptions adapter_opts = {};
@@ -791,7 +791,7 @@ Result<void> App::_init_graphics() {
     // v22+ API: use WGPURequestAdapterCallbackInfo
     WGPURequestAdapterCallbackInfo adapter_callback_info = {};
 #ifdef YMERY_WEB_DAWN
-    spdlog::debug("Using WGPUCallbackMode_AllowProcessEvents for web");
+    ydebug("Using WGPUCallbackMode_AllowProcessEvents for web");
     adapter_callback_info.mode = WGPUCallbackMode_AllowProcessEvents;
 #else
     adapter_callback_info.mode = WGPUCallbackMode_AllowSpontaneous;
@@ -802,14 +802,14 @@ Result<void> App::_init_graphics() {
             data->adapter = adapter;
         } else {
             std::string msg(message.data, message.length);
-            spdlog::error("Failed to get WebGPU adapter: {}", msg);
+            ywarn("Failed to get WebGPU adapter: {}", msg);
         }
         data->done = true;
     };
     adapter_callback_info.userdata1 = &adapter_data;
-    spdlog::debug("Calling wgpuInstanceRequestAdapter");
+    ydebug("Calling wgpuInstanceRequestAdapter");
     wgpuInstanceRequestAdapter(_wgpu_instance, &adapter_opts, adapter_callback_info);
-    spdlog::debug("wgpuInstanceRequestAdapter returned, waiting for callback");
+    ydebug("wgpuInstanceRequestAdapter returned, waiting for callback");
 
     while (!adapter_data.done) {
         // Process events to trigger callbacks
@@ -818,7 +818,7 @@ Result<void> App::_init_graphics() {
         emscripten_sleep(10);
 #endif
     }
-    spdlog::debug("Adapter callback completed");
+    ydebug("Adapter callback completed");
 
     _wgpu_adapter = adapter_data.adapter;
     if (!_wgpu_adapter) {
@@ -854,7 +854,7 @@ Result<void> App::_init_graphics() {
             data->device = device;
         } else {
             std::string msg(message.data, message.length);
-            spdlog::error("Failed to get WebGPU device: {}", msg);
+            ywarn("Failed to get WebGPU device: {}", msg);
         }
         data->done = true;
     };

@@ -16,7 +16,7 @@
 
 // Forward declarations for plugin create signature
 namespace ymery { class Dispatcher; class PluginManager; }
-#include <spdlog/spdlog.h>
+#include <ytrace/ytrace.hpp>
 
 namespace ymery::plugins {
 
@@ -55,7 +55,7 @@ public:
         // Allocate deinterleave buffer
         device->_channel_buffer.resize(period_size);
 
-        spdlog::debug("PipeWireDevice: created for '{}' with {} channels at {}Hz",
+        ydebug("PipeWireDevice: created for '{}' with {} channels at {}Hz",
                      target_name, num_channels, sample_rate);
 
         return device;
@@ -67,7 +67,7 @@ public:
         _running = true;
         _thread = std::thread(&PipeWireDevice::_run, this);
 
-        spdlog::debug("PipeWireDevice: started '{}'", _target_name);
+        ydebug("PipeWireDevice: started '{}'", _target_name);
         return Ok();
     }
 
@@ -84,7 +84,7 @@ public:
             _thread.join();
         }
 
-        spdlog::debug("PipeWireDevice: stopped '{}'", _target_name);
+        ydebug("PipeWireDevice: stopped '{}'", _target_name);
     }
 
     bool is_running() const { return _running; }
@@ -119,7 +119,7 @@ private:
 
         _loop = pw_loop_new(nullptr);
         if (!_loop) {
-            spdlog::error("PipeWireDevice: failed to create loop");
+            ywarn("PipeWireDevice: failed to create loop");
             _running = false;
             return;
         }
@@ -129,7 +129,7 @@ private:
 
         struct pw_context* context = pw_context_new(_loop, nullptr, 0);
         if (!context) {
-            spdlog::error("PipeWireDevice: failed to create context");
+            ywarn("PipeWireDevice: failed to create context");
             pw_loop_destroy(_loop);
             _loop = nullptr;
             _running = false;
@@ -138,7 +138,7 @@ private:
 
         struct pw_core* core = pw_context_connect(context, nullptr, 0);
         if (!core) {
-            spdlog::error("PipeWireDevice: failed to connect to PipeWire");
+            ywarn("PipeWireDevice: failed to connect to PipeWire");
             pw_context_destroy(context);
             pw_loop_destroy(_loop);
             _loop = nullptr;
@@ -178,7 +178,7 @@ private:
 
         _stream = pw_stream_new(core, "ymery-capture", props);
         if (!_stream) {
-            spdlog::error("PipeWireDevice: failed to create stream");
+            ywarn("PipeWireDevice: failed to create stream");
             pw_core_disconnect(core);
             pw_context_destroy(context);
             pw_loop_destroy(_loop);
@@ -196,7 +196,7 @@ private:
             params, 1);
 
         if (res < 0) {
-            spdlog::error("PipeWireDevice: failed to connect stream: {}", spa_strerror(res));
+            ywarn("PipeWireDevice: failed to connect stream: {}", spa_strerror(res));
             pw_stream_destroy(_stream);
             _stream = nullptr;
             pw_core_disconnect(core);
@@ -307,7 +307,7 @@ public:
     Result<void> init() override {
         pw_init(nullptr, nullptr);
         _initialized = true;
-        spdlog::debug("PipeWireManager: initialized");
+        ydebug("PipeWireManager: initialized");
         return Ok();
     }
 

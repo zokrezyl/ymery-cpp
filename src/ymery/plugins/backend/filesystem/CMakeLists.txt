@@ -19,7 +19,7 @@ endmacro()
 
 # Shared implementation as object library
 add_library(filesystem_common OBJECT common.cpp)
-target_include_directories(filesystem_common PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_include_directories(filesystem_common PRIVATE ${CMAKE_SOURCE_DIR}/src ${ytrace_SOURCE_DIR}/include)
 target_link_libraries(filesystem_common PRIVATE spdlog::spdlog)
 
 # Tree-like plugin (for direct use: data-tree: filesystem)

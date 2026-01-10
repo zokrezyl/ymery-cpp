@@ -4,7 +4,7 @@
 #include <mutex>
 #include <string>
 #include <chrono>
-#include <spdlog/spdlog.h>
+#include <ytrace/ytrace.hpp>
 #include <spdlog/sinks/base_sink.h>
 #include <imgui.h>
 

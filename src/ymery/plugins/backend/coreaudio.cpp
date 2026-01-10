@@ -9,7 +9,7 @@
 #include <mutex>
 #include <CoreAudio/CoreAudio.h>
 #include <AudioToolbox/AudioToolbox.h>
-#include <spdlog/spdlog.h>
+#include <ytrace/ytrace.hpp>
 
 // Forward declarations for plugin create signature
 namespace ymery { class Dispatcher; class PluginManager; }
@@ -99,7 +99,7 @@ public:
         // Allocate deinterleave buffer
         device->_channel_buffer.resize(1024);
 
-        spdlog::debug("CoreAudioDevice: created '{}' with {} channels at {}Hz",
+        ydebug("CoreAudioDevice: created '{}' with {} channels at {}Hz",
                      device_name, num_channels, sample_rate);
 
         return device;
@@ -110,12 +110,12 @@ public:
 
         OSStatus status = AudioQueueStart(_queue, nullptr);
         if (status != noErr) {
-            spdlog::error("CoreAudioDevice: failed to start queue, status={}", status);
+            ywarn("CoreAudioDevice: failed to start queue, status={}", status);
             return;
         }
 
         _running = true;
-        spdlog::debug("CoreAudioDevice: started '{}'", _device_name);
+        ydebug("CoreAudioDevice: started '{}'", _device_name);
     }
 
     void stop() {
@@ -123,7 +123,7 @@ public:
         _running = false;
 
         AudioQueueStop(_queue, true);
-        spdlog::debug("CoreAudioDevice: stopped '{}'", _device_name);
+        ydebug("CoreAudioDevice: stopped '{}'", _device_name);
     }
 
     bool is_running() const { return _running; }

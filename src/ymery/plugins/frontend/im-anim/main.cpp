@@ -10,6 +10,12 @@
 #include "shake.hpp"
 #include "spring.hpp"
 #include "easing-compare.hpp"
+#include "wiggle.hpp"
+#include "int-tween.hpp"
+#include "transform.hpp"
+#include "bezier.hpp"
+#include "noise.hpp"
+#include "text-stagger.hpp"
 
 namespace ymery::plugins {
 
@@ -25,7 +31,13 @@ public:
             "oscillate",
             "shake",
             "spring",
-            "easing-compare"
+            "easing-compare",
+            "wiggle",
+            "int-tween",
+            "transform",
+            "bezier",
+            "noise",
+            "text-stagger"
         };
     }
 
@@ -56,6 +68,24 @@ public:
         }
         if (widget_name == "easing-compare") {
             return imanim::EasingCompare::create(widget_factory, dispatcher, ns, data_bag);
+        }
+        if (widget_name == "wiggle") {
+            return imanim::Wiggle::create(widget_factory, dispatcher, ns, data_bag);
+        }
+        if (widget_name == "int-tween") {
+            return imanim::IntTween::create(widget_factory, dispatcher, ns, data_bag);
+        }
+        if (widget_name == "transform") {
+            return imanim::Transform::create(widget_factory, dispatcher, ns, data_bag);
+        }
+        if (widget_name == "bezier") {
+            return imanim::Bezier::create(widget_factory, dispatcher, ns, data_bag);
+        }
+        if (widget_name == "noise") {
+            return imanim::Noise::create(widget_factory, dispatcher, ns, data_bag);
+        }
+        if (widget_name == "text-stagger") {
+            return imanim::TextStagger::create(widget_factory, dispatcher, ns, data_bag);
         }
         return Err<WidgetPtr>("Unknown widget: " + widget_name);
     }

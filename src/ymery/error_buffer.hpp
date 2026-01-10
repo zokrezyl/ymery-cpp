@@ -5,6 +5,7 @@
 #include <mutex>
 #include <string>
 #include <chrono>
+#include <ytrace/ytrace.hpp>
 #include <spdlog/spdlog.h>
 #include <imgui.h>
 
@@ -27,25 +28,25 @@ public:
         // Always dump to spdlog
         switch (level) {
             case spdlog::level::trace:
-                spdlog::trace("{}", error.to_string());
+                ytrace("{}", error.to_string());
                 break;
             case spdlog::level::debug:
-                spdlog::debug("{}", error.to_string());
+                ydebug("{}", error.to_string());
                 break;
             case spdlog::level::info:
-                spdlog::info("{}", error.to_string());
+                yinfo("{}", error.to_string());
                 break;
             case spdlog::level::warn:
-                spdlog::warn("{}", error.to_string());
+                ywarn("{}", error.to_string());
                 break;
             case spdlog::level::err:
-                spdlog::error("{}", error.to_string());
+                ywarn("{}", error.to_string());
                 break;
             case spdlog::level::critical:
-                spdlog::critical("{}", error.to_string());
+                yerror("{}", error.to_string());
                 break;
             default:
-                spdlog::error("{}", error.to_string());
+                ywarn("{}", error.to_string());
                 break;
         }
 

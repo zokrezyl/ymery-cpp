@@ -2,7 +2,7 @@
 #include "../../../frontend/widget.hpp"
 #include "shared_model.hpp"
 #include <imgui.h>
-#include <spdlog/spdlog.h>
+#include <ytrace/ytrace.hpp>
 
 namespace ymery::plugins::editor {
 
@@ -42,14 +42,14 @@ protected:
 
         uint64_t current_version = model.version();
         if (!_cached_widget || _cached_version != current_version) {
-            spdlog::debug("Preview: model changed (v{} -> v{}), recreating widget", _cached_version, current_version);
+            ydebug("Preview: model changed (v{} -> v{}), recreating widget", _cached_version, current_version);
             auto res = _widget_factory->create_widget(_data_bag, model.root(), "app");
             if (res) {
                 _cached_widget = *res;
                 _cached_version = current_version;
             } else {
                 std::string err = error_msg(res);
-                spdlog::error("Preview: failed to create widget: {}", err);
+                ywarn("Preview: failed to create widget: {}", err);
                 ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "Error: %s", err.c_str());
                 return Ok();
             }

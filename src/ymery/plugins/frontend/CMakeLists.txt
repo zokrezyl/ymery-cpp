@@ -96,8 +96,8 @@ endforeach()
 
 # Export all frontend plugin targets to parent scope
 set(YMERY_FRONTEND_PLUGIN_TARGETS
-    # Consolidated plugins (one per GitHub repo)
-    imgui_plugin imspinner_plugin implot_plugin
+    # Consolidated plugins (one per GitHub repo) - imgui is now embedded
+    imspinner_plugin implot_plugin
     imgui_knobs_plugin imgui_toggle_plugin imcoolbar_plugin
     implot3d_plugin imnodes_plugin im-anim_plugin imguizmo_plugin
     imgui_markdown_plugin
@@ -107,3 +107,6 @@ set(YMERY_FRONTEND_PLUGIN_TARGETS
     node-graph nodes hex-editor piano shader-toy
     PARENT_SCOPE
 )
+
+# Export embedded plugin objects to parent scope
+set(YMERY_EMBEDDED_PLUGIN_OBJECTS ${YMERY_EMBEDDED_PLUGIN_OBJECTS} PARENT_SCOPE)

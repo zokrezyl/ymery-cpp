@@ -2,7 +2,7 @@
 #include "ymery/log_buffer.hpp"
 #include <iostream>
 #include <filesystem>
-#include <spdlog/spdlog.h>
+#include <ytrace/ytrace.hpp>
 #ifdef _WIN32
 #include <windows.h>
 #elif defined(__APPLE__)
@@ -10,9 +10,8 @@
 #endif
 
 int main(int argc, char* argv[]) {
-    spdlog::set_level(spdlog::level::info);
     ymery::setup_log_buffer_sink();  // Capture spdlog messages for logs-view widget
-    spdlog::info("ymery-cli starting");
+    yinfo("ymery-cli starting");
 
     // Parse command line arguments
     std::vector<std::filesystem::path> layout_paths;
@@ -72,9 +71,9 @@ int main(int argc, char* argv[]) {
 #ifdef YMERY_WEB
         // Web build: add /demo to layout paths for virtual filesystem
         layout_paths.push_back("/demo");
-        spdlog::debug("Web build: using builtin filesystem browser with /demo");
+        ydebug("Web build: using builtin filesystem browser with /demo");
 #else
-        spdlog::debug("No layout specified, using builtin filesystem browser");
+        ydebug("No layout specified, using builtin filesystem browser");
 #endif
     }
 
@@ -104,18 +103,18 @@ int main(int argc, char* argv[]) {
         // Extract module name from file (strip .yaml extension)
         main_module = main_file.stem().string();
 
-        spdlog::debug("Main file: {}", main_file.string());
-        spdlog::debug("Main module: {}", main_module);
+        ydebug("Main file: {}", main_file.string());
+        ydebug("Main module: {}", main_module);
     }
     for (const auto& p : layout_paths) {
-        spdlog::debug("Layout path: {}", p.string());
+        ydebug("Layout path: {}", p.string());
     }
 
 #ifdef YMERY_WEB
     // Web build: plugins are preloaded at /plugins in the virtual filesystem
     if (plugin_paths.empty()) {
         plugin_paths.push_back("/plugins");
-        spdlog::debug("Web build: using /plugins from virtual filesystem");
+        ydebug("Web build: using /plugins from virtual filesystem");
     }
 #else
     // Default plugin path - look for plugins directory next to executable
@@ -142,19 +141,19 @@ int main(int argc, char* argv[]) {
 #endif
         if (!exe_dir.empty()) {
             plugin_paths.push_back(exe_dir / "plugins");
-            spdlog::debug("Default plugin path: {}", (exe_dir / "plugins").string());
+            ydebug("Default plugin path: {}", (exe_dir / "plugins").string());
         }
     }
 #endif
 
     // Create app config
-    spdlog::debug("Creating app config");
+    ydebug("Creating app config");
     ymery::AppConfig config;
     config.layout_paths = layout_paths;
     config.plugin_paths = plugin_paths;
     config.main_module = main_module;
     config.window_title = "Ymery";
-    spdlog::debug("App config created, calling App::create");
+    ydebug("App config created, calling App::create");
 
     // Create and run app
     auto app_res = ymery::App::create(config);

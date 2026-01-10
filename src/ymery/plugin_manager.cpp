@@ -3,7 +3,8 @@
 #include "frontend/widget_factory.hpp"
 #include "data_bag.hpp"
 #include "static_plugins.hpp"
-#include <spdlog/spdlog.h>
+#include "embedded_plugins.hpp"
+#include <ytrace/ytrace.hpp>
 #include <filesystem>
 #include <sstream>
 #include <fstream>
@@ -116,7 +117,7 @@ static Dict load_plugin_meta(const std::string& plugin_path) {
 
     Dict result;
     if (!fs::exists(meta_path)) {
-        spdlog::debug("No meta file found: {}", meta_path);
+        ydebug("No meta file found: {}", meta_path);
         return result;
     }
 
@@ -128,9 +129,9 @@ static Dict load_plugin_meta(const std::string& plugin_path) {
                 result[key] = yaml_to_value(pair.second);
             }
         }
-        spdlog::debug("Loaded meta file: {}", meta_path);
+        ydebug("Loaded meta file: {}", meta_path);
     } catch (const std::exception& e) {
-        spdlog::warn("Failed to load meta file {}: {}", meta_path, e.what());
+        ywarn("Failed to load meta file {}: {}", meta_path, e.what());
     }
 
     return result;
@@ -167,6 +168,55 @@ PluginManager::~PluginManager() {
 }
 
 Result<void> PluginManager::init() {
+    // Register embedded plugins (linked directly into executable)
+    yinfo("PluginManager: registering embedded plugins");
+
+    // Register embedded imgui plugin
+    auto imgui_plugin = std::shared_ptr<Plugin>(embedded::create_imgui_plugin());
+    std::string imgui_name = imgui_plugin->name();
+    _new_plugins[imgui_name] = imgui_plugin;
+    yinfo("PluginManager: registered embedded plugin '{}' with widgets: {}",
+        imgui_name,
+        [&]() {
+            std::string widgets;
+            for (const auto& w : imgui_plugin->widgets()) {
+                if (!widgets.empty()) widgets += ", ";
+                widgets += w;
+            }
+            return widgets;
+        }());
+
+    // Register embedded tree-like plugins
+    // data-tree
+    {
+        PluginMeta meta;
+        meta.registered_name = "data-tree";
+        meta.class_name = "data-tree";
+        meta.create_fn = TreeLikeCreateFn([](
+            std::shared_ptr<Dispatcher> /*dispatcher*/,
+            std::shared_ptr<PluginManager> /*pm*/
+        ) -> Result<TreeLikePtr> {
+            return embedded::create_data_tree();
+        });
+        _plugins["tree-like"]["data-tree"] = meta;
+        yinfo("PluginManager: registered embedded tree-like plugin 'data-tree'");
+    }
+
+    // simple-data-tree
+    {
+        PluginMeta meta;
+        meta.registered_name = "simple-data-tree";
+        meta.class_name = "simple-data-tree";
+        meta.create_fn = TreeLikeCreateFn([](
+            std::shared_ptr<Dispatcher> /*dispatcher*/,
+            std::shared_ptr<PluginManager> /*pm*/
+        ) -> Result<TreeLikePtr> {
+            return embedded::create_simple_data_tree();
+        });
+        _plugins["tree-like"]["simple-data-tree"] = meta;
+        yinfo("PluginManager: registered embedded tree-like plugin 'simple-data-tree'");
+    }
+
     return Ok();
 }
 
@@ -190,7 +240,7 @@ Result<void> PluginManager::_ensure_plugins_discovered() {
     }
 
     // Discover plugins without loading them (lazy loading)
-    spdlog::debug("PluginManager: discovering plugins from {}", _plugins_path);
+    ydebug("PluginManager: discovering plugins from {}", _plugins_path);
 
     // Parse path-separated paths (: on Unix/web, ; on Windows)
     std::vector<std::string> plugin_dirs;
@@ -207,26 +257,26 @@ Result<void> PluginManager::_ensure_plugins_discovered() {
     char exe_path[MAX_PATH];
     if (GetModuleFileNameA(NULL, exe_path, MAX_PATH) > 0) {
         fs::path exe_dir = fs::path(exe_path).parent_path();
-        spdlog::debug("Exe directory: {}", exe_dir.string());
+        ydebug("Exe directory: {}", exe_dir.string());
         if (fs::exists(exe_dir / "ymery_lib.dll")) {
             if (SetDllDirectoryA(exe_dir.string().c_str())) {
-                spdlog::debug("Set DLL search directory to: {}", exe_dir.string());
+                ydebug("Set DLL search directory to: {}", exe_dir.string());
             } else {
-                spdlog::warn("Failed to set DLL directory: error {}", GetLastError());
+                ywarn("Failed to set DLL directory: error {}", GetLastError());
             }
         } else {
-            spdlog::warn("ymery_lib.dll not found in exe directory: {}", exe_dir.string());
+            ywarn("ymery_lib.dll not found in exe directory: {}", exe_dir.string());
         }
     } else {
-        spdlog::warn("Failed to get module filename: error {}", GetLastError());
+        ywarn("Failed to get module filename: error {}", GetLastError());
     }
 #endif
 
     // Scan each directory and record plugin paths (without loading)
     for (const auto& dir : plugin_dirs) {
-        spdlog::debug("PluginManager: scanning directory: {}", dir);
+        ydebug("PluginManager: scanning directory: {}", dir);
         if (!fs::exists(dir)) {
-            spdlog::warn("Plugin directory does not exist: {}", dir);
+            ywarn("Plugin directory does not exist: {}", dir);
             continue;
         }
 
@@ -234,7 +284,7 @@ Result<void> PluginManager::_ensure_plugins_discovered() {
         // Emscripten: use POSIX opendir/readdir (more reliable with VFS than std::filesystem)
         DIR* d = opendir(dir.c_str());
         if (!d) {
-            spdlog::warn("PluginManager: opendir failed for {}", dir);
+            ywarn("PluginManager: opendir failed for {}", dir);
             continue;
         }
         struct dirent* entry;
@@ -249,7 +299,7 @@ Result<void> PluginManager::_ensure_plugins_discovered() {
                 // Extract plugin name from filename (e.g., "im-anim.wasm" -> "im-anim")
                 std::string plugin_name = name.substr(0, name.size() - 5);
                 _discovered_plugins[plugin_name] = full_path;
-                spdlog::debug("PluginManager: discovered plugin: {} -> {}", plugin_name, full_path);
+                ydebug("PluginManager: discovered plugin: {} -> {}", plugin_name, full_path);
             }
         }
         closedir(d);
@@ -261,31 +311,31 @@ Result<void> PluginManager::_ensure_plugins_discovered() {
                 // Extract plugin name from filename (e.g., "im-anim.so" -> "im-anim")
                 std::string plugin_name = entry.path().stem().string();
                 _discovered_plugins[plugin_name] = path;
-                spdlog::debug("PluginManager: discovered plugin: {} -> {}", plugin_name, path);
+                ydebug("PluginManager: discovered plugin: {} -> {}", plugin_name, path);
             }
         }
 #endif
     }
 
     _plugins_discovered = true;
-    spdlog::info("PluginManager: discovered {} plugins (lazy loading enabled)", _discovered_plugins.size());
+    yinfo("PluginManager: discovered {} plugins (lazy loading enabled)", _discovered_plugins.size());
 
     return Ok();
 }
 
 Result<void> PluginManager::_ensure_plugin_loaded(const std::string& plugin_name) {
-    spdlog::info("_ensure_plugin_loaded called for: {}", plugin_name);
+    yinfo("_ensure_plugin_loaded called for: {}", plugin_name);
 
     // Already loaded as frontend plugin?
     if (_new_plugins.find(plugin_name) != _new_plugins.end()) {
-        spdlog::info("Plugin {} already loaded (frontend)", plugin_name);
+        yinfo("Plugin {} already loaded (frontend)", plugin_name);
         return Ok();
     }
 
     // Already loaded as backend plugin?
     for (const auto& [category, plugins] : _plugins) {
         if (plugins.find(plugin_name) != plugins.end()) {
-            spdlog::info("Plugin {} already loaded (backend)", plugin_name);
+            yinfo("Plugin {} already loaded (backend)", plugin_name);
             return Ok();
         }
     }
@@ -302,17 +352,17 @@ Result<void> PluginManager::_ensure_plugin_loaded(const std::string& plugin_name
     }
 
     // Load the plugin
-    spdlog::info("PluginManager: lazy loading plugin: {} from {}", plugin_name, it->second);
+    yinfo("PluginManager: lazy loading plugin: {} from {}", plugin_name, it->second);
     if (auto res = _load_plugin(it->second); !res) {
         return Err<void>("PluginManager: failed to load plugin '" + plugin_name + "'", res);
     }
-    spdlog::info("PluginManager: lazy loading plugin {} COMPLETE", plugin_name);
+    yinfo("PluginManager: lazy loading plugin {} COMPLETE", plugin_name);
 
     return Ok();
 }
 
 Result<void> PluginManager::_load_plugin(const std::string& path) {
-    spdlog::info("Loading plugin: {}", path);
+    yinfo("Loading plugin: {}", path);
 
     fs::path plugin_path(path);
 
@@ -320,13 +370,13 @@ Result<void> PluginManager::_load_plugin(const std::string& path) {
     std::wstring wide_path = plugin_path.wstring();
     PluginHandle handle = ymery_dlopen(wide_path.c_str());
 #else
-    spdlog::info("Calling dlopen for: {}", plugin_path.string());
+    yinfo("Calling dlopen for: {}", plugin_path.string());
     PluginHandle handle = ymery_dlopen(plugin_path.string().c_str());
-    spdlog::info("dlopen returned: {}", handle ? "success" : "null");
+    yinfo("dlopen returned: {}", handle ? "success" : "null");
 #endif
     if (!handle) {
         std::string error = ymery_dlerror();
-        spdlog::error("dlopen failed for '{}': {}", path, error);
+        ywarn("dlopen failed for '{}': {}", path, error);
         return Err<void>(std::string("Failed to load plugin '") + path + "': " + error);
     }
 
@@ -341,14 +391,14 @@ Result<void> PluginManager::_load_plugin(const std::string& path) {
     }
 
     // Backend plugin
-    spdlog::info("Loading backend plugin, calling name()...");
+    yinfo("Loading backend plugin, calling name()...");
     std::string plugin_name = name_fn();
-    spdlog::info("name() returned: {}", plugin_name);
-    spdlog::info("Calling type()...");
+    yinfo("name() returned: {}", plugin_name);
+    yinfo("Calling type()...");
     std::string plugin_type = type_fn();
-    spdlog::info("type() returned: {}", plugin_type);
+    yinfo("type() returned: {}", plugin_type);
 
-    spdlog::info("Loaded backend plugin: {} (type: {})", plugin_name, plugin_type);
+    yinfo("Loaded backend plugin: {} (type: {})", plugin_name, plugin_type);
 
     Dict meta_dict = load_plugin_meta(path);
 
@@ -400,16 +450,16 @@ Result<void> PluginManager::_load_plugin(const std::string& path) {
         _plugins["device-manager"][plugin_name] = meta;
     }
     else {
-        spdlog::warn("Unknown backend plugin type '{}' for {}", plugin_type, plugin_name);
+        ywarn("Unknown backend plugin type '{}' for {}", plugin_type, plugin_name);
     }
 
     _handles.push_back(handle);
-    spdlog::info("Backend plugin {} loaded successfully", plugin_name);
+    yinfo("Backend plugin {} loaded successfully", plugin_name);
     return Ok();
 }
 
 Result<void> PluginManager::_load_new_plugin(const std::string& path) {
-    spdlog::info("Loading new-style plugin: {}", path);
+    yinfo("Loading new-style plugin: {}", path);
 
     fs::path plugin_path(path);
 
@@ -425,32 +475,32 @@ Result<void> PluginManager::_load_new_plugin(const std::string& path) {
     }
 
     // New-style plugins export only 'create()' that returns Plugin*
-    spdlog::info("Looking for 'create' symbol in: {}", path);
+    yinfo("Looking for 'create' symbol in: {}", path);
     auto create_fn = reinterpret_cast<NewPluginCreateFn>(ymery_dlsym(handle, "create"));
     if (!create_fn) {
         ymery_dlclose(handle);
         return Err<void>("Plugin has no 'create' function: " + path);
     }
-    spdlog::info("Found 'create' function at: {}", (void*)create_fn);
+    yinfo("Found 'create' function at: {}", (void*)create_fn);
 
     // Create the plugin instance
-    spdlog::info("Calling create() for: {}", path);
+    yinfo("Calling create() for: {}", path);
     void* raw_plugin = create_fn();
-    spdlog::info("create() returned: {}", raw_plugin);
+    yinfo("create() returned: {}", raw_plugin);
     if (!raw_plugin) {
         ymery_dlclose(handle);
         return Err<void>("Plugin create() returned null: " + path);
     }
 
     Plugin* plugin = static_cast<Plugin*>(raw_plugin);
-    spdlog::info("Getting plugin name...");
+    yinfo("Getting plugin name...");
     std::string plugin_name = plugin->name();
-    spdlog::info("Plugin name: {}", plugin_name);
+    yinfo("Plugin name: {}", plugin_name);
 
     // Wrap in shared_ptr (transfers ownership)
     auto plugin_ptr = std::shared_ptr<Plugin>(plugin);
 
-    spdlog::info("Loaded new-style plugin '{}' with widgets: {}", plugin_name,
+    yinfo("Loaded new-style plugin '{}' with widgets: {}", plugin_name,
         [&]() {
             std::string widgets_str;
             for (const auto& w : plugin_ptr->widgets()) {
@@ -639,9 +689,9 @@ Result<WidgetPtr> PluginManager::create_widget(
 
         auto plugin_it = _new_plugins.find(plugin_name);
         if (plugin_it != _new_plugins.end()) {
-            spdlog::info("Creating widget '{}.{}' via plugin", plugin_name, widget_name);
+            yinfo("Creating widget '{}.{}' via plugin", plugin_name, widget_name);
             auto result = plugin_it->second->createWidget(widget_name, widget_factory, dispatcher, ns, data_bag);
-            spdlog::info("Widget creation returned: {}", result.has_value() ? "success" : "error");
+            yinfo("Widget creation returned: {}", result.has_value() ? "success" : "error");
             return result;
         }
         return Err<WidgetPtr>("PluginManager: plugin '" + plugin_name + "' not found");

@@ -1,5 +1,5 @@
 #include "embedded.hpp"
-#include <spdlog/spdlog.h>
+#include <ytrace/ytrace.hpp>
 
 namespace ymery {
 
@@ -15,7 +15,7 @@ Result<std::shared_ptr<EmbeddedApp>> EmbeddedApp::create(const EmbeddedConfig& c
 }
 
 Result<void> EmbeddedApp::_init_core() {
-    spdlog::debug("EmbeddedApp::_init_core starting");
+    ydebug("EmbeddedApp::_init_core starting");
 
     // Create dispatcher
     auto disp_res = Dispatcher::create();
@@ -52,14 +52,14 @@ Result<void> EmbeddedApp::_init_core() {
     if (tree_it != app_config.end()) {
         if (auto t = get_as<std::string>(tree_it->second)) {
             tree_type = *t;
-            spdlog::debug("Using data-tree type from config: {}", tree_type);
+            ydebug("Using data-tree type from config: {}", tree_type);
         }
     }
 
     // Create data tree from plugin
     auto tree_res = _plugin_manager->create_tree(tree_type, _dispatcher);
     if (!tree_res) {
-        spdlog::warn("Could not create {} from plugin: {}", tree_type, error_msg(tree_res));
+        ywarn("Could not create {} from plugin: {}", tree_type, error_msg(tree_res));
         return Err<void>("EmbeddedApp::_init_core: no tree-like plugin available", tree_res);
     }
     _data_tree = *tree_res;
@@ -72,20 +72,20 @@ Result<void> EmbeddedApp::_init_core() {
     _widget_factory = *wf_res;
 
     // Create root widget
-    spdlog::debug("Creating root widget");
+    ydebug("Creating root widget");
     auto root_res = _widget_factory->create_root_widget();
     if (!root_res) {
-        spdlog::error("EmbeddedApp::_init_core: root widget create failed: {}", error_msg(root_res));
+        ywarn("EmbeddedApp::_init_core: root widget create failed: {}", error_msg(root_res));
         return Err<void>("EmbeddedApp::_init_core: root widget create failed", root_res);
     }
     _root_widget = *root_res;
-    spdlog::debug("Root widget created successfully");
+    ydebug("Root widget created successfully");
 
     return Ok();
 }
 
 void EmbeddedApp::_dispose_core() {
-    spdlog::debug("EmbeddedApp::_dispose_core");
+    ydebug("EmbeddedApp::_dispose_core");
 
     // Dispose in correct order:
     // 1. Root widget first (it holds refs to factory, dispatcher, etc.)
@@ -121,7 +121,7 @@ void EmbeddedApp::dispose() {
 void EmbeddedApp::render_widgets() {
     if (_root_widget) {
         if (auto render_res = _root_widget->render(); !render_res) {
-            spdlog::warn("EmbeddedApp::render_widgets: {}", error_msg(render_res));
+            ywarn("EmbeddedApp::render_widgets: {}", error_msg(render_res));
         }
     }
 }

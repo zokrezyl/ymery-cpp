@@ -16,7 +16,7 @@
 #include "imgui_test_engine/imgui_te_coroutine.h"
 
 #include "ymery/embedded.hpp"
-#include <spdlog/spdlog.h>
+#include <ytrace/ytrace.hpp>
 #include <filesystem>
 #include <cstring>
 
@@ -39,7 +39,7 @@ bool init_app_with_layout(const std::string& layout_name) {
     auto layout_path = get_layout_path(layout_name);
 
     if (!std::filesystem::exists(layout_path)) {
-        spdlog::error("Layout not found: {}", layout_path.string());
+        yerror("Layout not found: {}", layout_path.string());
         return false;
     }
 
@@ -52,7 +52,7 @@ bool init_app_with_layout(const std::string& layout_name) {
 
     auto app_res = ymery::EmbeddedApp::create(g_config);
     if (!app_res) {
-        spdlog::error("Failed to create app: {}", ymery::error_msg(app_res));
+        yerror("Failed to create app: {}", ymery::error_msg(app_res));
         return false;
     }
 
@@ -69,8 +69,7 @@ void cleanup_app() {
 }
 
 int main(int argc, char** argv) {
-    spdlog::set_level(spdlog::level::info);
-    spdlog::info("GUI Tests starting");
+    yinfo("GUI Tests starting");
 
     // Parse command line args
     bool list_only = false;
@@ -87,7 +86,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    spdlog::info("Creating ImGui context...");
+    yinfo("Creating ImGui context...");
 
     // Create ImGui context
     IMGUI_CHECKVERSION();
@@ -105,12 +104,12 @@ int main(int argc, char** argv) {
     io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
     io.Fonts->SetTexID((ImTextureID)(intptr_t)1);  // Dummy texture ID
 
-    spdlog::info("Creating test engine...");
+    yinfo("Creating test engine...");
 
     // Create test engine
     ImGuiTestEngine* engine = ImGuiTestEngine_CreateContext();
     if (!engine) {
-        spdlog::error("Failed to create test engine");
+        yerror("Failed to create test engine");
         ImGui::DestroyContext();
         return 1;
     }
@@ -124,13 +123,13 @@ int main(int argc, char** argv) {
     test_io.ConfigVerboseLevelOnError = ImGuiTestVerboseLevel_Debug;
     test_io.ConfigRunSpeed = fast_mode ? ImGuiTestRunSpeed_Fast : ImGuiTestRunSpeed_Normal;
 
-    spdlog::info("Starting test engine...");
+    yinfo("Starting test engine...");
 
     // Start test engine
     ImGuiTestEngine_Start(engine, ImGui::GetCurrentContext());
     ImGuiTestEngine_InstallDefaultCrashHandler();
 
-    spdlog::info("Registering tests...");
+    yinfo("Registering tests...");
 
     // Register all tests
     RegisterTreeNodeTests(engine);
@@ -140,15 +139,15 @@ int main(int argc, char** argv) {
     // Get test list
     ImVector<ImGuiTest*> tests;
     ImGuiTestEngine_GetTestList(engine, &tests);
-    spdlog::info("Registered {} tests", tests.Size);
+    yinfo("Registered {} tests", tests.Size);
 
     if (list_only) {
         // Just list tests and exit
         for (int i = 0; i < tests.Size; i++) {
-            spdlog::info("  [{}] {}/{}", i, tests[i]->Category, tests[i]->Name);
+            yinfo("  [{}] {}/{}", i, tests[i]->Category, tests[i]->Name);
         }
-        spdlog::info("Use -filter to run specific tests");
-        spdlog::info("Note: Full test execution requires graphics backend integration");
+        yinfo("Use -filter to run specific tests");
+        yinfo("Note: Full test execution requires graphics backend integration");
 
         ImGuiTestEngine_Stop(engine);
         ImGui::DestroyContext();
@@ -167,7 +166,7 @@ int main(int argc, char** argv) {
     int frame_count = 0;
     const int max_frames = 10000;
 
-    spdlog::info("Running tests (max {} frames)...", max_frames);
+    yinfo("Running tests (max {} frames)...", max_frames);
 
     // Run at least one frame to start tests, then continue until done
     bool tests_done = false;
@@ -195,7 +194,7 @@ int main(int argc, char** argv) {
     }
 
     if (frame_count >= max_frames) {
-        spdlog::error("Test execution exceeded max frames ({})", max_frames);
+        yerror("Test execution exceeded max frames ({})", max_frames);
     }
 
     // Get results
@@ -204,7 +203,7 @@ int main(int argc, char** argv) {
     ImGuiTestEngine_GetResult(engine, count_tested, count_success);
 
     int count_failed = count_tested - count_success;
-    spdlog::info("Test Results: {} tested, {} success, {} failed ({} frames)",
+    yinfo("Test Results: {} tested, {} success, {} failed ({} frames)",
                  count_tested, count_success, count_failed, frame_count);
 
     // Cleanup

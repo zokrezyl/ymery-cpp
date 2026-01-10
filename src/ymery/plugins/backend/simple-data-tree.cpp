@@ -436,6 +436,8 @@ private:
 
 } // namespace ymery::plugins
 
+// For dynamic loading (native builds with dlopen)
+#ifndef YMERY_EMBEDDED_PLUGINS
 extern "C" const char* name() { return "simple-data-tree"; }
 extern "C" const char* type() { return "tree-like"; }
 extern "C" void* create(
@@ -443,4 +445,12 @@ extern "C" void* create(
     std::shared_ptr<ymery::PluginManager> /*plugin_manager*/
 ) {
     return static_cast<void*>(new ymery::Result<ymery::TreeLikePtr>(ymery::plugins::SimpleDataTree::create()));
+}
+#endif
+
+// For embedded linking - returns TreeLikePtr result directly
+namespace ymery::embedded {
+    Result<TreeLikePtr> create_simple_data_tree() {
+        return ymery::plugins::SimpleDataTree::create();
+    }
 }

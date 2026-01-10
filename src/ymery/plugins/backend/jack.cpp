@@ -9,7 +9,7 @@
 #include <atomic>
 #include <mutex>
 #include <jack/jack.h>
-#include <spdlog/spdlog.h>
+#include <ytrace/ytrace.hpp>
 
 // Forward declarations for plugin create signature
 namespace ymery { class Dispatcher; class PluginManager; }
@@ -54,7 +54,7 @@ public:
                 while (ports[count]) count++;
                 if (count > 0) {
                     device->_num_channels = count;
-                    spdlog::debug("JackDevice: auto-detected {} channels from {}", count, target_client);
+                    ydebug("JackDevice: auto-detected {} channels from {}", count, target_client);
                 }
                 jack_free(ports);
             }
@@ -97,7 +97,7 @@ public:
         // Set shutdown callback
         jack_on_shutdown(device->_client, _shutdown_callback, device.get());
 
-        spdlog::debug("JackDevice: created client '{}' with {} channels at {}Hz, buffer={}",
+        ydebug("JackDevice: created client '{}' with {} channels at {}Hz, buffer={}",
                      client_name, device->_num_channels, device->_sample_rate, device->_buffer_size);
 
         return device;
@@ -112,7 +112,7 @@ public:
         }
 
         _running = true;
-        spdlog::debug("JackDevice: activated client '{}'", _client_name);
+        ydebug("JackDevice: activated client '{}'", _client_name);
 
         // Auto-connect if requested
         if (_auto_connect && !_target_client.empty()) {
@@ -123,7 +123,7 @@ public:
                     const char* src_port = ports[i];
                     const char* dst_port = jack_port_name(_input_ports[i]);
                     if (jack_connect(_client, src_port, dst_port) == 0) {
-                        spdlog::debug("JackDevice: connected {} -> {}", src_port, dst_port);
+                        ydebug("JackDevice: connected {} -> {}", src_port, dst_port);
                     }
                 }
                 jack_free(ports);
@@ -139,7 +139,7 @@ public:
 
         if (_client) {
             jack_deactivate(_client);
-            spdlog::debug("JackDevice: deactivated client '{}'", _client_name);
+            ydebug("JackDevice: deactivated client '{}'", _client_name);
         }
     }
 
@@ -193,7 +193,7 @@ private:
 
     static void _shutdown_callback(void* arg) {
         auto* device = static_cast<JackDevice*>(arg);
-        spdlog::warn("JackDevice: JACK server shutdown");
+        ywarn("JackDevice: JACK server shutdown");
         device->_running = false;
     }
 
@@ -241,7 +241,7 @@ public:
         jack_status_t status;
         _query_client = jack_client_open("ymery_query", JackNoStartServer, &status);
         if (!_query_client) {
-            spdlog::warn("JackManager: JACK server not running (status={})", static_cast<int>(status));
+            ywarn("JackManager: JACK server not running (status={})", static_cast<int>(status));
         }
         return Ok();
     }
