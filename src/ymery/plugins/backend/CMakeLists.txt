@@ -1,4 +1,5 @@
-# Build each tree-like backend as a shared library plugin
+# Backend plugins - only platform-specific audio plugins
+# Core backends (data-tree, simple-data-tree, kernel, waveform, audio-file) are embedded in ymery_lib
 
 # Plugin output directory - can be overridden by parent project via YMERY_PLUGIN_DIR
 if(DEFINED YMERY_PLUGIN_DIR)
@@ -36,45 +37,7 @@ macro(configure_plugin target)
     endif()
 endmacro()
 
-set(BACKEND_PLUGINS
-    simple-data-tree
-    data-tree
-    kernel
-)
-
-foreach(plugin ${BACKEND_PLUGINS})
-    add_library(${plugin} SHARED ${plugin}.cpp)
-    target_link_libraries(${plugin} PRIVATE ymery_lib)
-    target_include_directories(${plugin} PRIVATE ${CMAKE_SOURCE_DIR}/src)
-    set_target_properties(${plugin} PROPERTIES
-        PREFIX ""
-        OUTPUT_NAME "${plugin}"
-        LIBRARY_OUTPUT_DIRECTORY "${PLUGIN_OUTPUT_DIR}"
-        LIBRARY_OUTPUT_DIRECTORY_DEBUG "${PLUGIN_OUTPUT_DIR}"
-        LIBRARY_OUTPUT_DIRECTORY_RELEASE "${PLUGIN_OUTPUT_DIR}"
-        LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO "${PLUGIN_OUTPUT_DIR}"
-        LIBRARY_OUTPUT_DIRECTORY_MINSIZEREL "${PLUGIN_OUTPUT_DIR}"
-    )
-    configure_plugin(${plugin})
-endforeach()
-
-# Waveform plugin (requires threading)
-add_library(waveform SHARED waveform.cpp)
-target_link_libraries(waveform PRIVATE ymery_lib)
-target_include_directories(waveform PRIVATE ${CMAKE_SOURCE_DIR}/src)
-set_target_properties(waveform PROPERTIES
-    PREFIX ""
-    OUTPUT_NAME "waveform"
-    LIBRARY_OUTPUT_DIRECTORY "${PLUGIN_OUTPUT_DIR}"
-    LIBRARY_OUTPUT_DIRECTORY_DEBUG "${PLUGIN_OUTPUT_DIR}"
-    LIBRARY_OUTPUT_DIRECTORY_RELEASE "${PLUGIN_OUTPUT_DIR}"
-    LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO "${PLUGIN_OUTPUT_DIR}"
-    LIBRARY_OUTPUT_DIRECTORY_MINSIZEREL "${PLUGIN_OUTPUT_DIR}"
-)
-configure_plugin(waveform)
-
 # Platform-specific audio plugins (not available on web)
-# Note: sndfile is now an embedded plugin (compiled into ymery executable)
 if(NOT YMERY_WEB)
 
 # ALSA plugin (Linux only)
@@ -182,10 +145,8 @@ endif() # NOT YMERY_WEB
 # Filesystem plugin (exposes both tree-like and device-manager)
 add_subdirectory(filesystem)
 
-# Export all backend plugin targets to parent scope
+# Export backend plugin targets to parent scope
 set(YMERY_BACKEND_PLUGIN_TARGETS
-    ${BACKEND_PLUGINS}
-    waveform
     filesystem
     filesystem-provider
     PARENT_SCOPE

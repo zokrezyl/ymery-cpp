@@ -72,17 +72,6 @@ else()
     message(STATUS "Building with OpenGL backend")
 endif()
 
-# libsndfile for audio file loading (embedded plugin)
-find_package(PkgConfig QUIET)
-if(PkgConfig_FOUND)
-    pkg_check_modules(SNDFILE sndfile)
-endif()
-if(SNDFILE_FOUND)
-    message(STATUS "libsndfile found - sndfile plugin enabled")
-else()
-    message(STATUS "libsndfile not found - sndfile plugin will not work")
-endif()
-
 # CPM.cmake for dependency management
 set(CPM_DOWNLOAD_VERSION 0.40.2)
 if(CPM_SOURCE_CACHE)
@@ -107,6 +96,19 @@ CPMAddPackage(
     GITHUB_REPOSITORY gabime/spdlog
     VERSION 1.14.1
 )
+
+# dr_libs - single-file audio libraries (public domain)
+CPMAddPackage(
+    NAME dr_libs
+    GITHUB_REPOSITORY mackron/dr_libs
+    GIT_TAG master
+    DOWNLOAD_ONLY YES
+)
+
+if(dr_libs_ADDED)
+    add_library(dr_libs INTERFACE)
+    target_include_directories(dr_libs INTERFACE ${dr_libs_SOURCE_DIR})
+endif()
 
 # ytrace - tracing with spdlog backend
 CPMAddPackage(
@@ -546,7 +548,13 @@ set(YMERY_CORE_SOURCES
     src/ymery/backend/audio_buffer.cpp
     src/ymery/embedded.cpp
     src/ymery/static_plugins.cpp
-    src/ymery/plugins/backend/sndfile.cpp
+    # Embedded backend plugins
+    src/ymery/plugins/frontend/imgui/main.cpp
+    src/ymery/backend/data_tree.cpp
+    src/ymery/backend/simple_data_tree.cpp
+    src/ymery/backend/audio_file.cpp
+    src/ymery/backend/waveform.cpp
+    src/ymery/backend/kernel.cpp
 )
 
 # App initialization
@@ -652,9 +660,8 @@ else()
         nanovg
         glfw
         spdlog::spdlog
-        ${SNDFILE_LIBRARIES}
+        dr_libs
     )
-    target_include_directories(ymery_lib PUBLIC ${SNDFILE_INCLUDE_DIRS})
     # dl library is only needed on Unix-like systems (not macOS)
     if(UNIX AND NOT APPLE)
         target_link_libraries(ymery_lib PUBLIC dl)
@@ -679,16 +686,11 @@ endif()
 if(NOT YMERY_ANDROID)
     # Include only core embedded plugins (imgui + tree-like backends)
     # Other plugins (implot, im-anim, etc.) are loaded dynamically as .wasm modules
+    # Embedded plugins are now part of ymery_lib
     add_executable(ymery
         src/main.cpp
-        src/ymery/plugins/frontend/imgui/main.cpp
-        src/ymery/plugins/backend/data-tree.cpp
-        src/ymery/plugins/backend/simple-data-tree.cpp
     )
     target_link_libraries(ymery PRIVATE ymery_lib)
-    target_include_directories(ymery PRIVATE ${CMAKE_SOURCE_DIR}/src)
-    # Define YMERY_EMBEDDED_PLUGINS to exclude extern "C" symbols that would clash
-    target_compile_definitions(ymery PRIVATE YMERY_EMBEDDED_PLUGINS=1)
 
     if(YMERY_WEB)
         # Generate demos.json from demo/layouts directory
@@ -728,11 +730,7 @@ if(NOT YMERY_WEB AND NOT YMERY_ANDROID)
         src/ymery/editor/widget_tree.cpp
         src/ymery/editor/layout_model.cpp
         src/ymery/editor/editor_canvas.cpp
-        src/ymery/plugins/frontend/imgui/main.cpp
-        src/ymery/plugins/backend/data-tree.cpp
-        src/ymery/plugins/backend/simple-data-tree.cpp
     )
-    target_compile_definitions(ymery-editor PRIVATE YMERY_EMBEDDED_PLUGINS=1)
     target_include_directories(ymery-editor PRIVATE
         ${CMAKE_SOURCE_DIR}/src
         ${CMAKE_SOURCE_DIR}/third_party/imgui

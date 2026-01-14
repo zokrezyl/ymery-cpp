@@ -217,19 +217,49 @@ Result<void> PluginManager::init() {
         yinfo("PluginManager: registered embedded tree-like plugin 'simple-data-tree'");
     }
 
-    // sndfile (audio file loading)
+    // audio-file (audio file loading via dr_libs)
     {
         PluginMeta meta;
-        meta.registered_name = "sndfile";
-        meta.class_name = "sndfile";
+        meta.registered_name = "audio-file";
+        meta.class_name = "audio-file";
         meta.create_fn = TreeLikeCreateFn([](
             std::shared_ptr<Dispatcher> /*dispatcher*/,
             std::shared_ptr<PluginManager> /*pm*/
         ) -> Result<TreeLikePtr> {
-            return embedded::create_sndfile_manager();
+            return embedded::create_audio_file_manager();
         });
-        _plugins["device-manager"]["sndfile"] = meta;
-        yinfo("PluginManager: registered embedded device-manager plugin 'sndfile'");
+        _plugins["device-manager"]["audio-file"] = meta;
+        yinfo("PluginManager: registered embedded device-manager plugin 'audio-file'");
+    }
+
+    // waveform (waveform generator)
+    {
+        PluginMeta meta;
+        meta.registered_name = "waveform";
+        meta.class_name = "waveform";
+        meta.create_fn = TreeLikeCreateFn([](
+            std::shared_ptr<Dispatcher> /*dispatcher*/,
+            std::shared_ptr<PluginManager> /*pm*/
+        ) -> Result<TreeLikePtr> {
+            return embedded::create_waveform_manager();
+        });
+        _plugins["device-manager"]["waveform"] = meta;
+        yinfo("PluginManager: registered embedded device-manager plugin 'waveform'");
+    }
+
+    // kernel (central manager)
+    {
+        PluginMeta meta;
+        meta.registered_name = "kernel";
+        meta.class_name = "kernel";
+        meta.create_fn = TreeLikeCreateFn([this](
+            std::shared_ptr<Dispatcher> dispatcher,
+            std::shared_ptr<PluginManager> /*pm*/
+        ) -> Result<TreeLikePtr> {
+            return embedded::create_kernel(dispatcher, shared_from_this());
+        });
+        _plugins["tree-like"]["kernel"] = meta;
+        yinfo("PluginManager: registered embedded tree-like plugin 'kernel'");
     }
 
     return Ok();
