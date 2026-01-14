@@ -72,6 +72,17 @@ else()
     message(STATUS "Building with OpenGL backend")
 endif()
 
+# libsndfile for audio file loading (embedded plugin)
+find_package(PkgConfig QUIET)
+if(PkgConfig_FOUND)
+    pkg_check_modules(SNDFILE sndfile)
+endif()
+if(SNDFILE_FOUND)
+    message(STATUS "libsndfile found - sndfile plugin enabled")
+else()
+    message(STATUS "libsndfile not found - sndfile plugin will not work")
+endif()
+
 # CPM.cmake for dependency management
 set(CPM_DOWNLOAD_VERSION 0.40.2)
 if(CPM_SOURCE_CACHE)
@@ -535,6 +546,7 @@ set(YMERY_CORE_SOURCES
     src/ymery/backend/audio_buffer.cpp
     src/ymery/embedded.cpp
     src/ymery/static_plugins.cpp
+    src/ymery/plugins/backend/sndfile.cpp
 )
 
 # App initialization
@@ -559,7 +571,8 @@ target_include_directories(ymery_lib PUBLIC
 )
 
 # Enable ytrace with spdlog backend for proper fmt formatting
-target_compile_definitions(ymery_lib PUBLIC YTRACE_USE_SPDLOG=1)
+# YMERY_EMBEDDED_PLUGINS prevents sndfile.cpp from exporting extern "C" symbols
+target_compile_definitions(ymery_lib PUBLIC YTRACE_USE_SPDLOG=1 YMERY_EMBEDDED_PLUGINS=1)
 
 if(YMERY_WEB)
     target_link_libraries(ymery_lib PUBLIC
@@ -639,7 +652,9 @@ else()
         nanovg
         glfw
         spdlog::spdlog
+        ${SNDFILE_LIBRARIES}
     )
+    target_include_directories(ymery_lib PUBLIC ${SNDFILE_INCLUDE_DIRS})
     # dl library is only needed on Unix-like systems (not macOS)
     if(UNIX AND NOT APPLE)
         target_link_libraries(ymery_lib PUBLIC dl)

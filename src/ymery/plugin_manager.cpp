@@ -217,6 +217,21 @@ Result<void> PluginManager::init() {
         yinfo("PluginManager: registered embedded tree-like plugin 'simple-data-tree'");
     }
 
+    // sndfile (audio file loading)
+    {
+        PluginMeta meta;
+        meta.registered_name = "sndfile";
+        meta.class_name = "sndfile";
+        meta.create_fn = TreeLikeCreateFn([](
+            std::shared_ptr<Dispatcher> /*dispatcher*/,
+            std::shared_ptr<PluginManager> /*pm*/
+        ) -> Result<TreeLikePtr> {
+            return embedded::create_sndfile_manager();
+        });
+        _plugins["device-manager"]["sndfile"] = meta;
+        yinfo("PluginManager: registered embedded device-manager plugin 'sndfile'");
+    }
+
     return Ok();
 }
 

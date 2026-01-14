@@ -74,6 +74,7 @@ set_target_properties(waveform PROPERTIES
 configure_plugin(waveform)
 
 # Platform-specific audio plugins (not available on web)
+# Note: sndfile is now an embedded plugin (compiled into ymery executable)
 if(NOT YMERY_WEB)
 
 # ALSA plugin (Linux only)

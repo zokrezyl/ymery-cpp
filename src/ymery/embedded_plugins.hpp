@@ -15,5 +15,6 @@ Plugin* create_imgui_plugin();
 // Backend plugins (TreeLike-based)
 Result<TreeLikePtr> create_data_tree();
 Result<TreeLikePtr> create_simple_data_tree();
+Result<TreeLikePtr> create_sndfile_manager();
 
 } // namespace ymery::embedded
